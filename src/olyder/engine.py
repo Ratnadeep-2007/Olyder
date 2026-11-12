@@ -82,14 +82,21 @@ def _invoke_builder(spec: Spec, feedback: str, *, enabled: bool, timeout: int, t
         raise StopCycle(f"Builder executable unavailable: {exc.filename}") from exc
 
 
-def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, allow_network: bool = False, budget: Budget | None = None, only: set[str] | None = None, source_evidence: list[dict] | None = None) -> dict:
+def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, allow_network: bool = False, budget: Budget | None = None, only: set[str] | None = None, source_evidence: list[dict] | None = None, deadline: float | None = None) -> dict:
     budget = budget or Budget(int(spec.raw.get("limits", {}).get("max_tokens", 30000)))
-    results = [asdict(x) for x in run_checks(spec.checks, spec.root, allow_exec=allow_exec, only=only)]
+    results = [asdict(x) for x in run_checks(spec.checks, spec.root, allow_exec=allow_exec, only=only, allow_network=allow_network, deadline=deadline)]
+    if deadline is not None and time.monotonic() >= deadline:
+        use_ai = False  # Do not spend tokens after the time budget expires.
     notes, concerns = _independent_review(spec, results, budget, ai=use_ai)
     sources = source_evidence if source_evidence is not None else collect(spec.raw.get("sources", []), network_allowed=allow_network)
     passed = bool(results) and all(x["status"] == "pass" for x in results)
-    # AI concerns force a human review; an AI verdict can never override failed tests.
-    status = "passed" if passed and not concerns else "needs_review" if passed and concerns else "failed"
+    # AI concerns and unavailable declared research evidence require a human review.
+    # Passing tests do not by themselves validate an unobserved external claim.
+    source_gaps = [s for s in sources if s.get("status") != "fetched"]
+    if passed and (concerns or source_gaps):
+        status = "needs_review"
+    else:
+        status = "passed" if passed else "failed"
     if any(x["status"] == "blocked" for x in results):
         status = "blocked"
     passed_count = sum(x["status"] == "pass" for x in results)
@@ -104,14 +111,19 @@ def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, a
         "blocked_checks": blocked_count,
         "execution_coverage_percent": round(100 * executed / len(spec.checks), 1),
         "pass_rate_of_executed_percent": round(100 * passed_count / executed, 1) if executed else None,
-        "total_check_duration_ms": sum(x["duration_ms"] for x in results)
+        "total_check_duration_ms": sum(x["duration_ms"] for x in results),
+        "sources_requested": len(sources),
+        "sources_fetched": len(sources) - len(source_gaps),
+        "sources_unavailable": len(source_gaps),
     }
     return {"goal": spec.goal, "status": status, "spec_sha256": spec.digest, "checks": results, "metrics": metrics, "sources": sources, "verifier_note": notes, "ai_concerns": concerns, "budget": budget.snapshot()}
 
 
 def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: bool, allow_network: bool, output: Path, max_iterations: int | None = None) -> dict:
     limits = spec.raw.get("limits", {})
-    allowed_iterations = min(max_iterations or int(limits.get("max_iterations", 3)), 20)
+    if max_iterations is not None and not 1 <= max_iterations <= 20:
+        raise ValueError("max_iterations must be between 1 and 20")
+    allowed_iterations = min(max_iterations if max_iterations is not None else int(limits.get("max_iterations", 3)), 20)
     budget = Budget(int(limits.get("max_tokens", 30000)))
     deadline = time.monotonic() + int(limits.get("max_seconds", 600))
     attempts = []
@@ -137,13 +149,20 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
                 break
             # Run the full set on every attempt for sound completion. Future optimized
             # rechecks may be added only with explicit dependency coverage evidence.
-            item = verify_once(spec, allow_exec=allow_exec, use_ai=use_ai, allow_network=allow_network, budget=budget, source_evidence=source_evidence)
+            item = verify_once(spec, allow_exec=allow_exec, use_ai=use_ai, allow_network=allow_network, budget=budget, source_evidence=source_evidence, deadline=deadline)
         except (StopCycle, QuotaExceeded, ModelError) as exc:
             feedback = str(exc)
             break
         attempts.append({"number": iteration, "status": item["status"], "checks": item["checks"]})
         final = item
+        if time.monotonic() >= deadline:
+            final["status"] = "blocked"
+            feedback = "Overall time limit reached during verification"
+            break
         if item["status"] == "passed":
+            break
+        if item["status"] == "needs_review" and item["metrics"]["sources_unavailable"] > 0 and item["metrics"]["failed_checks"] == 0:
+            feedback = "External evidence unavailable; requires authorized retrieval or human review"
             break
         signature = _signature(item["checks"])
         repeated = repeated + 1 if signature == previous else 0

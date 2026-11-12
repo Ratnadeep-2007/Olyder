@@ -22,10 +22,14 @@ def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
             continue
         try:
             req = request.Request(url, headers={"User-Agent": "Olyder/0.1"})
-            with request.urlopen(req, timeout=12) as response:
-                # Limit redirects to HTTPS as well.
-                if parse.urlparse(response.url).scheme != "https":
-                    raise ValueError("HTTP redirect is not HTTPS")
+            class RefuseRedirect(request.HTTPRedirectHandler):
+                # Do not follow redirects at all: a public URL may redirect to an
+                # internal/metadata host, or pass through auth-bearing URLs.
+                def redirect_request(self, req, fp, code, msg, headers, newurl):
+                    return None
+
+            opener = request.build_opener(RefuseRedirect)
+            with opener.open(req, timeout=12) as response:
                 data = response.read(80_000)
                 record["status"] = "fetched"
                 record["sha256"] = hashlib.sha256(data).hexdigest()
@@ -34,6 +38,9 @@ def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
                 plain = re.sub(r"\s+", " ", html.unescape(plain))
                 record["excerpt"] = plain[:4000]
                 record["reason"] = "Fetched excerpt; not independently verified"
+        except error.HTTPError as exc:
+            record["status"] = "blocked" if 300 <= exc.code < 400 else "error"
+            record["reason"] = "Redirect refused; list the destination explicitly in sources" if 300 <= exc.code < 400 else f"HTTP status {exc.code}"
         except (OSError, ValueError, error.URLError) as exc:
             record["status"] = "error"
             record["reason"] = f"Retrieval failed: {type(exc).__name__}"

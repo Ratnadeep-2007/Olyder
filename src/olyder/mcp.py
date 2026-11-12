@@ -30,7 +30,7 @@ def process(msg: dict, workspace: Path) -> dict | None:
     base = {"jsonrpc": "2.0", "id": req_id}
     try:
         if method == "initialize":
-            value = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "olyder", "version": "0.1.0"}}
+            value = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "olyder", "version": "0.2.0"}}
         elif method == "ping":
             value = {}
         elif method == "tools/list":

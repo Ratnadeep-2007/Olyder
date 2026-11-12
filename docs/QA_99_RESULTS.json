@@ -1,0 +1,1010 @@
+{
+  "title": "Olyder 99-scenario test results",
+  "scenarios": 99,
+  "baseline": {
+    "passed": 84,
+    "failed": 15
+  },
+  "final": {
+    "passed": 99,
+    "failed": 0
+  },
+  "limitations": [
+    "Browser action scenarios used a deterministic Playwright adapter substitute, not a live browser.",
+    "A separate live Chromium smoke attempt was blocked by the host (ERR_BLOCKED_BY_ADMINISTRATOR).",
+    "No commercial LLM API or external agent subscription was exercised.",
+    "A passed negative test means an expected failure/block was correctly observed."
+  ],
+  "cases": [
+    {
+      "id": "L01-minimal_valid",
+      "level": 1,
+      "category": "Schema",
+      "expected": "accepted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-non_ascii_goal",
+      "level": 1,
+      "category": "Schema",
+      "expected": "accepted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-empty_goal",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-missing_check_list",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-duplicate_check_ids",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-bool_command_timeout",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-invalid_http_scheme",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-embedded_credentials",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-missing_file_path",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-insecure_research_source",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L01-empty_builder_argument",
+      "level": 1,
+      "category": "Schema",
+      "expected": "rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-existing_file",
+      "level": 2,
+      "category": "Files",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-absent_file_expected_absent",
+      "level": 2,
+      "category": "Files",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-missing_file_fails",
+      "level": 2,
+      "category": "Files",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-contains_match",
+      "level": 2,
+      "category": "Files",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-contains_mismatch",
+      "level": 2,
+      "category": "Files",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-unicode_contains",
+      "level": 2,
+      "category": "Files",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-nested_file",
+      "level": 2,
+      "category": "Files",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-traversal_rejected",
+      "level": 2,
+      "category": "Files",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-symlink_escape_rejected",
+      "level": 2,
+      "category": "Files",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-directory_not_regular_text_file",
+      "level": 2,
+      "category": "Files",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L02-content_limited_to_first_megabyte",
+      "level": 2,
+      "category": "Files",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-blocked_without_consent",
+      "level": 3,
+      "category": "Commands",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-simple_success",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-failure_nonzero",
+      "level": 3,
+      "category": "Commands",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-expected_nonzero",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-stdout_contains_true",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-stdout_contains_false",
+      "level": 3,
+      "category": "Commands",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-stderr_captured",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-cwd_workspace",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-secret_redacted",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-timeout_observed",
+      "level": 3,
+      "category": "Commands",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L03-no_shell_injection",
+      "level": 3,
+      "category": "Commands",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-success_200",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-created_201",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-expected_404",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-expected_500",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-unexpected_404",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-content_found",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-content_missing",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-redirect_not_followed",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-http_requires_opt_in",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-nonlocal_http_without_network_opt_in",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L04-unicode_utf8_content",
+      "level": 4,
+      "category": "HTTP",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L05-browser_requires_opt_in",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L05-load_real_page",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-click_button_changes_dom",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-fill_form_field",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-missing_text_fails",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-current_url_regex",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-wrong_url_regex",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-navigation_to_next_page",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-click_link_navigation",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "pass",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-invalid_browser_selector_fails",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "fail",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "simulated browser adapter"
+    },
+    {
+      "id": "L05-browser_external_without_network_consent",
+      "level": 5,
+      "category": "Browser adapter",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-reserve_settle_actual",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-estimate_blocks_overspend",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-reserve_exact_boundary",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-unicode_estimation",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-settle_unknown_charges_reserved",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-actual_usage_can_exceed_reservation",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-release_restores_budget",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-reject_negative_output",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-reject_negative_limit",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-missing_model_configuration",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L06-network_failure_settles_reservation",
+      "level": 6,
+      "category": "Quota and model client",
+      "expected": "quota/model behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-deterministic_no_ai",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-clean_ai_assessment",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-ai_concern_forces_review",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "needs_review",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-non_json_response",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "needs_review",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-markdown_fenced_json",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-non_string_concern",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "needs_review",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-json_array_instead_object",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "needs_review",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-ai_cannot_override_failed",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "failed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-blocked_takes_priority",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-select_none_does_not_pass",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "failed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L07-no_builder_history_shared",
+      "level": 7,
+      "category": "Independent verifier",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-verify_only_no_builder",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "failed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-builder_creates_output",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-builder_modifies_spec_blocked",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-builder_not_found_blocked",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-builder_fails_nonzero_blocked",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-failure_then_repair",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-no_progress_terminates",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "failed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-max_iterations_stops",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "failed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-report_files_created",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "passed",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-negative_iteration_rejected",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "input rejected",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L08-deadline_exceeded_status",
+      "level": 8,
+      "category": "Repair loop",
+      "expected": "blocked",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "failed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-cli_init",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-cli_init_refuses_overwrite",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-skill_installs",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-cli_plan",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-mcp_list_tools",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-mcp_verify_read_only",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-mcp_unknown_tool",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-mcp_invalid_params",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-mcp_notification_no_reply",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-html_escapes_payload",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    },
+    {
+      "id": "L09-network_sources_blocked",
+      "level": 9,
+      "category": "CLI, MCP, reports",
+      "expected": "integration behavior asserted",
+      "observed": "matched expected",
+      "assertion": "passed",
+      "baseline": "passed",
+      "mode": "local check / fixture"
+    }
+  ]
+}
