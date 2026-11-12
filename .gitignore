@@ -1,0 +1,13 @@
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+*.egg-info/
+build/
+dist/
+.olyder/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/

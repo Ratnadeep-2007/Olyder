@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "olyder-agent"
+version = "0.1.0"
+description = "Independent, quota-aware verification and targeted repair loops for AI coding agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [{name = "Olyder Contributors"}]
+keywords = ["ai-agents", "testing", "verification", "mcp", "coding-agents", "agent-skills"]
+classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: Apache Software License"]
+
+[project.optional-dependencies]
+browser = ["playwright>=1.50"]
+dev = ["pytest>=8", "ruff>=0.9"]
+
+[project.scripts]
+olyder = "olyder.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+olyder = ["data/SKILL.md"]

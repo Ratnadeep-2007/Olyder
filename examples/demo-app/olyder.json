@@ -1,0 +1,9 @@
+{
+  "goal": "Customers receive correct cart totals and invalid pricing inputs are rejected",
+  "checks": [
+    {"id": "pricing-module", "type": "file", "path": "pricing.py", "contains": "def total"},
+    {"id": "pricing-cases", "type": "command", "argv": ["python", "-m", "unittest", "test_pricing", "-v"], "timeout": 30}
+  ],
+  "sources": [],
+  "limits": {"max_iterations": 2, "max_tokens": 4000, "max_seconds": 120}
+}
