@@ -6,7 +6,7 @@
 
 Olyder is a free, open-source, **verification-driven execution layer** for coding agents. It combines a portable agent skill, a Python CLI, an optional independent LLM reviewer, a bounded correction loop, and evidence-based reports. No model subscription is needed for deterministic tests.
 
-> **Status: v0.1.0 public-development beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
+> **Status: v0.2.0 public-development beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
 
 ## What it does
 
@@ -15,7 +15,7 @@ Olyder is a free, open-source, **verification-driven execution layer** for codin
 3. **Research ideas** from explicitly approved HTTPS source URLs. AI feasibility summaries are optional and must be treated as hypotheses, not proof of market demand.
 4. **Build** using your configured coding-agent CLI, only when explicitly permitted.
 5. **Verify independently** with observable tests; optional fresh LLM review sees requirements and test results, **never the builder's conversation or reasoning**.
-6. **Repair and retry** with targeted failure feedback, a hard attempt/time budget, and a measurable-progress stop.
+6. **Repair and retry** with targeted failure feedback, bounded attempts, a best-effort overall deadline, and a measurable-progress stop.
 7. **Report** JSON, Markdown and a self-contained HTML file with pass/fail metrics, declared-check execution coverage, evidence, status, scope and budget.
 
 ## Quick start
@@ -68,7 +68,7 @@ olyder run --allow-exec --execute-builder
 
 This executes the configured external coding-agent CLI, which may modify files and invoke additional tools. The builder's own model calls are **not tracked or controlled** by Olyder in v0.1. Do not run it outside an OS-enforced sandbox when code, prompts, or agents are untrusted. The acceptance spec file hash is locked, but its file bytes are not protected against a malicious process.
 
-Without `--execute-builder`, `olyder run` is a verify-only cycle that does not modify code. Without `--allow-exec`, command, HTTP and browser checks are blocked. **Blocked means not verified, not passed.**
+Without `--execute-builder`, `olyder run` is a verify-only cycle that does not modify code. Without `--allow-exec`, command, HTTP and browser checks are blocked. HTTP/browser checks accessing a non-local host require explicit `--allow-network`, even when `--allow-exec` is set. **Blocked means not verified, not passed.**
 
 ## Independent verifier: optional model call
 
@@ -90,7 +90,7 @@ On Windows PowerShell use `$env:OLYDER_MODEL="..."` etc. OpenAI-compatible model
 - `--ai` is opt-in, and each verifier/planner request gets fresh bounded context.
 - The local `max_tokens` budget limits estimated prompt+response tokens for Olyder's **own** API requests. It is **not** a read of your provider's remaining subscription quota, and it does not meter external builder-agent requests.
 - If the provider returns token usage, Olyder records it; otherwise it conservatively charges the reserved estimate.
-- Retries have strict iteration and overall time limits; repeated identical failures stop the loop.
+- Retries are iteration-bounded; checks with subprocesses have timeouts, and Olyder marks runs that exceed the overall deadline as blocked. External child processes may survive a timeout until a process-tree isolation layer is added.
 - Full regression checks run for each iteration in v0.1 rather than reusing potentially stale pass results. Selective re-testing will be introduced only when impact analysis can establish sound coverage.
 
 ## Scenario types
@@ -112,7 +112,7 @@ Add explicitly approved source URLs:
 "sources": ["https://example.org/official-documentation"]
 ```
 
-Then run `olyder idea --allow-network` to record source excerpts and hashes. Use `--ai` as well to request a **source-constrained feasibility assessment**. Merely retrieving a website does not validate an idea, prove market demand, or make a claim true. Source material is untrusted and should be cross-checked.
+Then run `olyder idea --allow-network` to record source excerpts and hashes. Use `--ai` as well to request a **source-constrained feasibility assessment**. Research redirects are not followed automatically; declare each approved HTTPS URL explicitly. Missing or blocked configured sources cause a local passing verification to return `needs_review`, not `passed`. Merely retrieving a website does not validate an idea, prove market demand, or make a claim true. Source material is untrusted and should be cross-checked.
 
 ## MCP and agent-skill distribution
 
@@ -147,6 +147,10 @@ flowchart TD
 
 See [scenario examples and measurable outcomes](docs/EXAMPLES.md), including staging checkout, ML prediction, and AI-agent workflows. The included demo is deliberately small so the repository's checks can be reproduced without a model account.
 
+## 99-scenario test results
+
+**99/99 expected outcomes matched** in the final offline acceptance matrix, plus 23 existing and 10 new regression tests (132 passed overall). Level 5 browser-action tests used a deterministic adapter because this host blocks Chromium navigation; real-browser and real-model interoperability remain to be validated. See [QA details and limitations](docs/QA_99.md) and [all 99 expected-vs-observed rows](docs/QA_99_MATRIX.md).
+
 ## Code review and release hardening
 
 See [the source review and outstanding security gaps](docs/CODE_REVIEW.md). This is a direct source review; CodeRabbit integration can be added to GitHub pull requests separately.
@@ -158,14 +162,14 @@ python -m pip install -e '.[dev]'
 python -m pytest -q
 ```
 
-CI tests Python 3.11 and 3.13 on Ubuntu and Windows. Project includes a cross-platform example, typed public inputs, no mandatory runtime dependencies, strict JSON specification validation and escaped HTML report generation.
+CI tests Python 3.11 and 3.13 on Ubuntu and Windows. The [99-scenario evidence report](docs/QA_99.md) covers nine levels, including simulated Playwright adapter cases; a live-browser smoke test is opt-in and has not passed in the hosted test environment. Project includes a cross-platform example, typed public inputs, no mandatory runtime dependencies, strict JSON specification validation and escaped HTML report generation.
 
 ## Security & limitations
 
 - **No OS-level sandboxing yet.** A user-chosen workspace is *not* a containment boundary for subprocesses. Commands and AI coding agents may read/write outside it if their OS privileges permit. Run in a VM, container or properly configured OS sandbox. Git worktrees are not security boundaries.
 - External builder CLIs can use their own networks, credentials, model subscriptions and tools. Olyder's local budget cannot cap those third-party operations.
 - AI prompts can leak test-result snippets to a configured provider; test logs may contain secrets. Simple output redaction is not comprehensive. Don't enable `--ai` for sensitive logs without sanitization.
-- HTTP and browser checks have network effects and URL redirects. Use only audited specifications against trusted services; no SSRF protection is claimed.
+- HTTP checks and external source retrieval refuse automatic redirects; browser navigation is constrained to loopback unless explicitly authorized, but hostile DNS, redirects, subprocesses, and external dependencies still create SSRF/network risk. Use trusted specifications and isolated test services; no comprehensive SSRF protection is claimed.
 - Model verdicts are fallible. Passing declared checks is **not** complete product validation, security certification, or proof of business viability.
 - No automatic acceptance-criteria discovery or automatic real-market research from arbitrary search queries in this release.
 - An attacker with workspace write access may modify the test infrastructure itself; isolation of the builder/verifier requires separate runtime credentials and permissions.

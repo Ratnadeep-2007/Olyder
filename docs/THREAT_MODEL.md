@@ -20,10 +20,14 @@
 
 ## Known gaps
 
-- Command and browser sandboxes; DNS rebinding/SSRF mitigation and redirect controls.
+- Command and browser sandboxes; comprehensive DNS rebinding/SSRF mitigation. HTTP and research-source redirects are refused, but browser-driven navigation and subprocess networking still require runtime isolation.
 - Secret masking and outbound content classification.
 - Recursive process-tree kill on timeout for child processes.
 - OS-level filesystem and process isolation for builders/verifiers.
 - Comprehensive model-account quota reporting and source provenance integrity.
 
 No production-security claim should be made until these gaps have independently tested mitigations.
+
+## Regression evidence
+
+See [99-scenario matrix and environment constraints](QA_99.md). Local and nonlocal network opt-ins are different; explicit consent does not create an OS sandbox.

@@ -17,7 +17,7 @@ from .report import save_report
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="olyder", description="Independent verification and bounded AI repair loops")
-    p.add_argument("--version", action="version", version="Olyder 0.1.0")
+    p.add_argument("--version", action="version", version="Olyder 0.2.0")
     sub = p.add_subparsers(dest="command", required=True)
     init = sub.add_parser("init", help="Generate a starter acceptance specification")
     init.add_argument("directory", nargs="?", default=".")

@@ -93,6 +93,16 @@ def load_spec(path: str | Path) -> Spec:
                     raise ConfigError(f"Check {c['id']}: invalid browser step")
                 if any(not isinstance(step.get(field), str) or not step[field] for field in required[step["action"]] if field != "value"):
                     raise ConfigError(f"Check {c['id']}: missing/invalid browser step value")
+                if step["action"] == "fill" and not isinstance(step.get("value"), str):
+                    raise ConfigError(f"Check {c['id']}: fill value must be a string")
+                if step["action"] == "expect_url":
+                    pattern = step["pattern"]
+                    if len(pattern) > 300:
+                        raise ConfigError(f"Check {c['id']}: URL regex too long")
+                    try:
+                        __import__("re").compile(pattern)
+                    except __import__("re").error as exc:
+                        raise ConfigError(f"Check {c['id']}: invalid URL regex") from exc
                 if step["action"] == "navigate":
                     target = urlparse(step["url"])
                     if target.scheme not in ("http", "https") or not target.hostname or target.username or target.password:
@@ -106,7 +116,7 @@ def load_spec(path: str | Path) -> Spec:
     builder = obj.get("builder", {})
     if not isinstance(builder, dict):
         raise ConfigError("builder must be an object")
-    if "argv" in builder and (not isinstance(builder["argv"], list) or not builder["argv"] or not all(isinstance(s, str) for s in builder["argv"])):
+    if "argv" in builder and (not isinstance(builder["argv"], list) or not builder["argv"] or not all(isinstance(s, str) and bool(s) for s in builder["argv"])):
         raise ConfigError("builder.argv must be a nonempty string list")
     limits = obj.get("limits", {})
     if not isinstance(limits, dict):

@@ -26,15 +26,15 @@ def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, 
         "max_tokens": max_tokens,
         "temperature": 0
     }
-    req = request.Request(base.rstrip("/") + "/chat/completions", data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
     try:
+        req = request.Request(base.rstrip("/") + "/chat/completions", data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
         with request.urlopen(req, timeout=45) as resp:
             obj = json.loads(resp.read(2_000_000))
         content = obj["choices"][0]["message"]["content"]
         usage = obj.get("usage", {}).get("total_tokens")
-        budget.settle(reservation, usage if isinstance(usage, int) else None)
+        budget.settle(reservation, usage if type(usage) is int and usage >= 0 else None)
         return content if isinstance(content, str) else json.dumps(content)
-    except (error.URLError, KeyError, ValueError, TypeError) as exc:
+    except (error.URLError, OSError, KeyError, ValueError, TypeError) as exc:
         # Request may have been processed even if disconnected: conservatively charge reserved amount.
         budget.settle(reservation, None)
         raise ModelError(f"Model request failed: {type(exc).__name__}") from exc
