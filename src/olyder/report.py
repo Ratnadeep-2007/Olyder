@@ -15,7 +15,7 @@ def save_report(report: dict, output_dir: Path) -> dict[str, str]:
         "full_suite_executed", "policy", "stop_reason", "acceptance_integrity",
         "run_id", "functional_verdict", "budget_verdict", "accounting",
         "wall_seconds", "environment", "verification_selection", "resource_usage", "warnings",
-        "artifact_refs", "verification_target", "application_status", "repaired_check_ids"
+        "artifact_refs", "verification_target", "application_status", "repaired_check_ids", "checker_sha256"
     ) if k in report}
     checks = report.get("checks", [])
     md = ["# Olyder Verification Report", "", f"**Goal:** {report.get('goal','')}", f"**Status:** {report.get('status','unknown')}", f"**Spec SHA-256:** `{report.get('spec_sha256','')}`", f"**Attempts:** {report.get('attempts',0)}", "", "## Acceptance checks", ""]

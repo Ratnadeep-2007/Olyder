@@ -48,6 +48,13 @@ def _digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _checker_digest():
+    digest=hashlib.sha256()
+    for name in ('sdk.py','checks.py','contracts.py','engine.py','workspace.py','execution.py'):
+        digest.update(name.encode());digest.update(Path(__file__).with_name(name).read_bytes())
+    return digest.hexdigest()
+
+
 def _execute(adapter, backend, workspace, prompt, timeout):
     command = [p.replace('{workspace}', str(workspace)) for p in adapter.command(prompt)]
     if getattr(adapter.capabilities(),'requires_git',False) and not (workspace/'.git').exists():
@@ -122,6 +129,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
     (spec.root/'.olyder').mkdir(mode=0o700,exist_ok=True)
     store=RunStore(spec.root/'.olyder'/'runs')
     state=store.create({'spec_sha256':spec.digest,'spec_path':str(spec.path),
+                        'checker_sha256':_checker_digest(),
                         'phase':'initializing','cancel_requested':False})
     run_id=state['run_id']; run_dir=store.path(run_id)
     account=RuntimeAccounting(run_id,spec.raw.get('budget'))
@@ -136,6 +144,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
     control=RunControl(deadline, cancelled=lambda: store.read(run_id).get('cancel_requested',False),
                        sink=emit, model_provider=model_provider)
     result={'goal':spec.goal,'spec_sha256':spec.digest,'run_id':run_id,'status':'blocked',
+            'checker_sha256':state['checker_sha256'],
             'checks':[],'history':[],'stop_reason':'initialization_failed',
             'sources':[],'independent_critic_status':'not_requested', 'budget':{}}
     workspace=None
@@ -384,6 +393,8 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
                 'accounting':state.get('accounting'), 'replayed_builder':False}
     contract=store.path(run_id)/'contract.json'
     try:
+        if state.get('checker_sha256')!=_checker_digest():
+            raise WorkspaceViolation('Verifier implementation changed; start fresh verification')
         if _digest(contract)!=state.get('spec_sha256'):
             raise WorkspaceViolation('Contract digest changed')
         original=Path(state['spec_path'])
@@ -410,8 +421,12 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
         before={n:h for n,h in input_before.items() if saved.is_protected(n)}
         control=RunControl(resumed_started+spec.raw.get('limits',{}).get('max_seconds',600),
                            cancelled=lambda:store.read(run_id).get('cancel_requested',False))
+        control.check_backend=get_backend('docker',image=state.get('docker_image','python:3.13-slim')) if isolation=='docker' else get_backend('host')
         with activate(control):
             control.check()
+            preparation=getattr(control.check_backend,'prepare_detached',None)
+            if preparation:
+                preparation(root,writable=False)
             item=verify_once(spec,allow_exec=permissions.allow_exec,allow_network=permissions.allow_network,
                              sandbox=isolation,docker_image=state.get('docker_image','python:3.13-slim'),deadline=control.deadline)
             control.check()
