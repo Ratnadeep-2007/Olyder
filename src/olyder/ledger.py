@@ -130,3 +130,25 @@ class BudgetLedger:
                     'unknown_spend': unknown, 'enforcement_kind': 'local_soft',
                     'strict_reconciliation': self.strict,
                     'remaining_estimated': str(max(Decimal(0), self.limit-actual-estimates-reserved-self.verifier_reserve))}
+
+    def checkpoint(self):
+        with self._lock:
+            return {'schema_version':1,'run_id':self.run_id,'limit':str(self.limit),
+                    'verifier_reserve':str(self.verifier_reserve),'strict':self.strict,
+                    'requests':{k:{'estimate':str(v['estimate']),
+                        'actual':str(v['actual']) if v['actual'] is not None else None,
+                        'state':v['state']} for k,v in self._requests.items()}}
+
+    @classmethod
+    def restore(cls, value):
+        if value.get('schema_version')!=1:
+            raise MoneyError('Unsupported ledger checkpoint')
+        ledger=cls(value['run_id'],value['limit'],verifier_reserve=value['verifier_reserve'],strict=value['strict'])
+        for identifier,record in value['requests'].items():
+            if not isinstance(identifier,str) or len(identifier)>200 or record['state'] not in ('reserved','unknown','settled','released'):
+                raise MoneyError('Invalid ledger checkpoint request')
+            actual=None if record['actual'] is None else money(record['actual'])
+            if (record['state']=='settled') != (actual is not None):
+                raise MoneyError('Inconsistent ledger checkpoint settlement')
+            ledger._requests[identifier]={'estimate':money(record['estimate']),'actual':actual,'state':record['state']}
+        return ledger

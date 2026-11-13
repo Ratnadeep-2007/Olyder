@@ -58,6 +58,9 @@ class AgentUsage:
                 self.completed = True
                 usage = event.get("usage")
                 if isinstance(usage, dict):
+                    if any(type(usage.get(k)) is not int or usage[k]<0 for k in ('input_tokens','output_tokens')):
+                        self.malformed_events += 1
+                        return
                     self.input_tokens += _count(usage.get("input_tokens"))
                     self.output_tokens += _count(usage.get("output_tokens"))
                     self.cached_tokens += _count(usage.get("cached_input_tokens"))
@@ -100,7 +103,7 @@ class AgentUsage:
                 "reasoning_tokens": self.reasoning_tokens,
                 "observed_tokens": self.observed_total if self.usage_events else None,
                 "usage_events": self.usage_events,
-                "usage_complete": self.completed and self.usage_events > 0 and not self.failed,
+                "usage_complete": self.completed and self.usage_events > 0 and not self.failed and not self.malformed_events,
                 "status": "failed" if self.failed else "completed" if self.completed else "incomplete",
                 "malformed_events": self.malformed_events,
                 "quota_enforced": False}

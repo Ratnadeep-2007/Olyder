@@ -52,7 +52,9 @@ def load_spec(path: str | Path) -> Spec:
             raise ConfigError(f"Check {i} has missing or duplicate id")
         ids.add(c["id"])
         kind = c.get("type")
-        if kind not in ("file", "command", "http", "browser"):
+        from .plugins import _verifiers
+        if kind not in ("file", "command", "http", "browser") and not (
+            isinstance(kind,str) and kind.startswith('plugin:') and kind[7:] in _verifiers):
             raise ConfigError(f"Check {c['id']}: type must be file, command, http or browser")
         if kind == "command":
             argv = c.get("argv")

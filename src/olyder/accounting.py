@@ -15,6 +15,16 @@ class PricingSnapshot:
     input_per_million_usd: str
     output_per_million_usd: str
     cached_per_million_usd: str | None = None
+    schema_version: int = 1
+
+    def __post_init__(self):
+        from datetime import date
+        date.fromisoformat(self.date)
+        if self.schema_version!=1:
+            raise ValueError('Unsupported pricing schema')
+        money(self.input_per_million_usd);money(self.output_per_million_usd)
+        if self.cached_per_million_usd is not None:
+            money(self.cached_per_million_usd)
 
     def estimate(self, usage):
         inp, out = usage.get('input_tokens'), usage.get('output_tokens')
@@ -71,6 +81,7 @@ class RuntimeAccounting:
 
     def snapshot(self):
         return {'ledger':self.ledger.snapshot() if self.ledger else None,
+                'ledger_checkpoint':self.ledger.checkpoint() if self.ledger else None,
                 'observations':list(self.observations), 'pending_requests':dict(self.pending),
                 'enforcement_kind':'local_soft',
                 'budget_verdict':'unknown' if any(o['billed_cost_usd'] is None for o in self.observations) else 'not_applicable'}

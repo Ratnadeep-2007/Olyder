@@ -47,6 +47,11 @@ def _require_network(url: str, allow_network: bool) -> None:
 
 def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False, deadline: float | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", trace_dir: Path | None = None) -> tuple[bool, str]:
     kind = check["type"]
+    if kind.startswith('plugin:'):
+        if not allow_exec:
+            raise PermissionError('Verifier plugins require explicit execution permission')
+        from .plugins import verify_plugin
+        return verify_plugin(check,root,{'allow_exec':allow_exec,'allow_network':allow_network})
     if kind == "file":
         p = safe_path(root, check["path"])
         expected = check.get("exists", True)

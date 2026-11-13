@@ -24,6 +24,8 @@ TOOLS = [
 
 
 def process(msg: dict, workspace: Path) -> dict | None:
+    if not isinstance(msg,dict):
+        return {'jsonrpc':'2.0','id':None,'error':{'code':-32600,'message':'Request must be an object'}}
     method, req_id = msg.get("method"), msg.get("id")
     if req_id is None:
         return None
@@ -41,6 +43,8 @@ def process(msg: dict, workspace: Path) -> dict | None:
                 return {**base, "error": {"code": -32602, "message": "Invalid params"}}
             name = params.get("name")
             spec = load_spec(workspace / "olyder.json")
+            if spec.root != workspace.resolve():
+                raise ValueError('Specification escapes MCP workspace')
             budget = Budget(int(spec.raw.get("limits", {}).get("max_tokens", 30000)))
             if name == "olyder_plan":
                 result = plan(spec, budget)

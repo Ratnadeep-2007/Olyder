@@ -22,6 +22,7 @@ from .config import Spec, load_spec
 from .control import Cancelled, RunControl, activate
 from .engine import plan, verify_once
 from .execution import ExecutionError, managed_run
+from .impact import select_checks
 from .policy import RunPolicy, progress
 from .privacy import redact
 from .quota import Budget, QuotaExceeded
@@ -29,7 +30,6 @@ from .report import save_report
 from .research import collect
 from .state import RunStore
 from .workspace import ProtectedWorkspace, WorkspaceViolation, tree
-from .impact import select_checks
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ def _execute(adapter, backend, workspace, prompt, timeout):
 def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None,
         mode=None, output=None, use_ai=False, docker_image='python:3.13-slim',
         docker_network='none', sink=None, model_provider=None, max_iterations=None,
-        apply=True, trace_dir=None) -> dict:
+        apply=True, trace_dir=None, exporters=()) -> dict:
     """Execute a bounded run; return structured uncertainty and artifact paths.
 
     Custom Python adapters/providers are trusted caller registrations. No plugin
@@ -139,13 +139,15 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
             checkpoint('ready',manifest_sha256=manifest['manifest_sha256'],contract_sha256=spec.digest,
                        execution_backend=backend,docker_image=docker_image)
             control.check()
+            research_started=time.monotonic()
             sources=collect(spec.raw.get('sources',[]),network_allowed=permissions.allow_network)
+            research_seconds=time.monotonic()-research_started
             control.check()
             builder=spec.raw.get('builder',{})
             name=agent or builder.get('provider')
             adapter=get_agent(name) if name else ExecutableAgent('generic',builder.get('argv') or ['false'])
             feedback='Implement the original goal. Do not create or modify acceptance assets.'
-            previous=[]; stagnant=0; previous_tree={}; selections=[]
+            previous=[]; stagnant=0; previous_tree={}; selections=[]; test_ms=0; executed_count=0
             token_budget=Budget(limits.get('max_tokens',30000))
             for number in range(1,iterations+1):
                 control.check()
@@ -201,12 +203,16 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         only=selected,
                         sandbox=backend if backend in ('host','docker') else 'host',docker_image=docker_image,
                         trace_dir=Path(trace_dir) if trace_dir else None)
+                    test_ms+=item['metrics']['total_check_duration_ms']
+                    executed_count+=item['metrics']['executed_checks']
                     if selected is not None and item['checks'] and all(c['status']=='pass' for c in item['checks']):
                         selections[-1]['final_full_suite']=[c['id'] for c in spec.checks]
                         item=verify_once(verification_spec,allow_exec=permissions.allow_exec,
                             allow_network=permissions.allow_network,budget=token_budget,
                             deadline=deadline,source_evidence=sources,sandbox=backend if backend in ('host','docker') else 'host',
                             docker_image=docker_image)
+                        test_ms+=item['metrics']['total_check_duration_ms']
+                        executed_count+=item['metrics']['executed_checks']
                 finally:
                     if critic_ticket:
                         observed=control.model_observations[observations_start:]
@@ -216,6 +222,8 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                 if trusted_before != {n:h for n,h in tree(root).items() if workspace.is_protected(n)}:
                     raise WorkspaceViolation('Trusted acceptance assets changed during verification')
                 delta=progress(previous,item['checks'])
+                delta.update(changed_files=sorted(changed),failure_signature=hashlib.sha256(
+                    json.dumps([(c['id'],c['status'],redact(c['details'])) for c in item['checks'] if c['status']!='pass'],sort_keys=True).encode()).hexdigest())
                 history=result['history']+[{'number':number,'status':item['status'],
                     'checks':item['checks'],'progress_delta':delta,'proposal_digest':tree(workspace.builder)}]
                 result.update(item,history=history)
@@ -225,7 +233,9 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                     break
                 if item['status']=='passed':
                     if apply and permissions.execute_builder:
+                        control.check()
                         workspace.apply()
+                        control.check()
                     result['stop_reason']='acceptance_passed'
                     break
                 if reserve_only:
@@ -256,6 +266,9 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
         budget_verdict=account.snapshot()['budget_verdict'],functional_verdict=result['status'],
         wall_seconds=time.monotonic()-started,policy={'mode':selected_mode,'full_final_suite_required':True},
         verification_selection=locals().get('selections',[]),
+        resource_usage={'deterministic_check_ms':locals().get('test_ms',0),
+                        'executed_checks':locals().get('executed_count',0),
+                        'research_seconds':locals().get('research_seconds',0)},
         environment={'python':platform.python_version(),'platform':platform.system()},
         execution_isolation={'mode':backend,'unsafe_host_authorized':permissions.unsafe_host,
                              'protected_assets_detached':workspace is not None})
@@ -263,6 +276,13 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
         result['acceptance_integrity']=workspace.evidence()
     checkpoint('completed',result=result)
     result['paths']=save_report(result,Path(output) if output else spec.root/'.olyder')
+    for name in exporters:
+        if not isinstance(name,str) or not name.replace('-','_').isidentifier():
+            raise ValueError('Invalid exporter name')
+        from .plugins import export
+        destination=Path(result['paths']['json']).parent/(name+'.txt')
+        destination.write_text(export(name,result),encoding='utf-8')
+        result['paths'][name]=str(destination)
     return result
 
 

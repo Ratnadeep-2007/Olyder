@@ -31,6 +31,13 @@ class BuilderTimeout(StopCycle):
 
 def plan(spec: Spec, budget: Budget | None = None, use_ai: bool = False) -> dict:
     tasks = [{"id": check["id"], "objective": f"Ensure acceptance check '{check['id']}' passes", "check_id": check["id"]} for check in spec.checks]
+    requirements=spec.raw.get('requirements',[])
+    for task,check in zip(tasks,spec.checks):
+        linked=[r for r in requirements if check['id'] in r.get('acceptance_check_ids',[])]
+        task.update(requirement_ids=[r['id'] for r in linked],
+                    objective='; '.join(r['text'] for r in linked) or task['objective'],
+                    affected_paths=check.get('paths',[]),depends_on=check.get('depends_on',[]),
+                    risk='low' if check['type']=='file' else 'requires_execution_review')
     result = {"goal": spec.goal, "tasks": tasks, "locked_spec_sha256": spec.digest, "planner": "deterministic"}
     if use_ai:
         if budget is None:

@@ -27,20 +27,25 @@ def _link(path):
     return path.is_symlink() or bool(getattr(path.lstat(), 'st_file_attributes', 0) & 0x400)
 
 
-def tree(root: Path, *, max_bytes=100_000_000) -> dict[str, str]:
+def secret_path(name):
+    return any(p in ('.env','.npmrc','.pypirc','.netrc','.aws','.ssh') or
+               p.startswith('.env.') and p!='.env.example' for p in Path(name).parts)
+
+
+def tree(root: Path, *, max_bytes=100_000_000, include_secrets=False) -> dict[str, str]:
     result = {}
     total = 0
     for directory, dirs, files in os.walk(root, followlinks=False):
         parent = Path(directory)
         for name in dirs + files:
-            if name in IGNORE:
+            if name in IGNORE or not include_secrets and secret_path(name):
                 continue
             path = parent/name
             if _link(path):
                 raise WorkspaceViolation('Symlink/reparse point rejected: '+path.relative_to(root).as_posix())
-        dirs[:] = sorted(d for d in dirs if d not in IGNORE)
+        dirs[:] = sorted(d for d in dirs if d not in IGNORE and (include_secrets or not secret_path(d)))
         for name in sorted(files):
-            if name in IGNORE:
+            if name in IGNORE or not include_secrets and secret_path(name):
                 continue
             p = parent/name
             size = p.stat().st_size
@@ -98,7 +103,7 @@ class ProtectedWorkspace:
 
     @staticmethod
     def secret(name):
-        return any(p == '.env' or p.startswith('.env.') and p != '.env.example' for p in Path(name).parts)
+        return secret_path(name)
 
     def is_protected(self, name):
         return any(name == p or name.startswith(p+'/') for p in self.protected)
@@ -106,7 +111,7 @@ class ProtectedWorkspace:
     def validate(self):
         if tree(self.trusted) != self.baseline:
             raise WorkspaceViolation('Trusted snapshot changed')
-        proposed = tree(self.builder)
+        proposed = tree(self.builder,include_secrets=True)
         forbidden = [n for n in proposed if self.is_protected(n) or self.secret(n)]
         if forbidden:
             raise WorkspaceViolation('Builder supplied protected or secret paths: '+', '.join(forbidden[:5]))

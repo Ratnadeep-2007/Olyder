@@ -14,7 +14,8 @@ class StateError(RuntimeError):
 class RunStore:
     def __init__(self, root):
         self.root = Path(root)
-        if any(p.is_symlink() for p in (self.root,*self.root.parents)):
+        if any(p.is_symlink() or p.exists() and getattr(p.lstat(),'st_file_attributes',0)&0x400
+               for p in (self.root,*self.root.parents)):
             raise StateError('Run storage cannot be a symlink')
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.db = self.root/'runs.sqlite3'
@@ -50,7 +51,7 @@ class RunStore:
     def path(self, identifier):
         self.validate_id(identifier)
         path = self.root/identifier
-        if path.is_symlink():
+        if path.is_symlink() or path.exists() and getattr(path.lstat(),'st_file_attributes',0)&0x400:
             raise StateError('Run directory cannot be a symlink')
         return path
 
@@ -85,3 +86,59 @@ class RunStore:
     def cancel(self, identifier):
         data=self.read(identifier)
         return self.update(identifier,data['revision'],{'cancel_requested':True})
+
+    def reconcile(self, identifier, request_id, amount, reference):
+        """Explicit user-provided invoice reconciliation, not provider certification."""
+        from .ledger import BudgetLedger, money
+        if not isinstance(reference,str) or not reference.strip() or len(reference)>500:
+            raise StateError('A bounded billing reference is required')
+        data=self.read(identifier)
+        if data.get('phase')!='completed':
+            raise StateError('Stop execution before reconciling billing')
+        accounting=data['accounting']
+        ledger=BudgetLedger.restore(accounting['ledger_checkpoint']) if accounting.get('ledger_checkpoint') else None
+        if ledger:
+            ledger.reconcile(request_id,amount)
+        found=False
+        for observation in accounting['observations']:
+            if observation['request_id']==request_id:
+                if observation.get('billing_reference') not in (None,reference):
+                    raise StateError('Conflicting billing reference')
+                observation.update(billed_cost_usd=str(money(amount)),
+                    billing_origin='user_reconciled_invoice',billing_reference=reference)
+                found=True
+        if not found:
+            raise StateError('Billing request not present in observations')
+        accounting.update(ledger=ledger.snapshot() if ledger else None,ledger_checkpoint=ledger.checkpoint() if ledger else None,
+            budget_verdict='reconciled' if all(o['billed_cost_usd'] is not None for o in accounting['observations']) else 'unknown')
+        result=data.get('result',{})
+        result.update(accounting=accounting,budget_verdict=accounting['budget_verdict'])
+        return self.update(identifier,data['revision'],{'accounting':accounting,'result':result})
+
+    def prune(self, *, older_than_days=30, apply=False):
+        """Explicit retention; completed runs only. Uncertain runs are retained."""
+        import shutil
+        if type(older_than_days) is not int or older_than_days<0:
+            raise StateError('Retention days must be a nonnegative integer')
+        cutoff=time.time()-older_than_days*86400
+        with self.connect() as c:
+            ids=[row[0] for row in c.execute('SELECT id FROM runs')]
+        selected=[]
+        for identifier in ids:
+            state=self.read(identifier)
+            if state.get('phase')!='completed' or state.get('created_at',time.time())>cutoff:
+                continue
+            accounting=state.get('accounting',{})
+            if accounting.get('pending_requests'):
+                continue
+            path=self.path(identifier)
+            if path.exists() and getattr(path.lstat(),'st_file_attributes',0)&0x400:
+                raise StateError('Refuse deleting a reparse point')
+            selected.append(identifier)
+            if apply:
+                self.update(identifier,state['revision'],{'phase':'pruning'})
+                if path.exists():
+                    shutil.rmtree(path)
+                with self.connect() as c:
+                    c.execute('DELETE FROM runs WHERE id=?',(identifier,))
+        return {'run_ids':selected,'deleted':apply,'older_than_days':older_than_days}

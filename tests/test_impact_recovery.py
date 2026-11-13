@@ -50,3 +50,20 @@ def test_uncertain_builder_is_never_replayed(tmp_path):
     result=resume(state['run_id'],tmp_path)
     assert result['status']=='blocked'
     assert result['stop_reason']=='uncertain_inflight_execution'
+
+
+def test_full_final_suite_catches_unsound_declared_mapping(tmp_path):
+    (tmp_path/'a').write_text('0');(tmp_path/'b').write_text('0')
+    value="int(open('a').read().split('#')[0])"
+    builder="from pathlib import Path;p=Path('a');p.write_text('1' if '#first' in p.read_text() else '0#first')"
+    config={'goal':'Do not miss a hidden regression','incremental':True,
+        'builder':{'argv':[sys.executable,'-c',builder]},'checks':[
+            {'id':'a','type':'command','paths':['a'],'argv':[sys.executable,'-c','assert '+value+'==1']},
+            {'id':'hidden','type':'command','paths':['b'],'argv':[sys.executable,'-c','assert '+value+'==0']}],
+        'limits':{'max_seconds':30,'max_iterations':3}}
+    path=tmp_path/'olyder.json';path.write_text(json.dumps(config))
+    result=run(path,permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True))
+    assert result['status']=='failed'
+    assert result['full_suite_executed']
+    assert result['checks'][1]['status']=='fail'
+    assert result['verification_selection'][1]['selected']==['a']
