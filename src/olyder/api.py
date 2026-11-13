@@ -3,11 +3,22 @@ import hmac
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from socketserver import TCPServer
 
 from .config import load_spec
 from .diagnostics import doctor
 from .engine import plan, verify_once
 from .privacy import redact_values
+
+
+class _LoopbackServer(ThreadingHTTPServer):
+    def server_bind(self):
+        # HTTPServer normally reverse-resolves its own bound address. This fixed
+        # loopback-only service needs no DNS; an unavailable resolver must not
+        # hold up startup (notably on macOS hosts).
+        TCPServer.server_bind(self)
+        self.server_name='127.0.0.1'
+        self.server_port=self.server_address[1]
 
 
 def dispatch(path, supplied_token, token, workspace):
@@ -49,7 +60,7 @@ def create_server(workspace, *, token, port=8765):
 
         def log_message(self,*args):
             pass  # Never log authorization headers or workspace contents.
-    return ThreadingHTTPServer(('127.0.0.1',port),Handler)
+    return _LoopbackServer(('127.0.0.1',port),Handler)
 
 
 def serve(workspace, *, token, port=8765):

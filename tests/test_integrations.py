@@ -46,6 +46,16 @@ def test_read_api_rejects_unknown_token(tmp_path):
     assert dispatch('/v1/not-a-command','token','token',tmp_path)[0]==404
 
 
+def test_loopback_api_startup_does_not_resolve_dns(tmp_path,monkeypatch):
+    import socket
+    from olyder.api import create_server
+    def forbidden_lookup(*args):
+        raise AssertionError('Fixed loopback service must not depend on reverse DNS')
+    monkeypatch.setattr(socket,'getfqdn',forbidden_lookup)
+    with create_server(tmp_path,token='FAKE_LOCAL_API_TOKEN_123456789',port=0) as server:
+        assert server.server_address[0]=='127.0.0.1' and server.server_port>0
+
+
 @pytest.mark.parametrize('data', [[], {'api_version':1,'kind':'agent','name':'x','permissions':[{}]},
     {'api_version':1,'kind':'agent','name':'x','permissions':['execute','write_workspace'],'argv':['python'],'telemetry':'unsupported'}])
 def test_malformed_plugin_contract_is_rejected(tmp_path,data):
@@ -63,7 +73,9 @@ def test_live_read_api(tmp_path):
         {'id':'file','type':'file','path':'olyder.json'}]}))
     token='FAKE_LOCAL_API_TOKEN_123456789'
     ready=tmp_path/'api.ready'
-    script=(f'from olyder.api import create_server;from pathlib import Path;'
+    script=(f'import sys;print("starting",file=sys.stderr,flush=True);'
+            f'from olyder.api import create_server;from pathlib import Path;'
+            f'print("imported",file=sys.stderr,flush=True);'
             f'server=create_server({str(tmp_path)!r},token={token!r},port=0);'
             f'Path({str(ready)!r}).write_text(str(server.server_port));server.serve_forever()')
     log=(tmp_path/'api.stderr').open('w+')
