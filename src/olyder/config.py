@@ -118,6 +118,11 @@ def load_spec(path: str | Path) -> Spec:
         raise ConfigError("builder must be an object")
     if "argv" in builder and (not isinstance(builder["argv"], list) or not builder["argv"] or not all(isinstance(s, str) and bool(s) for s in builder["argv"])):
         raise ConfigError("builder.argv must be a nonempty string list")
+    protected = obj.get("protected_paths", [])
+    if not isinstance(protected, list) or len(protected) > 50 or not all(isinstance(x, str) and x.strip() for x in protected):
+        raise ConfigError("protected_paths must be a list of up to 50 relative paths")
+    for value in protected:
+        safe_path(file.parent, value)
     limits = obj.get("limits", {})
     if not isinstance(limits, dict):
         raise ConfigError("limits must be an object")

@@ -319,7 +319,7 @@ def test_L6_quota(tmp_path, monkeypatch, case):
         monkeypatch.setenv("OLYDER_API_KEY", "dummy")
         def connection_down(*args, **kwargs):
             raise OSError("network offline")
-        monkeypatch.setattr(models.request, "urlopen", connection_down)
+        monkeypatch.setattr(models, "_open_model_request", connection_down)
         budget = Budget(4000)
         with pytest.raises(ModelError):
             chat("question", budget, system="test")

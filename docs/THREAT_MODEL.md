@@ -1,4 +1,4 @@
-# Threat model (v0.1)
+# Threat model (v0.3)
 
 ## Trust boundaries
 
@@ -13,18 +13,18 @@
 - No shell=True execution.
 - Explicit execution and remote network consent flags.
 - Symlink-resolved file checks restricted to selected root.
-- Locked spec hash between iterations; detects honest drift, **does not prevent** malicious mutation.
-- Time/iteration limits for repair cycle and subprocess timeouts.
-- Report HTML escaping and bounded captured output.
+- Locked spec hash and in-memory acceptance-test fingerprints across builder/verification iterations; detect changed declared tests but **do not prevent** malicious code from modifying workspaces, imports, or the verifier itself.
+- Time/iteration limits for repair cycle, fail-closed late HTTP outcomes, and subprocess timeouts.
+- Report HTML escaping and bounded captured output; model API redirects are refused to protect authorization headers.
 - Read-only MCP operation surface with no command or network execution.
 
 ## Known gaps
 
 - Command and browser sandboxes; comprehensive DNS rebinding/SSRF mitigation. HTTP and research-source redirects are refused, but browser-driven navigation and subprocess networking still require runtime isolation.
-- Secret masking and outbound content classification.
+- Comprehensive secret masking, classification and prevention of secret-bearing AI prompts. Common patterns are redacted from check evidence but unrecognized secrets may leak.
 - Recursive process-tree kill on timeout for child processes.
 - OS-level filesystem and process isolation for builders/verifiers.
-- Comprehensive model-account quota reporting and source provenance integrity.
+- Comprehensive model-account quota reporting, external coding-agent metering, and source provenance integrity. Internal reservations have unique one-use identities.
 
 No production-security claim should be made until these gaps have independently tested mitigations.
 
