@@ -126,7 +126,7 @@ class BudgetLedger:
 
     def snapshot(self):
         with self._lock:
-            unknown = any(r['state'] == 'unknown' for r in self._requests.values())
+            unknown = any(r['state'] in ('unknown','reserved') for r in self._requests.values())
             actual = sum((r['actual'] for r in self._requests.values() if r['state'] == 'settled'), Decimal(0))
             reserved = sum((r['estimate'] for r in self._requests.values() if r['state'] == 'reserved'), Decimal(0))
             estimates = sum((r['estimate'] for r in self._requests.values() if r['state'] == 'unknown'), Decimal(0))
@@ -136,6 +136,7 @@ class BudgetLedger:
                     'known_actual_subtotal': str(actual), 'spent_estimated': str(estimates),
                     'reserved': str(reserved), 'reserve_remaining': str(self.verifier_reserve),
                     'unknown_spend': unknown, 'enforcement_kind': 'local_soft',
+                    'over_limit':actual>self.limit,
                     'strict_reconciliation': self.strict,
                     'remaining_estimated': str(max(Decimal(0), self.limit-actual-estimates-reserved-self.verifier_reserve))}
 

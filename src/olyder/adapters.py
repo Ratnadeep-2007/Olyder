@@ -14,6 +14,8 @@ class ExecutableAgent:
     def __init__(self, name: str, argv: list[str], telemetry: str = 'unknown'):
         if not name or not argv or not all(isinstance(a, str) and a and '\0' not in a for a in argv):
             raise ValueError('Agent requires a name and explicit nonempty argv')
+        if telemetry not in ('unknown','codex','opencode','claude'):
+            raise ValueError('Unsupported agent telemetry format')
         self.name, self.argv, self.telemetry = name, list(argv), telemetry
 
     def command(self, prompt):
@@ -26,6 +28,9 @@ class ExecutableAgent:
     def parse(self, stream):
         if self.telemetry in ('codex', 'opencode'):
             usage=parse_agent_log(stream, self.telemetry).snapshot()
+            if not usage['usage_events']:
+                for key in ('input_tokens','output_tokens','cached_tokens','reasoning_tokens'):
+                    usage[key]=None
             if self.telemetry=='opencode' and usage['usage_complete']:
                 usage['input_tokens']+=usage['cached_tokens']
                 base=usage['input_tokens']+usage['output_tokens']
@@ -77,6 +82,10 @@ class ExecutableAgent:
 
 
 class BuiltinAgent(ExecutableAgent):
+    def capabilities(self):
+        from dataclasses import replace
+        return replace(super().capabilities(),requires_git=self.name=='codex')
+
     def command(self, prompt):
         return agent_argv(self.name, prompt)
 
@@ -109,6 +118,8 @@ def bind_model(adapter, model):
         return adapter
     if not isinstance(model,str) or not model or len(model)>512 or '\0' in model:
         raise ValueError('Invalid selected model')
+    if adapter.name not in ('codex','opencode','claude'):
+        raise ValueError('Custom adapters must implement their own model selection and provenance')
     class ConfiguredAgent:
         name=adapter.name
         api_version=API_VERSION

@@ -1,5 +1,8 @@
 """Execution preparation adapters; process handling stays in execution.py."""
+import os
 import shutil
+import stat
+from pathlib import Path
 
 from .execution import docker_argv
 from .interfaces import API_VERSION, Capabilities
@@ -34,8 +37,29 @@ class DockerBackend:
     def available(self):
         return shutil.which('docker') is not None  # daemon check happens on execution
 
+    def prepare_detached(self, root, *, writable):
+        """Map only SDK-owned detached trees, never the caller's original root."""
+        if not hasattr(os,'getuid') or os.getuid()!=0:
+            return
+        from .workspace import WorkspaceViolation, _link
+        paths=[root]
+        for directory,dirs,files in os.walk(root,followlinks=False):
+            paths.extend(Path(directory)/name for name in dirs+files)
+            if len(paths)>50000:
+                raise WorkspaceViolation('Detached ownership mapping exceeds resource bound')
+        for path in paths:
+            if _link(path) or not (path.is_dir() or stat.S_ISREG(path.lstat().st_mode)):
+                raise WorkspaceViolation('Unsafe detached ownership mapping')
+        for path in paths:
+            from .control import current
+            control=current.get()
+            if control:
+                control.check()
+            os.chown(path,65534,65534,follow_symlinks=False)
+
     def prepare(self, argv, root, *, writable):
-        return docker_argv(argv, root, image=self.image, writable=writable,
+        mapped=[part.replace(str(root),'/workspace') for part in argv]
+        return docker_argv(mapped, root, image=self.image, writable=writable,
                            network=self.network, env_names=self.env_names)
 
 

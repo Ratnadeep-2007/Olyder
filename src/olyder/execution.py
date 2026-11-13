@@ -52,6 +52,8 @@ def docker_argv(argv: list[str], root: Path, *, image: str, writable: bool,
     if not writable:
         mount += ",readonly"
     user = f"{os.getuid()}:{os.getgid()}" if hasattr(os, "getuid") else "65534:65534"
+    if hasattr(os,'getuid') and os.getuid()==0:
+        user='65534:65534'  # Never silently turn a root caller into a root builder.
     # Named containers can be force-removed if the Docker client itself times out.
     name = "olyder-" + secrets.token_hex(10)
     args = ["docker", "run", "--rm", "--name", name, "--init", "--interactive=false", "--network", network,
@@ -105,18 +107,18 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
             control.emit('process_completed', returncode=process.returncode)
         return ExitStatus(process.returncode, False, time.monotonic() - start)
     except BaseException as interrupt:
-        if process.poll() is None:
-            if os.name == "nt":
+        if os.name == 'nt':
+            if process.poll() is None:
                 try:
                     subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
                 except (OSError, subprocess.TimeoutExpired):
                     process.kill()
-            else:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:

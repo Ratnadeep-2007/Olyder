@@ -20,6 +20,8 @@ class PricingSnapshot:
     def __post_init__(self):
         from datetime import date
         date.fromisoformat(self.date)
+        if any(not isinstance(v,str) or not v for v in (self.provider,self.model)):
+            raise ValueError('Pricing provider and model must be explicit names')
         if self.schema_version!=1:
             raise ValueError('Unsupported pricing schema')
         money(self.input_per_million_usd);money(self.output_per_million_usd)

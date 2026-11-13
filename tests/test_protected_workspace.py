@@ -54,3 +54,20 @@ def test_trusted_snapshot_tampering_blocks(tmp_path):
     (workspace.trusted/'tests'/'oracle.py').write_text('spoof')
     with pytest.raises(WorkspaceViolation):
         workspace.harness()
+
+
+def test_case_variant_cannot_replace_oracle(tmp_path):
+    root=tmp_path/'project';root.mkdir()
+    workspace=ProtectedWorkspace(project(root),tmp_path/'state')
+    (workspace.builder/'TESTS').mkdir()
+    (workspace.builder/'TESTS'/'oracle.py').write_text('pass')
+    with pytest.raises(WorkspaceViolation):
+        workspace.harness()
+
+
+def test_missing_oracle_cannot_be_manufactured(tmp_path):
+    root=tmp_path/'project';root.mkdir()
+    path=root/'olyder.json';path.write_text(json.dumps({'goal':'trust','checks':[
+        {'id':'oracle','type':'command','argv':['python','acceptance_missing.py']}]}))
+    with pytest.raises(WorkspaceViolation):
+        ProtectedWorkspace(load_spec(path),tmp_path/'state')

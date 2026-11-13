@@ -29,7 +29,7 @@ from .quota import Budget, QuotaExceeded
 from .report import save_report
 from .research import collect
 from .state import RunStore
-from .workspace import ProtectedWorkspace, WorkspaceViolation, tree
+from .workspace import ProtectedWorkspace, WorkspaceViolation, file_modes, tree
 
 
 @dataclass(frozen=True)
@@ -50,13 +50,14 @@ def _digest(path):
 
 def _execute(adapter, backend, workspace, prompt, timeout):
     command = [p.replace('{workspace}', str(workspace)) for p in adapter.command(prompt)]
-    if adapter.name == 'codex':
+    if getattr(adapter.capabilities(),'requires_git',False) and not (workspace/'.git').exists():
         with tempfile.TemporaryFile(mode='w+t') as out:
             outcome = managed_run(['git','init','--quiet'], cwd=workspace, stdout=out, timeout=min(5,timeout))
             if outcome.returncode != 0:
-                raise ExecutionError('Codex adapter requires a Git workspace')
-    if backend.name == 'docker':
-        command = [p.replace(str(workspace),'/workspace') for p in command]
+                raise ExecutionError('Selected agent requires a Git workspace')
+    preparation=getattr(backend,'prepare_detached',None)
+    if preparation:
+        preparation(workspace,writable=True)
     command = backend.prepare(command, workspace, writable=True)
     with (
         tempfile.TemporaryDirectory(prefix='olyder-private-log-') as logs,
@@ -108,12 +109,17 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
     """
     spec=load_spec(spec_path)
     permissions=permissions or Permissions()
+    if not isinstance(permissions,Permissions) or type(use_ai) is not bool or type(apply) is not bool:
+        raise ValueError('SDK permissions and consent flags require explicit typed values')
+    if sink is not None and not callable(sink):
+        raise ValueError('Event sink must be callable')
     limits=spec.raw.get('limits',{})
     iterations=max_iterations if max_iterations is not None else limits.get('max_iterations',3)
     if type(iterations) is not int or not 1 <= iterations <= 20:
         raise ValueError('max_iterations must be between 1 and 20')
     selected_mode=mode or spec.raw.get('policy',{}).get('mode','balanced')
     policy=RunPolicy(selected_mode)
+    (spec.root/'.olyder').mkdir(mode=0o700,exist_ok=True)
     store=RunStore(spec.root/'.olyder'/'runs')
     state=store.create({'spec_sha256':spec.digest,'spec_path':str(spec.path),
                         'phase':'initializing','cancel_requested':False})
@@ -133,6 +139,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
             'checks':[],'history':[],'stop_reason':'initialization_failed',
             'sources':[],'independent_critic_status':'not_requested', 'budget':{}}
     workspace=None
+    application_status='not_attempted'
     def checkpoint(phase, **data):
         nonlocal state
         latest=store.read(run_id)
@@ -201,7 +208,12 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         sum(o.get('observed_tokens') or 0 for o in account.observations if o['role']=='builder')>cap):
                         builder_stop='agent_token_soft_cap'
                 root=workspace.harness()
-                trusted_before={n:h for n,h in tree(root).items() if workspace.is_protected(n)}
+                preparation=getattr(control.check_backend,'prepare_detached',None)
+                if preparation:
+                    preparation(root,writable=False)
+                input_before=tree(root)
+                modes_before=file_modes(root,input_before)
+                trusted_before={n:h for n,h in input_before.items() if workspace.is_protected(n)}
                 verification_spec=Spec(contract,root,copy.deepcopy(spec.raw),spec.digest)
                 # Preserve relative checks; absolute interpreter argv[0] is allowed.
                 for check in verification_spec.checks:
@@ -247,13 +259,19 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         account.settle(critic_ticket,observed[-1] if observed else None)
                 control.check()
                 workspace.validate()
-                if trusted_before != {n:h for n,h in tree(root).items() if workspace.is_protected(n)}:
+                input_after=tree(root)
+                if trusted_before != {n:h for n,h in input_after.items() if workspace.is_protected(n)}:
                     raise WorkspaceViolation('Trusted acceptance assets changed during verification')
+                if any(input_after.get(n)!=h for n,h in input_before.items()):
+                    raise WorkspaceViolation('Verifier modified implementation inputs; proposal was not verified unchanged')
+                if file_modes(root,input_before)!=modes_before:
+                    raise WorkspaceViolation('Verifier modified input file permissions')
                 delta=progress(previous,item['checks'])
                 delta.update(changed_files=sorted(changed),failure_signature=hashlib.sha256(
                     json.dumps([(c['id'],c['status'],redact(c['details'])) for c in item['checks'] if c['status']!='pass'],sort_keys=True).encode()).hexdigest())
                 history=result['history']+[{'number':number,'status':item['status'],
-                    'checks':item['checks'],'progress_delta':delta,'proposal_digest':tree(workspace.builder)}]
+                    'checks':item['checks'],'progress_delta':delta,'code_diff_hash':hashlib.sha256(
+                        json.dumps(proposed_tree,sort_keys=True).encode()).hexdigest()}]
                 result.update(item,history=history)
                 checkpoint('verified',result=result,proposal_digest=tree(workspace.builder))
                 if builder_stop:
@@ -262,7 +280,9 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                 if item['status']=='passed':
                     if apply and permissions.execute_builder:
                         control.check()
+                        application_status='partial_or_failed'
                         workspace.apply()
+                        application_status='complete'
                         control.check()
                     result['stop_reason']='acceptance_passed'
                     break
@@ -300,6 +320,8 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
     except (OSError,RuntimeError,ValueError) as exc:
         result.update(status='blocked',stop_reason='execution_blocked',verifier_note=redact(str(exc))[:1000])
     result.update(run_id=run_id,attempts=len(result['history']),accounting=account.snapshot(),
+        repaired_check_ids=sorted({identifier for attempt in result['history']
+            for identifier in attempt.get('progress_delta',{}).get('newly_passing',[])}),
         budget_verdict=account.snapshot()['budget_verdict'],functional_verdict=result['status'],
         wall_seconds=time.monotonic()-started,policy={'mode':selected_mode,'full_final_suite_required':True},
         verification_selection=locals().get('selections',[]),
@@ -307,22 +329,37 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         'executed_checks':locals().get('executed_count',0),
                         'research_seconds':locals().get('research_seconds',0)},
         environment={'python':platform.python_version(),'platform':platform.system()},
+        application_status=application_status,verification_target='detached_proposal',
         warnings=['Host execution has no OS containment'] if backend=='host' else [],
         execution_isolation={'mode':backend,'unsafe_host_authorized':permissions.unsafe_host,
                              'protected_assets_detached':workspace is not None})
     if workspace:
         result['acceptance_integrity']=workspace.evidence()
+        result['artifact_refs']={'contract':str(run_dir/'contract.json'),
+                                'manifest':str(workspace.state/'manifest.json'),
+                                'proposal':str(workspace.builder),'harness':str(workspace.verify_root)}
     if control.observer_errors:
         result['warnings'].append('Event observer failures: '+', '.join(control.observer_errors))
-    checkpoint('completed',result=result)
-    result['paths']=save_report(result,Path(output) if output else spec.root/'.olyder')
-    for name in exporters:
-        if not isinstance(name,str) or not name.replace('-','_').isidentifier():
-            raise ValueError('Invalid exporter name')
-        from .plugins import export
-        destination=Path(result['paths']['json']).parent/(name+'.txt')
-        destination.write_text(export(name,result),encoding='utf-8')
-        result['paths'][name]=str(destination)
+    result['paths']={}
+    try:
+        result['paths']=save_report(result,Path(output) if output else spec.root/'.olyder')
+        for name in exporters:
+            if not isinstance(name,str) or not name.replace('-','_').isidentifier():
+                raise ValueError('Invalid exporter name')
+            from .plugins import export
+            destination=Path(result['paths']['json']).parent/(name+'.txt')
+            destination.write_text(export(name,result),encoding='utf-8')
+            result['paths'][name]=str(destination)
+        result['artifact_status']='complete'
+        if time.monotonic()>=deadline and result['status']=='passed':
+            result.update(status='blocked',stop_reason='deadline_exhausted_during_artifacts')
+            save_report(result,Path(output) if output else spec.root/'.olyder')
+    except Exception as exc:  # noqa: BLE001 -- terminal execution evidence must survive exporter/IO failures
+        result.update(artifact_status='failed',artifact_error=type(exc).__name__,
+                      status='blocked',execution_stop_reason=result['stop_reason'],stop_reason='artifact_generation_failed')
+    finally:
+        result['wall_seconds']=time.monotonic()-started
+        checkpoint('completed',result=result)
     return result
 
 
@@ -338,6 +375,7 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
     reconciliation and are deliberately not automatically resumed. Explicit
     recover permits a saved, completed proposal after an interrupted verifier.
     """
+    resumed_started=time.monotonic()
     store=RunStore(Path(workspace).resolve()/'.olyder'/'runs')
     state=store.read(run_id)
     if state.get('phase') not in ('completed',) and not (
@@ -349,10 +387,14 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
         if _digest(contract)!=state.get('spec_sha256'):
             raise WorkspaceViolation('Contract digest changed')
         original=Path(state['spec_path'])
+        if original.parent.resolve()!=Path(workspace).resolve():
+            raise WorkspaceViolation('Saved specification escapes selected workspace')
         if _digest(original)!=state['spec_sha256']:
             raise WorkspaceViolation('Original requirements changed; start a new run')
         saved=ProtectedWorkspace.reopen(store.path(run_id)/'workspace',state['manifest_sha256'])
-        if tree(saved.builder)!=state.get('proposal_digest',tree(saved.builder)):
+        if saved.root.resolve()!=Path(workspace).resolve():
+            raise WorkspaceViolation('Saved proposal belongs to another workspace')
+        if 'proposal_digest' not in state or tree(saved.builder)!=state['proposal_digest']:
             raise WorkspaceViolation('Saved proposal changed')
         root=saved.harness()
         spec=load_spec(contract)
@@ -362,18 +404,32 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
         if isolation not in ('host','docker'):
             raise WorkspaceViolation('Custom backend recovery requires explicit integration')
         # Saved paid requests are never resumed or re-settled.
-        state=store.update(run_id,state['revision'],{'phase':'resume_started'})
-        before={n:h for n,h in tree(root).items() if saved.is_protected(n)}
-        item=verify_once(spec,allow_exec=permissions.allow_exec,allow_network=permissions.allow_network,
-                         sandbox=isolation,docker_image=state.get('docker_image','python:3.13-slim'),
-                         deadline=time.monotonic()+spec.raw.get('limits',{}).get('max_seconds',600))
+        state=store.update(run_id,state['revision'],{'phase':'resume_started','cancel_requested':False})
+        input_before=tree(root)
+        modes_before=file_modes(root,input_before)
+        before={n:h for n,h in input_before.items() if saved.is_protected(n)}
+        control=RunControl(resumed_started+spec.raw.get('limits',{}).get('max_seconds',600),
+                           cancelled=lambda:store.read(run_id).get('cancel_requested',False))
+        with activate(control):
+            control.check()
+            item=verify_once(spec,allow_exec=permissions.allow_exec,allow_network=permissions.allow_network,
+                             sandbox=isolation,docker_image=state.get('docker_image','python:3.13-slim'),deadline=control.deadline)
+            control.check()
         saved.validate()
-        if before!={n:h for n,h in tree(root).items() if saved.is_protected(n)}:
+        input_after=tree(root)
+        if before!={n:h for n,h in input_after.items() if saved.is_protected(n)}:
             raise WorkspaceViolation('Verifier changed protected inputs during resume')
+        if any(input_after.get(n)!=h for n,h in input_before.items()):
+            raise WorkspaceViolation('Verifier modified proposal inputs during resume')
+        if file_modes(root,input_before)!=modes_before:
+            raise WorkspaceViolation('Verifier modified proposal input permissions during resume')
         item.update(run_id=run_id,resumed_verification_only=True,replayed_builder=False,
+                    verification_target='checkpointed_proposal',application_status='not_attempted',
                     accounting=state.get('accounting'),stop_reason='resume_verification')
         if state.get('ai_review_required') and item['status']=='passed':
             item.update(status='needs_review',independent_critic_status='not_replayed_requires_review')
+    except (Cancelled,KeyboardInterrupt):
+        item={'run_id':run_id,'status':'cancelled','stop_reason':'user_cancelled'}
     except (OSError,ValueError,RuntimeError) as exc:
         item={'run_id':run_id,'status':'blocked','stop_reason':'resume_integrity_or_state',
               'verifier_note':redact(str(exc))[:1000]}

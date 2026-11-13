@@ -75,6 +75,9 @@ class AgentUsage:
                 if not isinstance(part, dict):
                     return
                 identifier = part.get("id")
+                if identifier is not None and not isinstance(identifier,str):
+                    self.malformed_events+=1
+                    return
                 if identifier and identifier in self._seen_parts:
                     return
                 if identifier:

@@ -46,6 +46,14 @@ def test_read_api_rejects_unknown_token(tmp_path):
     assert dispatch('/v1/not-a-command','token','token',tmp_path)[0]==404
 
 
+@pytest.mark.parametrize('data', [[], {'api_version':1,'kind':'agent','name':'x','permissions':[{}]},
+    {'api_version':1,'kind':'agent','name':'x','permissions':['execute','write_workspace'],'argv':['python'],'telemetry':'unsupported'}])
+def test_malformed_plugin_contract_is_rejected(tmp_path,data):
+    path=tmp_path/'bad.json';path.write_text(json.dumps(data))
+    with pytest.raises(ValueError):
+        load_agent_manifest(path,grants={'x'})
+
+
 def test_live_read_api(tmp_path):
     import os
     import socket
@@ -77,3 +85,15 @@ def test_live_read_api(tmp_path):
         assert denied.value.code==401
     finally:
         process.terminate();process.wait(timeout=5)
+
+
+def test_mcp_run_requires_server_side_grant(tmp_path):
+    from olyder.mcp import process
+    from olyder.sdk import Permissions
+    path=tmp_path/'olyder.json';path.write_text(json.dumps({'goal':'write','builder':{
+        'argv':[sys.executable,'-c',"from pathlib import Path;Path('value').write_text('ok')"]},
+        'checks':[{'id':'ok','type':'file','path':'value'}]}))
+    request={'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'olyder_run'}}
+    assert 'error' in process(request,tmp_path)
+    granted=process(request,tmp_path,run_permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True))
+    assert json.loads(granted['result']['content'][0]['text'])['status']=='passed'

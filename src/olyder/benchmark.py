@@ -4,6 +4,7 @@ The baseline source is extracted from a pinned, already-local Git commit. Both
 runners execute identical fixture builders and oracle scripts in disposable
 directories. These tasks do not represent SWE-bench/Harbor or model quality.
 """
+import hashlib
 import io
 import json
 import os
@@ -40,6 +41,9 @@ def benchmark(output, *, repetitions=3, task_ids=None, repository=None):
         raise ValueError('Pilot repetitions must be between 1 and 10')
     repo=Path(repository or Path.cwd()).resolve()
     current_source=Path(__file__).resolve().parents[1]
+    source_hash=hashlib.sha256()
+    for source in sorted((current_source/'olyder').glob('*.py')):
+        source_hash.update(source.name.encode());source_hash.update(source.read_bytes())
     archive=subprocess.run(['git','archive','--format=zip',BASELINE,'src/olyder'],
                            cwd=repo,check=True,capture_output=True,timeout=30).stdout
     rows=[]
@@ -90,7 +94,8 @@ def benchmark(output, *, repetitions=3, task_ids=None, repository=None):
                         'status':data['status'],'expected':expected,'matched':data['status']==expected,
                         'false_pass':data['status']=='passed' and expected in ('failed','blocked'),
                         'seconds':time.monotonic()-start,'attempts':data.get('attempts'),
-                        'check_ms':data.get('metrics',{}).get('total_check_duration_ms'),
+                        'check_ms':data.get('resource_usage',{}).get('deterministic_check_ms',
+                            sum(c.get('duration_ms',0) for attempt in data.get('history',[]) for c in attempt.get('checks',[]))),
                         'actual_usd':None,'provider_usage':'not_applicable_fake_agent',
                         'recovery_behavior':'covered_separately_by_checkpoint_tests'})
     summary={}
@@ -103,6 +108,8 @@ def benchmark(output, *, repetitions=3, task_ids=None, repository=None):
             'actual_usd':None,'verified_solves_per_actual_usd':None}
     report={'schema_version':1,'kind':'offline_paired_pilot','baseline_commit':BASELINE,
             'python':platform.python_version(),'platform':platform.platform(),
+            'implementation_sha256':source_hash.hexdigest(),'cpu':platform.processor(),
+            'pricing_snapshot':'not_applicable_offline_fake_agents',
             'repetitions':repetitions,'deadline_seconds':30,'seed':'deterministic',
             'actual_provider_usd':None,'cost_savings_claim':'inconclusive',
             'live_provider_runs':0,'official_benchmark_harnesses':'not_run',

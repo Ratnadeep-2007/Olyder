@@ -3,6 +3,7 @@ import json
 import re
 import sqlite3
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
@@ -27,13 +28,19 @@ class RunStore:
         except sqlite3.Error as exc:
             raise StateError('Corrupt or inaccessible run database') from exc
 
+    @contextmanager
     def connect(self):
+        connection=None
         try:
-            c = sqlite3.connect(self.db, timeout=10)
-            c.execute('PRAGMA synchronous=FULL')
-            return c
+            connection=sqlite3.connect(self.db, timeout=10)
+            connection.execute('PRAGMA synchronous=FULL')
+            with connection:
+                yield connection
         except sqlite3.Error as exc:
-            raise StateError('Cannot open run database') from exc
+            raise StateError('Corrupt or inaccessible run database') from exc
+        finally:
+            if connection is not None:
+                connection.close()
 
     @staticmethod
     def validate_id(identifier):
@@ -92,6 +99,8 @@ class RunStore:
         from .ledger import BudgetLedger, money
         if not isinstance(reference,str) or not reference.strip() or len(reference)>500:
             raise StateError('A bounded billing reference is required')
+        from .privacy import redact
+        reference=redact(reference)
         data=self.read(identifier)
         if data.get('phase')!='completed':
             raise StateError('Stop execution before reconciling billing')
@@ -111,6 +120,8 @@ class RunStore:
             raise StateError('Billing request not present in observations')
         accounting.update(ledger=ledger.snapshot() if ledger else None,ledger_checkpoint=ledger.checkpoint() if ledger else None,
             budget_verdict='reconciled' if all(o['billed_cost_usd'] is not None for o in accounting['observations']) else 'unknown')
+        if ledger and ledger.snapshot()['over_limit']:
+            accounting['budget_verdict']='exceeded'
         result=data.get('result',{})
         result.update(accounting=accounting,budget_verdict=accounting['budget_verdict'])
         return self.update(identifier,data['revision'],{'accounting':accounting,'result':result})

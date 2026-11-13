@@ -36,10 +36,14 @@ def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, 
             if provider.api_version != 1:
                 raise ValueError('Incompatible model provider protocol')
             response = provider.complete(prompt, system=system, max_tokens=max_tokens)
+            if not isinstance(response,dict):
+                raise ValueError('Provider response must be an object')
             content = response['content']
             if not isinstance(content, str):
                 raise ValueError('Model content must be text')
             usage = response.get('usage', {})
+            if not isinstance(usage,dict):
+                usage={}
             total = usage.get('total_tokens')
             budget.settle(reservation, total if type(total) is int and total >= 0 else None)
             control.model_observations.append(_observation(usage, response.get('model'),
@@ -77,7 +81,8 @@ def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, 
         with _open_model_request(req, timeout=timeout) as resp:
             obj = json.loads(resp.read(2_000_000))
         content = obj["choices"][0]["message"]["content"]
-        usage = obj.get("usage", {}).get("total_tokens")
+        usage_data=obj.get('usage')
+        usage = usage_data.get('total_tokens') if isinstance(usage_data,dict) else None
         if not isinstance(content, (str, list, dict)):
             raise TypeError("Unsupported model response content")
     except (error.HTTPError, error.URLError, OSError, KeyError, ValueError, TypeError, IndexError) as exc:

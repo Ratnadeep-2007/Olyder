@@ -80,6 +80,11 @@ def parser() -> argparse.ArgumentParser:
     skill.add_argument("--force", action="store_true", help="Overwrite existing skill file")
     mcp = sub.add_parser("mcp", help="Run read-only-by-default MCP JSON-RPC server over stdio")
     mcp.add_argument("--workspace", default=".")
+    mcp.add_argument('--allow-exec',action='store_true')
+    mcp.add_argument('--execute-builder',action='store_true',help='Expose olyder_run only with explicit server-side execution grant')
+    mcp.add_argument('--unsafe-host',action='store_true')
+    mcp.add_argument('--sandbox',choices=['host','docker'],default='host')
+    mcp.add_argument('--docker-image',default='python:3.13-slim')
     return p
 
 
@@ -123,7 +128,12 @@ def main(argv: list[str] | None = None) -> int:
             return 1 if args.command=='resume' and result['status']!='passed' else 0
         if args.command == "mcp":
             from .mcp import serve
-            return serve(Path(args.workspace).resolve())
+            from .sdk import Permissions
+            if args.execute_builder and (not args.allow_exec or args.sandbox=='host' and not args.unsafe_host):
+                raise ConfigError('MCP builder grant needs --allow-exec and --sandbox docker or --unsafe-host')
+            return serve(Path(args.workspace).resolve(),run_permissions=Permissions(
+                allow_exec=args.allow_exec,execute_builder=args.execute_builder,unsafe_host=args.unsafe_host),
+                sandbox=args.sandbox,docker_image=args.docker_image)
         if args.command == "install-skill":
             project = Path(args.project).expanduser().resolve()
             if not project.is_dir():
@@ -192,7 +202,10 @@ def main(argv: list[str] | None = None) -> int:
                 docker_image=args.docker_image, docker_network=args.docker_network,
                 agent=args.agent,
                 trace_dir=Path(args.output)/'browser-traces' if args.trace_browser else None)
-        print(json.dumps({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"], "agent_usage": result.get("agent_usage"), "paths": result["paths"]}, indent=2))
+        print(json.dumps({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"],
+            "run_id":result.get('run_id'),'functional_verdict':result.get('functional_verdict'),
+            'budget_verdict':result.get('budget_verdict'),'stop_reason':result.get('stop_reason'),
+            'artifact_status':result.get('artifact_status'),"agent_usage": result.get("agent_usage"), "paths": result["paths"]}, indent=2))
         return 0 if result["status"] == "passed" else 1
     except (ConfigError, FileNotFoundError, ModelError, QuotaExceeded, ValueError, OSError, RuntimeError) as exc:
         print(f"Olyder error: {exc}", file=sys.stderr)

@@ -19,6 +19,7 @@ class Capabilities:
     cancellation: bool = True
     isolated: bool = False
     provider_hard_limit: bool = False
+    requires_git: bool = False
     notes: str = ''
 
 

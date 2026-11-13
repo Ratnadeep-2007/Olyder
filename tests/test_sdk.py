@@ -63,3 +63,17 @@ def test_live_agent_event_metadata_is_private(tmp_path):
     assert any(e['type']=='agent_event' and e['event_type']=='text' for e in events)
     assert 'FAKE_PRIVATE_PROMPT' not in json.dumps(events)
 
+
+def test_empty_directory_checks_are_preserved(tmp_path):
+    (tmp_path/'empty').mkdir()
+    path=tmp_path/'olyder.json';path.write_text(json.dumps({'goal':'directory',
+        'checks':[{'id':'directory','type':'file','path':'empty'}]}))
+    assert run(path)['status']=='passed'
+
+
+def test_unittest_module_oracle_resolves_to_trusted_file(tmp_path):
+    (tmp_path/'test_value.py').write_text('import unittest\nclass T(unittest.TestCase):\n def test_value(self): self.assertEqual(1,1)\n')
+    path=tmp_path/'olyder.json';path.write_text(json.dumps({'goal':'unittest',
+        'checks':[{'id':'unit','type':'command','argv':[sys.executable,'-m','unittest','test_value','-v']}]}))
+    assert run(path,permissions=Permissions(allow_exec=True))['status']=='passed'
+

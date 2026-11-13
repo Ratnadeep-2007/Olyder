@@ -18,14 +18,15 @@ def load_agent_manifest(path, *, grants):
     if path.is_symlink() or path.stat().st_size>64000:
         raise ValueError('Plugin manifest must be a small regular file')
     data=json.loads(path.read_text(encoding='utf-8-sig'))
-    if data.get('api_version')!=1 or data.get('kind')!='agent':
+    if not isinstance(data,dict) or data.get('api_version')!=1 or data.get('kind')!='agent':
         raise ValueError('Unsupported executable plugin contract')
     name=data.get('name')
     if not isinstance(name,str) or not name.replace('-','_').isidentifier():
         raise ValueError('Invalid plugin name')
     if name not in grants:
         raise PermissionError('Explicit named plugin grant required: '+name)
-    if set(data.get('permissions',[])) != {'execute','write_workspace'}:
+    permissions=data.get('permissions')
+    if not isinstance(permissions,list) or not all(isinstance(p,str) for p in permissions) or set(permissions) != {'execute','write_workspace'}:
         raise ValueError('Agent plugins must declare execute and write_workspace permissions')
     adapter=ExecutableAgent(name,data.get('argv'),data.get('telemetry','unknown'))
     register_agent(adapter)
