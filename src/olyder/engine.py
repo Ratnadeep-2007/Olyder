@@ -25,6 +25,10 @@ class StopCycle(Exception):
     pass
 
 
+class BuilderTimeout(StopCycle):
+    pass
+
+
 def plan(spec: Spec, budget: Budget | None = None, use_ai: bool = False) -> dict:
     tasks = [{"id": check["id"], "objective": f"Ensure acceptance check '{check['id']}' passes", "check_id": check["id"]} for check in spec.checks]
     result = {"goal": spec.goal, "tasks": tasks, "locked_spec_sha256": spec.digest, "planner": "deterministic"}
@@ -92,7 +96,7 @@ def _invoke_builder(spec: Spec, feedback: str, *, enabled: bool, timeout: int,
         outcome = managed_run(command, cwd=spec.root, stdout=captured, timeout=timeout)
         usage = parse_agent_log(captured, provider).snapshot() if provider else None
     if outcome.timed_out:
-        raise StopCycle("Builder process tree exceeded time limit and was terminated")
+        raise BuilderTimeout("Builder process tree exceeded time limit and was terminated")
     if outcome.returncode != 0:
         raise StopCycle(f"Builder exited nonzero ({outcome.returncode}); execution stopped")
     if usage is not None and usage["status"] == "failed":
@@ -135,6 +139,11 @@ def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, a
     if not locked_before or not spec.path.is_file() or hashlib.sha256(spec.path.read_bytes()).hexdigest() != spec.digest:
         status = "blocked"
         notes += " | Locked specification changed"
+    if deadline is not None and time.monotonic() >= deadline:
+        status = "blocked"
+        notes += " | Overall verification deadline exhausted"
+        if requested_ai:
+            critic_status = "deadline_exhausted"
     passed_count = sum(x["status"] == "pass" for x in results)
     failed_count = sum(x["status"] == "fail" for x in results)
     blocked_count = sum(x["status"] == "blocked" for x in results)
@@ -189,14 +198,19 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
             protected_changed = acceptance_changed(spec, protected_baseline)
             if protected_changed:
                 raise StopCycle("Protected acceptance tests modified: " + ", ".join(protected_changed[:5]))
+            builder_timeout = False
             reserve_only = execute_builder and policy and not policy.admit_builder(deadline - time.monotonic())
             if reserve_only:
                 termination = "final_verification_reserve"
             if execute_builder and not reserve_only:
-                _, agent_usage = _invoke_builder(spec, feedback, enabled=True,
-                    timeout=max(1, min(180, int(deadline - time.monotonic() - (policy.final_seconds if policy else 0)))),
-                    tasks=task_plan["tasks"], sandbox=sandbox, docker_image=docker_image,
-                    docker_network=docker_network, agent=agent)
+                try:
+                    _, agent_usage = _invoke_builder(spec, feedback, enabled=True,
+                        timeout=max(1, min(180, int(deadline - time.monotonic() - (policy.final_seconds if policy else 0)))),
+                        tasks=task_plan["tasks"], sandbox=sandbox, docker_image=docker_image,
+                        docker_network=docker_network, agent=agent)
+                except BuilderTimeout:
+                    builder_timeout = True
+                    agent_usage = None
                 if agent_usage is not None:
                     agent_runs.append(agent_usage)
                     # This is only a post-hoc cap. It cannot stop provider spend mid-turn.
@@ -212,7 +226,7 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
                 raise StopCycle("Protected acceptance tests modified: " + ", ".join(protected_changed[:5]))
             # Run the full set on every attempt for sound completion. Future optimized
             # rechecks may be added only with explicit dependency coverage evidence.
-            item = verify_once(spec, allow_exec=allow_exec, use_ai=use_ai,
+            item = verify_once(spec, allow_exec=allow_exec, use_ai=use_ai and not builder_timeout,
                 allow_network=allow_network, budget=budget, source_evidence=source_evidence,
                 deadline=deadline, sandbox=sandbox, docker_image=docker_image, trace_dir=trace_dir)
         except (StopCycle, QuotaExceeded, ModelError, ExecutionError) as exc:
@@ -231,6 +245,11 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
         if time.monotonic() >= deadline:
             final["status"] = "blocked"
             feedback = "Overall time limit reached during verification"
+            break
+        if builder_timeout:
+            final["status"] = "blocked"
+            termination = "builder_timeout"
+            feedback = "Builder timed out; final checks reflect latest workspace, execution incomplete"
             break
         if item["status"] == "passed":
             break

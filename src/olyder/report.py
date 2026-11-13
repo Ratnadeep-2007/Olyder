@@ -28,8 +28,8 @@ def save_report(report: dict, output_dir: Path) -> dict[str, str]:
     if "execution_isolation" in report:
         md.extend(["", "## Execution isolation", "", "```json",
                    json.dumps(report["execution_isolation"], indent=2), "```"])
-    md.extend(["", "## Acceptance and policy evidence", "", "```json", json.dumps(metadata, indent=2), "``` "])
-    md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
+    md.extend(["", "## Acceptance and policy evidence", "", "```json", json.dumps(metadata, indent=2), "```"])
+    md_path.write_text("\n".join(line.rstrip() for line in md) + "\n", encoding="utf-8")
     e = html.escape
     rows = "\n".join(f"<tr><td>{e(str(c['id']))}</td><td class='{e(c['status'])}'>{e(c['status'])}</td><td>{e(str(c['type']))}</td><td>{e(str(c['duration_ms']))} ms</td><td><pre>{e(str(c['details']))}</pre></td></tr>" for c in checks)
     metrics_text = e(json.dumps(report.get("metrics", {}), indent=2))

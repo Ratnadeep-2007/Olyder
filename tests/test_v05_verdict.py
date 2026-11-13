@@ -137,3 +137,27 @@ def test_builder_reserve_still_runs_checks(tmp_path, monkeypatch):
         use_ai=False, allow_network=False, output=tmp_path/'out', mode='balanced')
     assert len(result['checks']) == 2
     assert result['stop_reason'] == 'final_verification_reserve'
+
+
+def test_late_critic_cannot_accept_expired_run(tmp_path, monkeypatch):
+    def late(*a, **kw):
+        time.sleep(0.08)
+        return '{"concerns":[],"note":"No concerns"}'
+    monkeypatch.setattr('olyder.engine.chat', late)
+    spec = fixture(tmp_path)
+    (tmp_path/'absent').touch()
+    result = verify_once(spec, use_ai=True, deadline=time.monotonic()+0.04)
+    assert result['status'] == 'blocked'
+
+
+def test_builder_timeout_verifies_latest_tree(tmp_path, monkeypatch):
+    import sys
+    from olyder import engine
+    from olyder.execution import ExitStatus
+    spec = fixture(tmp_path, builder={'argv':[sys.executable,'-c','pass']})
+    monkeypatch.setattr(engine, 'managed_run', lambda *a, **kw: ExitStatus(None,True,0))
+    result = engine.run_loop(spec, allow_exec=True, execute_builder=True,
+        use_ai=False, allow_network=False, output=tmp_path/'out', mode='balanced')
+    assert len(result['checks']) == 2
+    assert result['status'] == 'blocked'
+    assert result['stop_reason'] == 'builder_timeout'

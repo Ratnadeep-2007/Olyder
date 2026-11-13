@@ -5,7 +5,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 runs = []
-for filename in ('baseline.xml', 'v05-red.xml', 'ledger-red.xml', 'policy-red.xml', 'review-red.xml',
+for filename in ('baseline.xml', 'v05-red.xml', 'ledger-red.xml', 'policy-red.xml', 'review-red.xml', 'timeout-red.xml',
                  'v05-foundations.xml', 'final-windows.xml', 'final-linux.xml'):
     path = Path('docs/validation') / filename
     if not path.exists():

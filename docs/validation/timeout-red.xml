@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.144" timestamp="2026-11-13T18:40:10.417391+05:30" hostname="RatnadeepLOQ"><testcase classname="tests.test_v05_verdict" name="test_builder_timeout_verifies_latest_tree" time="0.013"><failure message="assert 0 == 2&#10; +  where 0 = len([])">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-12/test_builder_timeout_verifies_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002215E254D10&gt;
+
+    def test_builder_timeout_verifies_latest_tree(tmp_path, monkeypatch):
+        import sys
+        from olyder import engine
+        from olyder.execution import ExitStatus
+        spec = fixture(tmp_path, builder={'argv':[sys.executable,'-c','pass']})
+        monkeypatch.setattr(engine, 'managed_run', lambda *a, **kw: ExitStatus(None,True,0))
+        result = engine.run_loop(spec, allow_exec=True, execute_builder=True,
+            use_ai=False, allow_network=False, output=tmp_path/'out', mode='balanced')
+&gt;       assert len(result['checks']) == 2
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+tests\test_v05_verdict.py:161: AssertionError</failure></testcase></testsuite></testsuites>

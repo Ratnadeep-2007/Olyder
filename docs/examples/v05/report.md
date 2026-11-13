@@ -8,7 +8,7 @@
 ## Acceptance checks
 
 - **pricing-module** — PASS (file, 0ms): Text content assertion
-- **pricing-cases** — PASS (command, 109ms): Exit 0; output condition not configured; tail: test_checkout (test_pricing.PricingTests.test_checkout) ... ok test_discount (test_pricing.PricingTests.test_discount) ... ok test_rejects_negative_price (test_pricing.PricingTests.test_rejects_negative_price) ... ok  ---------------------------------------------------------------------- Ran 3 tests in 0.000s  OK 
+- **pricing-cases** — PASS (command, 109ms): Exit 0; output condition not configured; tail: test_checkout (test_pricing.PricingTests.test_checkout) ... ok test_discount (test_pricing.PricingTests.test_discount) ... ok test_rejects_negative_price (test_pricing.PricingTests.test_rejects_negative_price) ... ok  ---------------------------------------------------------------------- Ran 3 tests in 0.000s  OK
 
 ## Objective metrics
 
@@ -89,4 +89,4 @@ A passing report proves only the declared checks ran and passed in the observed 
   ],
   "full_suite_executed": true
 }
-``` 
+```
