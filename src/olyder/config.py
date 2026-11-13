@@ -118,8 +118,12 @@ def load_spec(path: str | Path) -> Spec:
         raise ConfigError("builder must be an object")
     if "argv" in builder and (not isinstance(builder["argv"], list) or not builder["argv"] or not all(isinstance(s, str) and bool(s) for s in builder["argv"])):
         raise ConfigError("builder.argv must be a nonempty string list")
-    if "provider" in builder and builder["provider"] not in ("codex", "opencode"):
-        raise ConfigError("builder.provider must be codex or opencode")
+    if "provider" in builder:
+        from .adapters import get_agent
+        try:
+            get_agent(builder["provider"])
+        except (ValueError, TypeError) as exc:
+            raise ConfigError("builder.provider must name an explicitly registered adapter") from exc
     env_names = builder.get("env", [])
     if not isinstance(env_names, list) or len(env_names) > 20 or not all(
         isinstance(name, str) and name.isidentifier() for name in env_names):
@@ -138,6 +142,17 @@ def load_spec(path: str | Path) -> Spec:
     policy = obj.get("policy", {})
     if not isinstance(policy, dict) or ("mode" in policy and policy["mode"] not in ("economy", "balanced", "thorough")):
         raise ConfigError("policy.mode must be economy, balanced or thorough")
+    monetary = obj.get('budget', {})
+    if not isinstance(monetary, dict):
+        raise ConfigError('budget must be an object')
+    from .ledger import money
+    for key in ('max_cost_usd','builder_upper_bound_usd','verifier_reserve_usd'):
+        if key in monetary:
+            money(monetary[key], positive=key == 'max_cost_usd')
+    if type(monetary.get('strict',False)) is not bool:
+        raise ConfigError('budget.strict must be boolean')
+    if monetary.get('strict') and 'max_cost_usd' not in monetary:
+        raise ConfigError('Strict monetary admission requires max_cost_usd')
     from .contracts import validate_requirements
     validate_requirements(obj, ids)
     return Spec(file, file.parent, obj, hashlib.sha256(content).hexdigest())

@@ -42,7 +42,7 @@ def parser() -> argparse.ArgumentParser:
             s.add_argument("--mode", choices=["economy", "balanced", "thorough"], default=None, help="Retry policy; every mode runs all acceptance checks")
             s.add_argument("--execute-builder", action="store_true", help="Allow configured agent CLI to edit the workspace")
             s.add_argument("--max-iterations", type=int, default=None)
-            s.add_argument("--agent", choices=["codex", "opencode"], default=None,
+            s.add_argument("--agent", default=None,
                            help="Agent CLI with structured usage telemetry")
             s.add_argument("--unsafe-host", action="store_true",
                            help="Explicitly permit a builder to run on the host without OS isolation")
@@ -119,13 +119,15 @@ def main(argv: list[str] | None = None) -> int:
                 raise ConfigError("Builder requires --sandbox docker or explicit --unsafe-host")
             if args.docker_network == "bridge" and not args.allow_network:
                 raise ConfigError("Docker bridge networking requires --allow-network")
-            result = run_loop(spec, mode=args.mode, allow_exec=args.allow_exec,
-                execute_builder=args.execute_builder, use_ai=args.ai,
-                allow_network=args.allow_network, output=Path(args.output),
-                max_iterations=args.max_iterations, sandbox=args.sandbox,
+            from .sdk import run, Permissions
+            result = run(spec.path, mode=args.mode,
+                permissions=Permissions(allow_exec=args.allow_exec,
+                    execute_builder=args.execute_builder, allow_network=args.allow_network,
+                    unsafe_host=args.unsafe_host), use_ai=args.ai, output=Path(args.output),
+                max_iterations=args.max_iterations, backend=args.sandbox,
                 docker_image=args.docker_image, docker_network=args.docker_network,
                 agent=args.agent,
-                trace_dir=Path(args.output) / "browser-traces" if args.trace_browser else None)
+                trace_dir=Path(args.output)/'browser-traces' if args.trace_browser else None)
         print(json.dumps({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"], "agent_usage": result.get("agent_usage"), "paths": result["paths"]}, indent=2))
         return 0 if result["status"] == "passed" else 1
     except (ConfigError, FileNotFoundError, ModelError, QuotaExceeded, ValueError, OSError) as exc:

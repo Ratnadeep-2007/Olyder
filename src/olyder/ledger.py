@@ -77,6 +77,26 @@ class BudgetLedger:
                 raise MoneyError('Conflicting settlement')
             r.update(state=state, actual=amount)
 
+    def reserve_verifier(self, request_id, upper_bound):
+        """Transfer protected funds into an active verifier reservation atomically."""
+        amount = money(upper_bound)
+        with self._lock:
+            if amount > self.verifier_reserve:
+                raise QuotaExceeded('Mandatory verifier reserve unavailable')
+            self.verifier_reserve -= amount
+            try:
+                # Unknown builder billing must not prevent using funds that
+                # were protected specifically for mandatory verification.
+                strict = self.strict
+                self.strict = False
+                try:
+                    self.reserve(request_id, amount)
+                finally:
+                    self.strict = strict
+            except Exception:
+                self.verifier_reserve += amount
+                raise
+
     def release(self, request_id):
         with self._lock:
             r = self._requests.get(request_id)

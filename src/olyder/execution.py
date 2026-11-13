@@ -14,6 +14,8 @@ import secrets
 from dataclasses import dataclass
 from pathlib import Path
 
+from .control import current, Cancelled
+
 
 class ExecutionError(RuntimeError):
     """Command cannot be executed under the requested policy."""
@@ -79,9 +81,26 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
                                    stdin=subprocess.DEVNULL, shell=False, **kwargs)
     except FileNotFoundError as exc:
         raise ExecutionError(f"Executable unavailable: {exc.filename}") from exc
+    control = current.get()
+    if control:
+        control.emit('process_started', pid=process.pid)
     try:
-        return ExitStatus(process.wait(timeout=timeout), False, time.monotonic() - start)
-    except subprocess.TimeoutExpired:
+        while process.poll() is None:
+            if control:
+                control.check()
+                if os.fstat(stdout.fileno()).st_size > control.max_output_bytes:
+                    raise Cancelled('Captured output exceeded resource bound')
+            remaining = timeout - (time.monotonic() - start)
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(argv, timeout)
+            try:
+                process.wait(timeout=min(.05, remaining))
+            except subprocess.TimeoutExpired:
+                continue
+        if control:
+            control.emit('process_completed', returncode=process.returncode)
+        return ExitStatus(process.returncode, False, time.monotonic() - start)
+    except (subprocess.TimeoutExpired, KeyboardInterrupt, Cancelled, TimeoutError) as interrupt:
         if os.name == "nt":
             try:
                 subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
@@ -110,4 +129,6 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
                                    timeout=7, check=False)
                 except (OSError, subprocess.TimeoutExpired):
                     pass
+        if not isinstance(interrupt, subprocess.TimeoutExpired):
+            raise
         return ExitStatus(process.returncode, True, time.monotonic() - start)

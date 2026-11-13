@@ -12,7 +12,9 @@ def save_report(report: dict, output_dir: Path) -> dict[str, str]:
     json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     metadata = {k: report[k] for k in (
         "requirement_coverage", "independent_critic_status", "selected_checks",
-        "full_suite_executed", "policy", "stop_reason", "acceptance_integrity"
+        "full_suite_executed", "policy", "stop_reason", "acceptance_integrity",
+        "run_id", "functional_verdict", "budget_verdict", "accounting",
+        "wall_seconds", "environment", "verification_selection"
     ) if k in report}
     checks = report.get("checks", [])
     md = ["# Olyder Verification Report", "", f"**Goal:** {report.get('goal','')}", f"**Status:** {report.get('status','unknown')}", f"**Spec SHA-256:** `{report.get('spec_sha256','')}`", f"**Attempts:** {report.get('attempts',0)}", "", "## Acceptance checks", ""]

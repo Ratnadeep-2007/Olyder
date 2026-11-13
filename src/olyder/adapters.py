@@ -1,0 +1,97 @@
+"""Replaceable CLI adapters. Templates never imply permission auto-approval."""
+from __future__ import annotations
+
+import json
+from decimal import Decimal
+
+from .agents import agent_argv, parse_agent_log
+from .interfaces import API_VERSION, AgentAdapter, Capabilities
+
+
+class ExecutableAgent:
+    api_version = API_VERSION
+
+    def __init__(self, name: str, argv: list[str], telemetry: str = 'unknown'):
+        if not name or not argv or not all(isinstance(a, str) and a and '\0' not in a for a in argv):
+            raise ValueError('Agent requires a name and explicit nonempty argv')
+        self.name, self.argv, self.telemetry = name, list(argv), telemetry
+
+    def command(self, prompt):
+        return [a.replace('{prompt}', prompt) for a in self.argv]
+
+    def capabilities(self):
+        return Capabilities(structured_usage=self.telemetry != 'unknown',
+                            streaming=True, notes='CLI spend is post-hoc; no provider hard limit')
+
+    def parse(self, stream):
+        if self.telemetry in ('codex', 'opencode'):
+            return parse_agent_log(stream, self.telemetry).snapshot()
+        result = {'provider': self.name, 'observed_tokens': None,
+                  'input_tokens': None, 'output_tokens': None,
+                  'cached_tokens': None, 'usage_complete': False,
+                  'estimated_cost_usd': None, 'billed_cost_usd': None,
+                  'status': 'incomplete', 'origin': 'agent_jsonl'}
+        stream.seek(0)
+        for i in range(10000):
+            line = stream.readline(1_000_001)
+            if not line:
+                break
+            if len(line) > 1_000_000:
+                break
+            try:
+                e = json.loads(line)
+                if not isinstance(e, dict):
+                    continue
+                if self.telemetry == 'claude' and e.get('type') == 'result':
+                    result['status'] = 'failed' if e.get('is_error') else 'completed'
+                    usage = e.get('usage', {})
+                    inp, out = usage.get('input_tokens'), usage.get('output_tokens')
+                    if type(inp) is int and inp >= 0 and type(out) is int and out >= 0:
+                        cached = usage.get('cache_read_input_tokens', 0)
+                        written = usage.get('cache_creation_input_tokens', 0)
+                        if type(cached) is not int or cached < 0 or type(written) is not int or written < 0:
+                            continue
+                        result.update(input_tokens=inp+cached+written, output_tokens=out,
+                                      cached_tokens=cached, observed_tokens=inp+cached+written+out,
+                                      usage_complete=not e.get('is_error'))
+                    cost = e.get('total_cost_usd')
+                    if isinstance(cost, (int, float, str)) and not isinstance(cost, bool):
+                        amount = Decimal(str(cost))
+                        if amount.is_finite() and amount >= 0:
+                            result['estimated_cost_usd'] = str(amount)
+            except (ValueError, TypeError, AttributeError, ArithmeticError):
+                continue
+        return result
+
+
+class BuiltinAgent(ExecutableAgent):
+    def command(self, prompt):
+        return agent_argv(self.name, prompt)
+
+
+_agents: dict[str, AgentAdapter] = {
+    n: BuiltinAgent(n, [n], n) for n in ('codex', 'opencode')
+}
+_agents['claude'] = ExecutableAgent('claude', [
+    'claude', '--bare', '-p', '--output-format', 'stream-json', '--verbose', '{prompt}'
+], 'claude')
+
+
+def register_agent(adapter: AgentAdapter):
+    if not isinstance(adapter, AgentAdapter) or adapter.api_version != API_VERSION:
+        raise ValueError('Unsupported agent protocol version')
+    if adapter.name in _agents:
+        raise ValueError('Agent name already registered')
+    _agents[adapter.name] = adapter
+
+
+def get_agent(name: str) -> AgentAdapter:
+    try:
+        return _agents[name]
+    except KeyError as exc:
+        raise ValueError(f'Unknown agent: {name}; explicitly register an adapter first') from exc
+
+
+def agent_capabilities():
+    from dataclasses import asdict
+    return {n: asdict(a.capabilities()) for n, a in _agents.items()}

@@ -69,7 +69,11 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
         try:
             with tempfile.TemporaryFile(mode="w+t", encoding="utf-8", errors="replace") as captured:
                 command = check["argv"]
-                if sandbox == "docker":
+                from .control import current
+                control = current.get()
+                if control and control.check_backend is not None:
+                    command = control.check_backend.prepare(command, root, writable=False)
+                elif sandbox == "docker":
                     command = docker_argv(command, root, image=docker_image, writable=False)
                 elif sandbox != "host":
                     raise ExecutionError("Unknown execution isolation mode")
