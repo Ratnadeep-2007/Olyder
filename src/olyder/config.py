@@ -71,9 +71,8 @@ def load_spec(path: str | Path) -> Spec:
             timeout = c.get("timeout", 60)
             if type(timeout) is not int or not 1 <= timeout <= 300:
                 raise ConfigError(f"Check {c['id']}: timeout must be an integer from 1 to 300")
-        if kind == "command":
-            if "exit_code" in c and (type(c["exit_code"]) is not int or not 0 <= c["exit_code"] <= 255):
-                raise ConfigError(f"Check {c['id']}: exit_code must be an integer from 0 to 255")
+        if kind == "command" and "exit_code" in c and (type(c["exit_code"]) is not int or not 0 <= c["exit_code"] <= 255):
+            raise ConfigError(f"Check {c['id']}: exit_code must be an integer from 0 to 255")
         if kind in ("http", "browser"):
             u = c.get("url")
             parsed = urlparse(u) if isinstance(u, str) else None

@@ -6,15 +6,15 @@ so Docker availability is checked at execution and never falls back to the host.
 from __future__ import annotations
 
 import os
+import secrets
 import shutil
 import signal
 import subprocess
 import time
-import secrets
 from dataclasses import dataclass
 from pathlib import Path
 
-from .control import current, ResourceLimit
+from .control import ResourceLimit, current
 
 
 class ExecutionError(RuntimeError):
@@ -111,7 +111,7 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
             if process.poll() is None:
                 try:
                     subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
                 except (OSError, subprocess.TimeoutExpired):
                     process.kill()
         else:

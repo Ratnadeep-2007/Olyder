@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-
 SUPPORTED = ("codex", "opencode")
 
 
@@ -116,21 +115,16 @@ class AgentUsage:
 
 
 def parse_agent_log(path, provider: str, *, max_lines: int = 100000) -> AgentUsage:
+    from contextlib import nullcontext
+
     usage = AgentUsage(provider)
     if hasattr(path, "seek"):
         path.seek(0)
-        stream = path
-        close = False
-    else:
-        stream = open(path, "r", encoding="utf-8", errors="replace")
-        close = True
-    try:
+    with (nullcontext(path) if hasattr(path, "seek") else
+          open(path, "r", encoding="utf-8", errors="replace")) as stream:
         for i, line in enumerate(stream):
             if i >= max_lines:
                 usage.malformed_events += 1
                 break
             usage.accept(line)
-    finally:
-        if close:
-            stream.close()
     return usage

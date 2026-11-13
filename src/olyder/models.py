@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import json
 import os
-from urllib import request, error, parse
+from urllib import error, parse, request
 
-from .quota import Budget
 from .control import current
+from .quota import Budget
 
 
 class ModelError(RuntimeError):
@@ -53,10 +53,10 @@ def _chat_body(prompt: str, budget: Budget, *, system: str, model: str | None = 
                 raise ValueError('Incompatible model provider protocol')
             response = provider.complete(prompt, system=system, max_tokens=max_tokens)
             if not isinstance(response,dict):
-                raise ValueError('Provider response must be an object')
+                raise TypeError('Provider response must be an object')
             content = response['content']
             if not isinstance(content, str):
-                raise ValueError('Model content must be text')
+                raise TypeError('Model content must be text')
             usage = response.get('usage', {})
             if not isinstance(usage,dict):
                 usage={}

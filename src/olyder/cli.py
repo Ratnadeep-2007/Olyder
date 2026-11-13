@@ -8,14 +8,10 @@ import sys
 from pathlib import Path
 
 from .config import DEFAULT, ConfigError, load_spec
-from .engine import plan, run_loop, verify_once
-from .idea import evaluate_idea
+from .engine import plan
 from .models import ModelError
-from .quota import Budget, QuotaExceeded
-from .report import save_report
-
-
 from .privacy import redact_values
+from .quota import Budget, QuotaExceeded
 
 
 def _json(value, *args, **kwargs):
@@ -117,12 +113,13 @@ def main(argv: list[str] | None = None) -> int:
             print(_json(doctor(),indent=2));return 0
         if args.command=='serve':
             import os
+
             from .api import serve
             serve(args.workspace,token=os.getenv('OLYDER_LOCAL_API_TOKEN',''),port=args.port)
             return 0
         if args.command in ('status','cancel','resume','report'):
+            from .sdk import Permissions, resume
             from .state import RunStore
-            from .sdk import resume, Permissions
             store=RunStore(Path(args.workspace).resolve()/'.olyder'/'runs')
             if args.command=='cancel':
                 result=store.cancel(args.run_id)
@@ -191,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
             print(_json(result, indent=2, ensure_ascii=False))
             return 1 if result.get('status') in ('blocked','budget_exhausted','cancelled') else 0
         if args.command == "verify":
-            from .sdk import run, Permissions
+            from .sdk import Permissions, run
             result = run(spec.path, permissions=Permissions(allow_exec=args.allow_exec,
                 allow_network=args.allow_network), use_ai=args.ai,backend=args.sandbox,
                 docker_image=args.docker_image,output=Path(args.output),
@@ -205,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ConfigError("Builder requires --sandbox docker or explicit --unsafe-host")
             if args.docker_network == "bridge" and not args.allow_network:
                 raise ConfigError("Docker bridge networking requires --allow-network")
-            from .sdk import run, Permissions
+            from .sdk import Permissions, run
             result = run(spec.path, mode=args.mode,
                 permissions=Permissions(allow_exec=args.allow_exec,
                     execute_builder=args.execute_builder, allow_network=args.allow_network,

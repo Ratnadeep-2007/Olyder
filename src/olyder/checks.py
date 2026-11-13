@@ -1,19 +1,18 @@
 """Execute reproducible acceptance checks with observed evidence, not AI assertions."""
 from __future__ import annotations
 
-import re
-import subprocess
-import tempfile
+import ipaddress
 import os
+import re
+import tempfile
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from urllib import request, error, parse
-import ipaddress
+from urllib import error, parse, request
 
 from .config import ConfigError, safe_path
+from .execution import ExecutionError, docker_argv, managed_run
 from .privacy import redact
-from .execution import docker_argv, managed_run, ExecutionError
 
 
 @dataclass
@@ -217,13 +216,12 @@ def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: s
             status, details = "blocked", str(exc)
         except (ConfigError, OSError, ValueError, KeyError, re.error) as exc:
             status, details = "fail", f"Invalid check or I/O: {type(exc).__name__}: {str(exc)[:250]}"
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 -- optional check plugins have third-party exception types.
             # Optional browser dependencies may raise provider-specific exceptions.
             # Treat these as failed checks rather than crashing the whole verification run.
             details = f"Unexpected check failure: {type(exc).__name__}"
-            if kind := check.get("type"):
-                if kind == "browser":
-                    details += ": " + str(exc).splitlines()[0][:180]
+            if check.get("type") == "browser":
+                details += ": " + str(exc).splitlines()[0][:180]
             status = "fail"
         out.append(Result(check["id"], status, check["type"], round((time.monotonic()-start)*1000), redact(details[:3000])))
     return out

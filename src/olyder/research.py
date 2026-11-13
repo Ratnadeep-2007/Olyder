@@ -6,8 +6,8 @@ import hashlib
 import html
 import re
 import time
-from datetime import datetime, timezone
-from urllib import request, error, parse
+from datetime import UTC, datetime
+from urllib import error, parse, request
 
 
 def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
@@ -18,7 +18,7 @@ def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
         if control:
             control.check()
         record = {"url": url, "status": "blocked", "excerpt": "", "sha256": "",
-                  "classification":"unanswered", "retrieved_at":datetime.now(timezone.utc).isoformat()}
+                  "classification":"unanswered", "retrieved_at":datetime.now(UTC).isoformat()}
         if not network_allowed:
             record["reason"] = "External retrieval disabled; pass --allow-network"
             evidence.append(record)

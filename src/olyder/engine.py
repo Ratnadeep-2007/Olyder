@@ -3,23 +3,23 @@ from __future__ import annotations
 
 import hashlib
 import json
-import subprocess
 import tempfile
 import time
 from dataclasses import asdict
 from pathlib import Path
 
+from .agents import agent_argv, parse_agent_log
 from .checks import run_checks
-from .integrity import snapshot as acceptance_snapshot, changed as acceptance_changed
 from .config import Spec
-from .models import chat, ModelError
+from .execution import ExecutionError, docker_argv, managed_run
+from .integrity import changed as acceptance_changed
+from .integrity import snapshot as acceptance_snapshot
+from .models import ModelError, chat
+from .policy import RunPolicy, progress
+from .privacy import redact_values
 from .quota import Budget, QuotaExceeded
 from .report import save_report
 from .research import collect
-from .agents import agent_argv, parse_agent_log
-from .execution import docker_argv, managed_run, ExecutionError
-from .policy import RunPolicy, progress
-from .privacy import redact_values
 
 
 class StopCycle(Exception):

@@ -4,11 +4,11 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+
 from .config import load_spec
 from .engine import plan, verify_once
-from .quota import Budget
 from .privacy import redact_values
-
+from .quota import Budget
 
 TOOLS = [
     {

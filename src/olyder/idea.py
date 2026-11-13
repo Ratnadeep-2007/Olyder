@@ -3,9 +3,9 @@ import json
 
 from .config import Spec
 from .models import chat
+from .privacy import redact_values
 from .quota import Budget
 from .research import collect
-from .privacy import redact_values
 
 
 def evaluate_idea(spec: Spec, *, network_allowed: bool, use_ai: bool, budget: Budget) -> dict:
