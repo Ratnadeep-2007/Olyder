@@ -135,6 +135,11 @@ def load_spec(path: str | Path) -> Spec:
     for key in ("max_iterations", "max_tokens", "max_seconds", "max_agent_tokens"):
         if key in limits and (type(limits[key]) is not int or limits[key] <= 0):
             raise ConfigError(f"limits.{key} must be positive integer")
+    policy = obj.get("policy", {})
+    if not isinstance(policy, dict) or ("mode" in policy and policy["mode"] not in ("economy", "balanced", "thorough")):
+        raise ConfigError("policy.mode must be economy, balanced or thorough")
+    from .contracts import validate_requirements
+    validate_requirements(obj, ids)
     return Spec(file, file.parent, obj, hashlib.sha256(content).hexdigest())
 
 
@@ -149,6 +154,8 @@ def safe_path(root: Path, path: str) -> Path:
 
 
 DEFAULT = {
+    "schema_version": 2,
+    "policy": {"mode": "balanced"},
     "goal": "Describe the user-visible outcome and requirements here",
     "checks": [
         {"id": "readme-exists", "type": "file", "path": "README.md", "exists": True},

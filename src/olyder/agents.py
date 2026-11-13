@@ -14,9 +14,9 @@ SUPPORTED = ("codex", "opencode")
 def agent_argv(provider: str, prompt: str) -> list[str]:
     if provider == "codex":
         return ["codex", "exec", "--json", "--sandbox", "workspace-write",
-                "--skip-git-repo-check", prompt]
+                prompt]
     if provider == "opencode":
-        return ["opencode", "run", "--format", "json", "--agent", "build", "--auto", prompt]
+        return ["opencode", "run", "--format", "json", "--agent", "build", prompt]
     raise ValueError(f"Unsupported coding agent: {provider}")
 
 

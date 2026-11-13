@@ -18,6 +18,7 @@ from .report import save_report
 from .research import collect
 from .agents import agent_argv, parse_agent_log
 from .execution import docker_argv, managed_run, ExecutionError
+from .policy import RunPolicy, progress
 
 
 class StopCycle(Exception):
@@ -100,22 +101,40 @@ def _invoke_builder(spec: Spec, feedback: str, *, enabled: bool, timeout: int,
 
 
 def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, allow_network: bool = False, budget: Budget | None = None, only: set[str] | None = None, source_evidence: list[dict] | None = None, deadline: float | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", trace_dir: Path | None = None) -> dict:
+    locked_before = spec.path.is_file() and hashlib.sha256(spec.path.read_bytes()).hexdigest() == spec.digest
     budget = budget or Budget(int(spec.raw.get("limits", {}).get("max_tokens", 30000)))
     results = [asdict(x) for x in run_checks(spec.checks, spec.root, allow_exec=allow_exec, only=only, allow_network=allow_network, deadline=deadline, sandbox=sandbox, docker_image=docker_image, trace_dir=trace_dir)]
+    requested_ai = use_ai
     if deadline is not None and time.monotonic() >= deadline:
         use_ai = False  # Do not spend tokens after the time budget expires.
-    notes, concerns = _independent_review(spec, results, budget, ai=use_ai)
+    critic_status = "not_requested"
+    if requested_ai:
+        critic_status = "completed" if use_ai else "deadline_exhausted"
+    try:
+        notes, concerns = _independent_review(spec, results, budget, ai=use_ai)
+    except (QuotaExceeded, ModelError):
+        notes, concerns = "Requested independent review unavailable", ["Independent review not completed"]
+        critic_status = "unavailable"
+    if requested_ai and not use_ai:
+        concerns.append("Requested independent review exceeded deadline")
     sources = source_evidence if source_evidence is not None else collect(spec.raw.get("sources", []), network_allowed=allow_network)
     passed = bool(results) and all(x["status"] == "pass" for x in results)
     # AI concerns and unavailable declared research evidence require a human review.
     # Passing tests do not by themselves validate an unobserved external claim.
     source_gaps = [s for s in sources if s.get("status") != "fetched"]
-    if passed and (concerns or source_gaps):
+    from .contracts import coverage_map
+    coverage = coverage_map(spec, results)
+    missing_coverage = any(r["mandatory"] and not r["satisfied"] for r in coverage.values())
+    full_suite = {r["id"] for r in results} == {c["id"] for c in spec.checks}
+    if passed and (concerns or source_gaps or missing_coverage or not full_suite):
         status = "needs_review"
     else:
         status = "passed" if passed else "failed"
     if any(x["status"] == "blocked" for x in results):
         status = "blocked"
+    if not locked_before or not spec.path.is_file() or hashlib.sha256(spec.path.read_bytes()).hexdigest() != spec.digest:
+        status = "blocked"
+        notes += " | Locked specification changed"
     passed_count = sum(x["status"] == "pass" for x in results)
     failed_count = sum(x["status"] == "fail" for x in results)
     blocked_count = sum(x["status"] == "blocked" for x in results)
@@ -133,11 +152,15 @@ def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, a
         "sources_fetched": len(sources) - len(source_gaps),
         "sources_unavailable": len(source_gaps),
     }
-    return {"goal": spec.goal, "status": status, "spec_sha256": spec.digest, "checks": results, "metrics": metrics, "sources": sources, "verifier_note": notes, "ai_concerns": concerns, "budget": budget.snapshot()}
+    return {"goal": spec.goal, "status": status, "spec_sha256": spec.digest, "requirement_coverage": coverage, "independent_critic_status": critic_status, "selected_checks": [r["id"] for r in results], "full_suite_executed": full_suite, "checks": results, "metrics": metrics, "sources": sources, "verifier_note": notes, "ai_concerns": concerns, "budget": budget.snapshot()}
 
 
-def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: bool, allow_network: bool, output: Path, max_iterations: int | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", docker_network: str = "none", agent: str | None = None, trace_dir: Path | None = None) -> dict:
+def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: bool, allow_network: bool, output: Path, max_iterations: int | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", docker_network: str = "none", agent: str | None = None, trace_dir: Path | None = None, mode: str | None = None) -> dict:
     limits = spec.raw.get("limits", {})
+    policy_mode = mode or spec.raw.get("policy", {}).get("mode")
+    policy = RunPolicy(policy_mode) if policy_mode else None
+    last_checks = []
+    stagnation = 0
     if max_iterations is not None and not 1 <= max_iterations <= 20:
         raise ValueError("max_iterations must be between 1 and 20")
     allowed_iterations = min(max_iterations if max_iterations is not None else int(limits.get("max_iterations", 3)), 20)
@@ -149,6 +172,7 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
     previous = ""
     feedback = "Implement original requirement"
     final = None
+    termination = None
     # Research/external source retrieval happens once per run, not per repair attempt.
     source_evidence = collect(spec.raw.get("sources", []), network_allowed=allow_network)
     task_plan = plan(spec)  # Deterministic: zero model tokens, stable across retries.
@@ -165,9 +189,12 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
             protected_changed = acceptance_changed(spec, protected_baseline)
             if protected_changed:
                 raise StopCycle("Protected acceptance tests modified: " + ", ".join(protected_changed[:5]))
-            if execute_builder:
+            reserve_only = execute_builder and policy and not policy.admit_builder(deadline - time.monotonic())
+            if reserve_only:
+                termination = "final_verification_reserve"
+            if execute_builder and not reserve_only:
                 _, agent_usage = _invoke_builder(spec, feedback, enabled=True,
-                    timeout=max(1, min(180, int(deadline - time.monotonic()))),
+                    timeout=max(1, min(180, int(deadline - time.monotonic() - (policy.final_seconds if policy else 0)))),
                     tasks=task_plan["tasks"], sandbox=sandbox, docker_image=docker_image,
                     docker_network=docker_network, agent=agent)
                 if agent_usage is not None:
@@ -207,22 +234,42 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
             break
         if item["status"] == "passed":
             break
+        if reserve_only:
+            break
+        if item["status"] == "needs_review" and item["metrics"]["failed_checks"] == 0:
+            termination = "unresolved_review"
+            feedback = "Mandatory review or evidence remains unresolved; no implementation failure to repair"
+            break
         if agent_runs and not agent_runs[-1]["usage_complete"]:
             feedback = "Agent usage telemetry incomplete; stopped instead of assuming a known quota"
             break
         if item["status"] == "needs_review" and item["metrics"]["sources_unavailable"] > 0 and item["metrics"]["failed_checks"] == 0:
             feedback = "External evidence unavailable; requires authorized retrieval or human review"
             break
+        if policy:
+            delta = progress(last_checks, item["checks"])
+            attempts[-1]["progress_delta"] = delta
+            stagnation = 0 if delta["improved"] else stagnation + 1
+            last_checks = item["checks"]
+            if delta["blockers"] or (len(attempts) > 1 and delta["regressions"]):
+                feedback = "Blocked checks or regressions require independent review"
+                break
+            if stagnation > policy.no_progress_limit:
+                feedback = "No measurable progress under " + policy.mode + " policy"
+                break
         signature = _signature(item["checks"])
         repeated = repeated + 1 if signature == previous else 0
         previous = signature
-        if repeated >= 2:
+        if not policy and repeated >= 2:
             feedback = "No measurable progress after repeated attempts"
             break
         failed = [{"id": x["id"], "status": x["status"], "evidence": x["details"][:1000]} for x in item["checks"] if x["status"] != "pass"]
         feedback = json.dumps({"failed_checks": failed, "ai_concerns": item["ai_concerns"]}, ensure_ascii=False)
         if not execute_builder:
+            termination = "verification_only"
             break
+    else:
+        termination = "iteration_limit"
     if final is None:
         final = {"goal": spec.goal, "status": "blocked", "spec_sha256": spec.digest, "checks": [], "sources": [], "verifier_note": feedback, "ai_concerns": []}
     elif final["status"] != "passed" and feedback:
@@ -233,6 +280,8 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
         "complete": bool(agent_runs) and all(x["usage_complete"] for x in agent_runs),
         "enforced_provider_quota": False}
     final["execution_isolation"] = {"mode": sandbox, "network": docker_network if sandbox == "docker" else "host", "sandboxed_checks": sandbox == "docker"}
+    final["policy"] = {"mode": policy_mode or "legacy", "reasons": ["explicit opt-in" if policy else "unversioned config retains v0.4 retry policy"], "full_final_suite_required": True}
+    final["stop_reason"] = "acceptance_passed" if final["status"] == "passed" else termination or feedback
     final["task_plan"] = task_plan
     if not final.get("sources"):
         final["sources"] = source_evidence

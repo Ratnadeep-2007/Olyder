@@ -39,6 +39,7 @@ def parser() -> argparse.ArgumentParser:
             s.add_argument("--trace-browser", action="store_true",
                            help="Opt-in: save browser failure traces (can contain sensitive data)")
         if name == "run":
+            s.add_argument("--mode", choices=["economy", "balanced", "thorough"], default=None, help="Retry policy; every mode runs all acceptance checks")
             s.add_argument("--execute-builder", action="store_true", help="Allow configured agent CLI to edit the workspace")
             s.add_argument("--max-iterations", type=int, default=None)
             s.add_argument("--agent", choices=["codex", "opencode"], default=None,
@@ -118,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ConfigError("Builder requires --sandbox docker or explicit --unsafe-host")
             if args.docker_network == "bridge" and not args.allow_network:
                 raise ConfigError("Docker bridge networking requires --allow-network")
-            result = run_loop(spec, allow_exec=args.allow_exec,
+            result = run_loop(spec, mode=args.mode, allow_exec=args.allow_exec,
                 execute_builder=args.execute_builder, use_ai=args.ai,
                 allow_network=args.allow_network, output=Path(args.output),
                 max_iterations=args.max_iterations, sandbox=args.sandbox,

@@ -22,3 +22,12 @@ Use this skill when a user asks to implement, verify, challenge, or repair code 
 - Other IDEs: use `olyder` CLI in their integrated terminal; use `olyder mcp --workspace PATH` for read-only-by-default planning and file verification.
 
 This repository does not implement OS-level sandboxing, autonomous open-web research, mobile controls, or cross-provider remaining-quota discovery in v0.1.
+
+
+## v0.5 development branch (incomplete)
+
+- `olyder run --mode economy|balanced|thorough` changes retry patience, never acceptance checks. Every attempt executes the full suite.
+- Existing specs retain the legacy policy. Newly initialized specs use schema 2 and balanced. Explicit schema-2 requirements map `acceptance_check_ids`; uncovered mandatory requirements require review.
+- A selected subset cannot establish full acceptance. Requested AI review that cannot complete remains unresolved.
+- OpenCode no longer receives `--auto`; approve permissions through its own reviewed configuration. Codex now requires a Git workspace.
+- Dollar ledger is a library foundation only: no CLI dollar cap, provider-enforced quota, or durable recovery is implemented. Do not describe this branch as a completed v0.5 release.
