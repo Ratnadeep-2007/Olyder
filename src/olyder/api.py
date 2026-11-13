@@ -24,7 +24,11 @@ def dispatch(path, supplied_token, token, workspace):
     return 200,plan(spec) if path.endswith('plan') else verify_once(spec)
 
 
-def serve(workspace, *, token, port=8765):
+def create_server(workspace, *, token, port=8765):
+    """Construct a loopback server; callers own its shutdown/close lifecycle.
+
+    Port 0 lets the OS allocate an available port without bind/close races.
+    """
     if len(token)<24:
         raise ValueError('Set a local API token of at least 24 characters')
     class Handler(BaseHTTPRequestHandler):
@@ -45,5 +49,9 @@ def serve(workspace, *, token, port=8765):
 
         def log_message(self,*args):
             pass  # Never log authorization headers or workspace contents.
-    with ThreadingHTTPServer(('127.0.0.1',port),Handler) as server:
+    return ThreadingHTTPServer(('127.0.0.1',port),Handler)
+
+
+def serve(workspace, *, token, port=8765):
+    with create_server(workspace,token=token,port=port) as server:
         server.serve_forever()

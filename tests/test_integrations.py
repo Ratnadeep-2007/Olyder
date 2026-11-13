@@ -55,21 +55,27 @@ def test_malformed_plugin_contract_is_rejected(tmp_path,data):
 
 
 def test_live_read_api(tmp_path):
-    import socket
     import subprocess
     import time
     import urllib.request
     import urllib.error
     path=tmp_path/'olyder.json';path.write_text(json.dumps({'goal':'read','checks':[
         {'id':'file','type':'file','path':'olyder.json'}]}))
-    with socket.socket() as listener:
-        listener.bind(('127.0.0.1',0));port=listener.getsockname()[1]
     token='FAKE_LOCAL_API_TOKEN_123456789'
-    script=f'from olyder.api import serve;serve({str(tmp_path)!r},token={token!r},port={port})'
+    ready=tmp_path/'api.ready'
+    script=(f'from olyder.api import create_server;from pathlib import Path;'
+            f'server=create_server({str(tmp_path)!r},token={token!r},port=0);'
+            f'Path({str(ready)!r}).write_text(str(server.server_port));server.serve_forever()')
     log=(tmp_path/'api.stderr').open('w+')
     process=subprocess.Popen([sys.executable,'-c',script],stdout=subprocess.DEVNULL,stderr=log)
     try:
         deadline=time.monotonic()+5
+        while not ready.exists():
+            if process.poll() is not None or time.monotonic()>deadline:
+                log.seek(0)
+                pytest.fail('API readiness failed: '+log.read())
+            time.sleep(.05)
+        port=int(ready.read_text())
         while True:
             try:
                 request=urllib.request.Request(f'http://127.0.0.1:{port}/v1/verify',headers={'Authorization':'Bearer '+token})
