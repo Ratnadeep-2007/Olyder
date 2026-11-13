@@ -12,6 +12,7 @@ from urllib import request, error, parse
 import ipaddress
 
 from .config import ConfigError, safe_path
+from .privacy import redact
 
 
 @dataclass
@@ -81,7 +82,7 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
                             break
                         matched = target in previous + chunk
                         previous = chunk[-max(0, len(target) - 1):] if len(target) > 1 else ""
-            output = re.sub(r"(?i)(api[_-]?key|token|password)\s*[:=]\s*\S+", r"\1=[REDACTED]", output)
+            output = redact(output)
             success = cp.returncode == check.get("exit_code", 0)
             if "contains" in check:
                 success = success and matched
@@ -104,8 +105,11 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
 
         opener = request.build_opener(NoRedirects)
         try:
+            timeout = min(30, int(check.get("timeout", 10)))
+            if deadline is not None:
+                timeout = min(timeout, max(0.001, deadline - time.monotonic()))
             try:
-                response = opener.open(req, timeout=min(30, int(check.get("timeout", 10))))
+                response = opener.open(req, timeout=timeout)
             except error.HTTPError as exc:
                 # HTTP 4xx/5xx is an observable response, not a transport failure.
                 response = exc
@@ -176,6 +180,9 @@ def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: s
                 raise PermissionError("Verification deadline exhausted; remaining checks were not executed")
             ok, details = _run(check, root, allow_exec, allow_network=allow_network, deadline=deadline)
             status = "pass" if ok else "fail"
+            if deadline is not None and time.monotonic() >= deadline:
+                status = "blocked"
+                details = "Verification deadline expired before the check could be accepted"
         except (PermissionError, RuntimeError) as exc:
             status, details = "blocked", str(exc)
         except (ConfigError, OSError, ValueError, KeyError, re.error) as exc:
@@ -188,5 +195,5 @@ def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: s
                 if kind == "browser":
                     details += ": " + str(exc).splitlines()[0][:180]
             status = "fail"
-        out.append(Result(check["id"], status, check["type"], round((time.monotonic()-start)*1000), details[:3000]))
+        out.append(Result(check["id"], status, check["type"], round((time.monotonic()-start)*1000), redact(details[:3000])))
     return out

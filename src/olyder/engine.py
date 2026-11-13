@@ -10,6 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .checks import run_checks
+from .integrity import snapshot as acceptance_snapshot, changed as acceptance_changed
 from .config import Spec
 from .models import chat, ModelError
 from .quota import Budget, QuotaExceeded
@@ -134,6 +135,8 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
     # Research/external source retrieval happens once per run, not per repair attempt.
     source_evidence = collect(spec.raw.get("sources", []), network_allowed=allow_network)
     task_plan = plan(spec)  # Deterministic: zero model tokens, stable across retries.
+    protected_baseline = acceptance_snapshot(spec)
+    protected_changed = []
     for iteration in range(1, allowed_iterations + 1):
         if time.monotonic() >= deadline:
             feedback = "Overall time limit reached"
@@ -142,11 +145,17 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
             feedback = "Specification was modified during execution; halted"
             break
         try:
+            protected_changed = acceptance_changed(spec, protected_baseline)
+            if protected_changed:
+                raise StopCycle("Protected acceptance tests modified: " + ", ".join(protected_changed[:5]))
             if execute_builder:
                 _invoke_builder(spec, feedback, enabled=True, timeout=max(1, min(180, int(deadline - time.monotonic()))), tasks=task_plan["tasks"])
             if not spec.path.is_file() or hashlib.sha256(spec.path.read_bytes()).hexdigest() != spec.digest:
                 feedback = "Builder modified locked specification; halted"
                 break
+            protected_changed = acceptance_changed(spec, protected_baseline)
+            if protected_changed:
+                raise StopCycle("Protected acceptance tests modified: " + ", ".join(protected_changed[:5]))
             # Run the full set on every attempt for sound completion. Future optimized
             # rechecks may be added only with explicit dependency coverage evidence.
             item = verify_once(spec, allow_exec=allow_exec, use_ai=use_ai, allow_network=allow_network, budget=budget, source_evidence=source_evidence, deadline=deadline)
@@ -155,6 +164,11 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
             break
         attempts.append({"number": iteration, "status": item["status"], "checks": item["checks"]})
         final = item
+        protected_changed = acceptance_changed(spec, protected_baseline)
+        if protected_changed:
+            final["status"] = "blocked"
+            feedback = "Protected acceptance tests modified during verification: " + ", ".join(protected_changed[:5])
+            break
         if time.monotonic() >= deadline:
             final["status"] = "blocked"
             feedback = "Overall time limit reached during verification"
@@ -178,6 +192,7 @@ def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: boo
         final = {"goal": spec.goal, "status": "blocked", "spec_sha256": spec.digest, "checks": [], "sources": [], "verifier_note": feedback, "ai_concerns": []}
     elif final["status"] != "passed" and feedback:
         final["verifier_note"] += " | Stop reason / next feedback: " + feedback[:1500]
+    final["acceptance_integrity"] = {"protected_paths": sorted(protected_baseline), "unchanged": not bool(protected_changed), "changed_paths": protected_changed}
     final["task_plan"] = task_plan
     if not final.get("sources"):
         final["sources"] = source_evidence

@@ -6,7 +6,7 @@
 
 Olyder is a free, open-source, **verification-driven execution layer** for coding agents. It combines a portable agent skill, a Python CLI, an optional independent LLM reviewer, a bounded correction loop, and evidence-based reports. No model subscription is needed for deterministic tests.
 
-> **Status: v0.2.0 public-development beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
+> **Status: v0.3.0 security-hardening beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
 
 ## What it does
 
@@ -66,7 +66,7 @@ Start the autonomous loop **only after reviewing the builder and test commands**
 olyder run --allow-exec --execute-builder
 ```
 
-This executes the configured external coding-agent CLI, which may modify files and invoke additional tools. The builder's own model calls are **not tracked or controlled** by Olyder in v0.1. Do not run it outside an OS-enforced sandbox when code, prompts, or agents are untrusted. The acceptance spec file hash is locked, but its file bytes are not protected against a malicious process.
+This executes the configured external coding-agent CLI, which may modify files and invoke additional tools. The builder's own model calls are **not tracked or controlled** by Olyder in v0.3. Do not run it outside an OS-enforced sandbox when code, prompts, or agents are untrusted. The acceptance spec file hash is locked, but its file bytes are not protected against a malicious process.
 
 Without `--execute-builder`, `olyder run` is a verify-only cycle that does not modify code. Without `--allow-exec`, command, HTTP and browser checks are blocked. HTTP/browser checks accessing a non-local host require explicit `--allow-network`, even when `--allow-exec` is set. **Blocked means not verified, not passed.**
 
@@ -91,7 +91,7 @@ On Windows PowerShell use `$env:OLYDER_MODEL="..."` etc. OpenAI-compatible model
 - The local `max_tokens` budget limits estimated prompt+response tokens for Olyder's **own** API requests. It is **not** a read of your provider's remaining subscription quota, and it does not meter external builder-agent requests.
 - If the provider returns token usage, Olyder records it; otherwise it conservatively charges the reserved estimate.
 - Retries are iteration-bounded; checks with subprocesses have timeouts, and Olyder marks runs that exceed the overall deadline as blocked. External child processes may survive a timeout until a process-tree isolation layer is added.
-- Full regression checks run for each iteration in v0.1 rather than reusing potentially stale pass results. Selective re-testing will be introduced only when impact analysis can establish sound coverage.
+- Full regression checks run for each iteration in v0.3 rather than reusing potentially stale pass results. Selective re-testing will be introduced only when impact analysis can establish sound coverage.
 
 ## Scenario types
 
@@ -147,9 +147,25 @@ flowchart TD
 
 See [scenario examples and measurable outcomes](docs/EXAMPLES.md), including staging checkout, ML prediction, and AI-agent workflows. The included demo is deliberately small so the repository's checks can be reproduced without a model account.
 
-## 99-scenario test results
+## Testing results
 
-**99/99 expected outcomes matched** in the final offline acceptance matrix, plus 23 existing and 10 new regression tests (132 passed overall). Level 5 browser-action tests used a deterministic adapter because this host blocks Chromium navigation; real-browser and real-model interoperability remain to be validated. See [QA details and limitations](docs/QA_99.md) and [all 99 expected-vs-observed rows](docs/QA_99_MATRIX.md).
+**99/99 expected outcomes matched** in the v0.2 offline acceptance matrix, plus 23 core and 10 supplementary regressions. The v0.3 hardening suite adds 18 security and reliability tests (**150 passed overall** in the local Linux / Python 3.13 run). Level 5 browser-action tests used a deterministic adapter because this host blocks Chromium navigation; real-browser and real-model interoperability remain to be validated. See [QA details and limitations](docs/QA_99.md) and [all 99 expected-vs-observed rows](docs/QA_99_MATRIX.md).
+
+## v0.3: verified security and reliability enhancements
+
+- **Model API requests refuse all redirects**, including cross-origin redirects that could forward a bearer token. Only HTTPS (or explicit local loopback) model API origins are permitted.
+- **Acceptance evidence is fingerprinted across build/verify cycles:** existing `tests/`, conventional test scripts and explicitly listed `protected_paths` are checked for tampering. A changed acceptance script blocks completion, even if its modified version now returns success.
+- **Identity-tracked token reservations** prevent double settlements when two concurrent reservations have the same numeric estimate; the returned reservation behaves numerically like the original estimate.
+- **Hard deadlines are fail-closed:** late HTTP check outcomes cannot be reported as passed.
+- **Best-effort token redaction** masks common bearer/basic headers and key/password assignments from captured check details; this is not a comprehensive secret scanner.
+
+For custom trusted datasets, add an explicit guard in `olyder.json`:
+
+```json
+"protected_paths": ["fixtures/ground_truth.csv", "acceptance/check_contracts.py"]
+```
+
+**Security boundary:** fingerprinting detects accidental or straightforward builder modifications, but does NOT make the workspace an OS-enforced sandbox, prevent malicious child processes, or protect a verifier running with shared writable permissions. Use independently mounted read-only acceptance assets and separate OS privileges for hostile workloads. See [hardening validation](docs/ENHANCEMENT_VALIDATION.md).
 
 ## Code review and release hardening
 
