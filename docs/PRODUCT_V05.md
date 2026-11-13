@@ -8,13 +8,13 @@ Alternatives include Aider auto-testing, OpenHands sandboxes, Harbor evaluation 
 
 Adoption experiment: observe five developers configuring a trusted fixture in under ten minutes, then challenge five planted defects without revealing the oracle. Record setup time, false positives, false negatives and willingness to use the report in a PR. No primary-user interviews have been conducted here.
 
-Risks: users mistake hashes for isolation, token estimates for invoices, or green declared tests for full product correctness. Detached verifier storage and clear functional/budget verdicts are release blockers. See ARCHITECTURE_V05.md for implemented versus planned scope.
+Risks: users mistake hashes for isolation, token estimates for invoices, or green declared tests for full product correctness. Detached verifier storage and separate functional/budget verdicts now exist; OS containment still requires the isolated backend. See IMPLEMENTATION_REPORT.md for tested scope and remaining release limits.
 
 | Capability | Impact | Effort | Failure mode | Mitigation | Evidence |
 |---|---|---|---|---|---|
 | Coverage map | High | Small | Unmapped requirement falsely passes | Review gate | Executed sentinels |
-| Decimal ledger | High | Medium | Unknown counted as zero; concurrent overspend | Atomic admission and reconciliation | Executed unit tests; not runtime wired |
+| Decimal ledger | High | Medium | Unknown counted as zero; concurrent overspend | Atomic admission and reconciliation | Runtime wired; fake-provider and concurrency tests, no provider hard cap |
 | Retry modes | Medium | Small | Progress falsely inferred | Per-check pass/regression deltas | Executed tests |
-| Detached harness | Critical | Large | Builder modifies verifier | Separate mounts/identity | NOT implemented |
-| Durable recovery | High | Medium | Duplicate charge after crash | Journal and immutable request IDs | NOT implemented |
+| Detached harness | Critical | Large | Builder modifies verifier | Separate mounts/identity | Executable host fixtures and hosted Docker test |
+| Durable recovery | High | Medium | Duplicate charge after crash | Journal and immutable request IDs | Safe re-verification tested; uncertain paid work blocked |
 | Gateway routing | High | Large | Proxy configured but bypassed | End-to-end capability probe | NOT implemented |

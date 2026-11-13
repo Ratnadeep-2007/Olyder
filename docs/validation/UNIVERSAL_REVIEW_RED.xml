@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="1" tests="7" time="0.259" timestamp="2026-11-13T20:56:33.583675+05:30" hostname="RatnadeepLOQ"><testcase classname="tests.test_universal_review" name="test_verifier_transfer_is_idempotent" time="0.002"><failure message="AssertionError: assert '0' == '10'&#10;  &#10;  - 10&#10;  + 0">def test_verifier_transfer_is_idempotent():
+        ledger=BudgetLedger('run','100',verifier_reserve='20')
+        ledger.reserve_verifier('v','10');ledger.reserve_verifier('v','10')
+&gt;       assert ledger.snapshot()['reserve_remaining']=='10'
+E       AssertionError: assert '0' == '10'
+E         
+E         - 10
+E         + 0
+
+tests\test_universal_review.py:24: AssertionError</failure></testcase><testcase classname="tests.test_universal_review" name="test_opencode_normalized_cached_input" time="0.001"><failure message="assert 100 == 120">def test_opencode_normalized_cached_input():
+        usage=get_agent('opencode').parse(io.StringIO(json.dumps({'type':'step_finish','part':{
+            'reason':'stop','tokens':{'input':100,'output':10,'total':130,'cache':{'read':20}}}})))
+&gt;       assert usage['input_tokens']==120
+E       assert 100 == 120
+
+tests\test_universal_review.py:32: AssertionError</failure></testcase><testcase classname="tests.test_universal_review" name="test_dynamic_plugin_never_omitted" time="0.001"><failure message="AssertionError: assert {'a'} == {'a', 'p'}&#10;  &#10;  Extra items in the right set:&#10;  'p'&#10;  Use -v to get more diff">def test_dynamic_plugin_never_omitted():
+        checks=[{'id':'a','type':'file','paths':['a']},{'id':'p','type':'plugin:custom'}]
+&gt;       assert select_checks(checks,{'a'},set())[0]=={'a','p'}
+E       AssertionError: assert {'a'} == {'a', 'p'}
+E         
+E         Extra items in the right set:
+E         'p'
+E         Use -v to get more diff
+
+tests\test_universal_review.py:38: AssertionError</failure></testcase><testcase classname="tests.test_universal_review" name="test_failed_event_observer_does_not_orphan_child" time="0.022"><failure message="OSError: observer unavailable">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-35/test_failed_event_observer_doe0')
+
+    def test_failed_event_observer_does_not_orphan_child(tmp_path):
+        def sink(event):
+            raise OSError('observer unavailable')
+        control=RunControl(time.monotonic()+5,sink=sink)
+        with activate(control),tempfile.TemporaryFile(mode='w+t') as out:
+            # Observer failures are recorded without surrendering supervision.
+&gt;           status=managed_run([sys.executable,'-c','pass'],cwd=tmp_path,stdout=out,timeout=2)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_universal_review.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\olyder\execution.py:86: in managed_run
+    control.emit('process_started', pid=process.pid)
+src\olyder\control.py:30: in emit
+    self.sink({'schema_version':1, 'type':kind, 'timestamp':time.time(), **data})
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+event = {'schema_version': 1, 'type': 'process_started', 'timestamp': 1794583593.7266138, 'pid': 38828}
+
+    def sink(event):
+&gt;       raise OSError('observer unavailable')
+E       OSError: observer unavailable
+
+tests\test_universal_review.py:43: OSError</failure></testcase><testcase classname="tests.test_universal_review" name="test_final_output_limit_is_checked" time="0.074"><failure message="Failed: DID NOT RAISE Cancelled">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-35/test_final_output_limit_is_che0')
+
+    def test_final_output_limit_is_checked(tmp_path):
+        control=RunControl(time.monotonic()+5,max_output_bytes=10)
+        with activate(control),tempfile.TemporaryFile(mode='w+t') as out:
+&gt;           with pytest.raises(Cancelled):
+E           Failed: DID NOT RAISE Cancelled
+
+tests\test_universal_review.py:55: Failed</failure></testcase><testcase classname="tests.test_universal_review" name="test_directory_replaced_by_file_matches_verified_tree" time="0.020"><failure message="AssertionError: assert (False)&#10; +  where False = is_file()&#10; +    where is_file = (WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-35/test_directory_replaced_by_fil0/project') / 'module').is_file">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-35/test_directory_replaced_by_fil0')
+
+    def test_directory_replaced_by_file_matches_verified_tree(tmp_path):
+        root=tmp_path/'project';root.mkdir();(root/'module').mkdir();(root/'module'/'old.py').write_text('old')
+        path=root/'olyder.json';path.write_text(json.dumps({'goal':'replace','checks':[{'id':'ok','type':'file','path':'module'}]}))
+        ws=ProtectedWorkspace(load_spec(path),tmp_path/'state')
+        (ws.builder/'module'/'old.py').unlink();(ws.builder/'module').rmdir();(ws.builder/'module').write_text('new')
+        ws.harness();ws.apply()
+&gt;       assert (root/'module').is_file() and (root/'module').read_text()=='new'
+E       AssertionError: assert (False)
+E        +  where False = is_file()
+E        +    where is_file = (WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-35/test_directory_replaced_by_fil0/project') / 'module').is_file
+
+tests\test_universal_review.py:65: AssertionError</failure></testcase><testcase classname="tests.test_universal_review" name="test_fifo_rejected_before_read" time="0.000"><skipped type="pytest.skip" message="POSIX FIFO fixture">C:\Users\ratna\Olyder\tests\test_universal_review.py:68: POSIX FIFO fixture</skipped></testcase></testsuite></testsuites>
