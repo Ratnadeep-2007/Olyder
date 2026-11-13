@@ -14,14 +14,17 @@ class StateError(RuntimeError):
 class RunStore:
     def __init__(self, root):
         self.root = Path(root)
-        if self.root.is_symlink():
+        if any(p.is_symlink() for p in (self.root,*self.root.parents)):
             raise StateError('Run storage cannot be a symlink')
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.db = self.root/'runs.sqlite3'
         if self.db.is_symlink():
             raise StateError('Run database cannot be a symlink')
-        with self.connect() as c:
-            c.execute('CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, revision INTEGER, data TEXT)')
+        try:
+            with self.connect() as c:
+                c.execute('CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, revision INTEGER, data TEXT)')
+        except sqlite3.Error as exc:
+            raise StateError('Corrupt or inaccessible run database') from exc
 
     def connect(self):
         try:
