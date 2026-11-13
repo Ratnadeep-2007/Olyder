@@ -55,3 +55,11 @@ def test_required_critic_cannot_be_silently_skipped(tmp_path):
         permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True),use_ai=True)
     assert result['status'] != 'passed'
 
+
+def test_live_agent_event_metadata_is_private(tmp_path):
+    code="import json,time;print(json.dumps({'type':'text','text':'FAKE_PRIVATE_PROMPT'}),flush=True);time.sleep(.15)"
+    events=[]
+    result=run(project(tmp_path,code),permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True),sink=events.append,max_iterations=1)
+    assert any(e['type']=='agent_event' and e['event_type']=='text' for e in events)
+    assert 'FAKE_PRIVATE_PROMPT' not in json.dumps(events)
+

@@ -28,7 +28,7 @@ def select_checks(checks, changed, failed):
                 raise ValueError
         if any(not any(fnmatchcase(path,p) for c in static for p in c['paths']) for path in changed):
             raise ValueError
-        selected=set(failed) | {c['id'] for c in checks if c['type'] in ('http','browser')}
+        selected=set(failed) | {c['id'] for c in checks if c['type'] not in ('file','command')}
         selected.update(c['id'] for c in static if any(fnmatchcase(path,p) for path in changed for p in c['paths']))
         while True:
             expanded=selected|{c for c,deps in graph.items() if any(d in selected for d in deps)}

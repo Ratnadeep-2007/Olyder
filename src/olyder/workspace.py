@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 from pathlib import Path
 
 from .integrity import protected_paths
@@ -21,6 +22,18 @@ IGNORE = {'.git', '.olyder', '.venv', '.wheel-smoke', '__pycache__',
 
 class WorkspaceViolation(RuntimeError):
     pass
+
+
+def _read_regular(path, limit=100_000_000):
+    flags=os.O_RDONLY|getattr(os,'O_NOFOLLOW',0)|getattr(os,'O_NONBLOCK',0)|getattr(os,'O_BINARY',0)
+    descriptor=os.open(path,flags)
+    with os.fdopen(descriptor,'rb') as source:
+        if not stat.S_ISREG(os.fstat(source.fileno()).st_mode):
+            raise WorkspaceViolation('Only regular workspace files are allowed')
+        data=source.read(limit+1)
+        if len(data)>limit:
+            raise WorkspaceViolation('File exceeds snapshot byte bound')
+        return data
 
 
 def _link(path):
@@ -48,11 +61,13 @@ def tree(root: Path, *, max_bytes=100_000_000, include_secrets=False) -> dict[st
             if name in IGNORE or not include_secrets and secret_path(name):
                 continue
             p = parent/name
+            if not stat.S_ISREG(p.lstat().st_mode):
+                raise WorkspaceViolation('Special workspace file rejected: '+p.relative_to(root).as_posix())
             size = p.stat().st_size
             total += size
             if total > max_bytes or len(result) >= 20000:
                 raise WorkspaceViolation('Workspace snapshot exceeds 100 MB / 20000 files')
-            result[p.relative_to(root).as_posix()] = hashlib.sha256(p.read_bytes()).hexdigest()
+            result[p.relative_to(root).as_posix()] = hashlib.sha256(_read_regular(p,max_bytes)).hexdigest()
     return result
 
 
@@ -61,8 +76,11 @@ def _copy(source, target, names):
         src, dst = source/name, target/name
         if _link(src):
             raise WorkspaceViolation('Source changed to symlink during snapshot')
+        if dst.is_dir():
+            raise WorkspaceViolation('File/directory collision in proposal')
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+        dst.write_bytes(_read_regular(src))
+        dst.chmod(stat.S_IMODE(src.lstat().st_mode)&0o777)
 
 
 class ProtectedWorkspace:
@@ -112,7 +130,8 @@ class ProtectedWorkspace:
         if tree(self.trusted) != self.baseline:
             raise WorkspaceViolation('Trusted snapshot changed')
         proposed = tree(self.builder,include_secrets=True)
-        forbidden = [n for n in proposed if self.is_protected(n) or self.secret(n)]
+        forbidden = [n for n in proposed if self.is_protected(n) or self.secret(n) or
+                     any(p.startswith(n+'/') for p in self.protected)]
         if forbidden:
             raise WorkspaceViolation('Builder supplied protected or secret paths: '+', '.join(forbidden[:5]))
         return proposed
@@ -134,9 +153,26 @@ class ProtectedWorkspace:
         if tree(self.root) != self.baseline:
             raise WorkspaceViolation('Original workspace changed; proposal not applied')
         editable = {n for n in self.baseline if not self.is_protected(n) and not self.secret(n)}
+        replacement_dirs=[]
+        for name in proposed:
+            destination=self.root/name
+            if destination.is_dir():
+                for directory,dirs,files in os.walk(destination,followlinks=False):
+                    parent=Path(directory)
+                    if any((parent/f).relative_to(self.root).as_posix() not in editable for f in files):
+                        raise WorkspaceViolation('Directory replacement would remove ignored/private files')
+                    if any(_link(parent/d) for d in dirs):
+                        raise WorkspaceViolation('Directory replacement contains links')
+                replacement_dirs.append(destination)
         for name in sorted(editable - proposed.keys()):
             (self.root/name).unlink()
+        for destination in replacement_dirs:
+            for directory,dirs,files in os.walk(destination,topdown=False):
+                Path(directory).rmdir()
         _copy(self.builder, self.root, proposed)
+        applied={n:h for n,h in tree(self.root).items() if not self.is_protected(n)}
+        if applied!=proposed:
+            raise WorkspaceViolation('Applied implementation does not match verified proposal')
 
     def evidence(self):
         return {'trusted_snapshot_sha256': hashlib.sha256(

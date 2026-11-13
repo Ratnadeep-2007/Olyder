@@ -30,7 +30,7 @@ def scenarios():
         {'id': 'small-budget','source': 'value=0','repair': 'value=1','oracle': 'from app import value;assert value==1','expected': 'budget_exhausted','budget': True},
         {'id': 'missing-usage','source': 'value=0','repair': 'value=1','oracle': 'from app import value;assert value==1','expected': 'passed'},
         {'id': 'browser-dependent','source': 'value=0','repair': 'value=1','oracle': 'assert True','expected': 'blocked','browser': True},
-        {'id': 'python-json-integration','source': 'value=0','repair': 'value=42','oracle': "import json;from app import value;assert json.loads(json.dumps({'value':value}))['value']==42",'expected': 'passed'},
+        {'id': 'python-http-integration', 'source': 'value=0', 'repair': 'value=42', 'oracle': "import json,threading,urllib.request\nfrom http.server import BaseHTTPRequestHandler,ThreadingHTTPServer\nfrom app import value\nclass Handler(BaseHTTPRequestHandler):\n def do_GET(self):\n  self.send_response(200);self.end_headers();self.wfile.write(json.dumps({'value':value}).encode())\n def log_message(self,*a): pass\nwith ThreadingHTTPServer(('127.0.0.1',0),Handler) as server:\n thread=threading.Thread(target=lambda:server.serve_forever(poll_interval=.01),daemon=True);thread.start()\n try:\n  with urllib.request.urlopen('http://127.0.0.1:'+str(server.server_port)) as response: assert json.load(response)['value']==42\n finally: server.shutdown();thread.join()\n", 'expected': 'passed'},
         {'id': 'range-boundary','source': 'def values(n): return list(range(n-1))','repair': 'def values(n): return list(range(n))','oracle': 'from app import values;assert values(3)==[0,1,2];assert values(0)==[]','expected': 'passed'},
     ]
 
@@ -98,7 +98,7 @@ def benchmark(output, *, repetitions=3, task_ids=None, repository=None):
         group=[r for r in rows if r['mode']==mode and r['status']!='skipped']
         summary[mode]={'executed':len(group),'expected_outcomes':sum(r['matched'] for r in group),
             'false_passes':sum(r['false_pass'] for r in group),
-            'verified_solved':sum(r['status']=='passed' for r in group),
+            'verified_solved':sum(r['status']=='passed' and r['expected']=='passed' for r in group),
             'median_seconds':statistics.median(r['seconds'] for r in group) if group else None,
             'actual_usd':None,'verified_solves_per_actual_usd':None}
     report={'schema_version':1,'kind':'offline_paired_pilot','baseline_commit':BASELINE,

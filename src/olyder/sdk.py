@@ -16,10 +16,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .accounting import RuntimeAccounting
-from .adapters import ExecutableAgent, get_agent
+from .adapters import ExecutableAgent, bind_model, get_agent
 from .backends import get_backend
 from .config import Spec, load_spec
-from .control import Cancelled, RunControl, activate
+from .control import Cancelled, ResourceLimit, RunControl, activate, current
 from .engine import plan, verify_once
 from .execution import ExecutionError, managed_run
 from .impact import select_checks
@@ -58,9 +58,36 @@ def _execute(adapter, backend, workspace, prompt, timeout):
     if backend.name == 'docker':
         command = [p.replace(str(workspace),'/workspace') for p in command]
     command = backend.prepare(command, workspace, writable=True)
-    with tempfile.TemporaryFile(mode='w+t',encoding='utf-8',errors='replace') as out:
-        outcome = managed_run(command,cwd=workspace,stdout=out,timeout=timeout)
-        usage = adapter.parse(out)
+    with (
+        tempfile.TemporaryDirectory(prefix='olyder-private-log-') as logs,
+        open(Path(logs)/'agent.log','w+',encoding='utf-8',errors='replace') as out,
+        open(Path(logs)/'agent.log',encoding='utf-8',errors='replace') as reader,
+    ):
+        control=current.get()
+        previous_poll=control.poll_output if control else None
+        pending=''
+        def poll():
+            nonlocal pending
+            pending+=reader.read(131072)
+            while '\n' in pending:
+                line,pending=pending.split('\n',1)
+                try:
+                    event=json.loads(line)
+                    kind=event.get('type') if isinstance(event,dict) else None
+                    if kind in ('turn.started','turn.completed','turn.failed','step_start','step_finish','result','error','text'):
+                        control.emit('agent_event',event_type=kind)
+                except (ValueError,TypeError):
+                    continue
+            if len(pending)>1_000_000:
+                pending=''
+        if control:
+            control.poll_output=poll
+        try:
+            outcome = managed_run(command,cwd=workspace,stdout=out,timeout=timeout)
+            usage = adapter.parse(out)
+        finally:
+            if control:
+                control.poll_output=previous_poll
     usage.update(origin='agent_jsonl', elapsed_seconds=outcome.elapsed_seconds)
     if outcome.timed_out:
         return usage, 'builder_timeout'
@@ -137,7 +164,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                 raise WorkspaceViolation('Contract changed during snapshot capture')
             manifest=workspace.evidence()
             checkpoint('ready',manifest_sha256=manifest['manifest_sha256'],contract_sha256=spec.digest,
-                       execution_backend=backend,docker_image=docker_image)
+                       execution_backend=backend,docker_image=docker_image,ai_review_required=use_ai)
             control.check()
             research_started=time.monotonic()
             sources=collect(spec.raw.get('sources',[]),network_allowed=permissions.allow_network)
@@ -146,6 +173,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
             builder=spec.raw.get('builder',{})
             name=agent or builder.get('provider')
             adapter=get_agent(name) if name else ExecutableAgent('generic',builder.get('argv') or ['false'])
+            adapter=bind_model(adapter,builder.get('model'))
             feedback='Implement the original goal. Do not create or modify acceptance assets.'
             previous=[]; stagnant=0; previous_tree={}; selections=[]; test_ms=0; executed_count=0
             token_budget=Budget(limits.get('max_tokens',30000))
@@ -181,7 +209,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         for arg in check['argv'][1:]:
                             if Path(arg).is_absolute():
                                 raise WorkspaceViolation('Protected checks require relative asset arguments')
-                checkpoint('verifying',attempt=number)
+                checkpoint('verifying',attempt=number,proposal_digest=tree(workspace.builder))
                 critic_ticket=None
                 request_critic=use_ai and not builder_stop
                 if request_critic:
@@ -251,6 +279,11 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                 previous_tree=proposed_tree
                 failed=[{'check_id':c['id'],'status':c['status'],'evidence':c['details'][:1200]}
                     for c in item['checks'] if c['status']!='pass']
+                by_check={c['id']:c for c in spec.checks}
+                for failure in failed:
+                    declared=by_check[failure['check_id']]
+                    failure.update(affected_paths=declared.get('paths',[]),
+                                   depends_on=declared.get('depends_on',[]))
                 feedback=json.dumps({'repair':failed,'rule':'Do not weaken requirements or tests'})
             else:
                 result['stop_reason']='iteration_limit'
@@ -258,8 +291,12 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
         result.update(status='budget_exhausted',stop_reason='budget_admission',verifier_note=redact(str(exc)))
     except WorkspaceViolation as exc:
         result.update(status='blocked',stop_reason='integrity_violation',verifier_note=redact(str(exc)))
+    except ResourceLimit:
+        result.update(status='blocked',stop_reason='resource_limit')
     except (Cancelled,KeyboardInterrupt):
         result.update(status='cancelled',stop_reason='user_cancelled')
+    except TimeoutError:
+        result.update(status='blocked',stop_reason='deadline_exhausted')
     except (OSError,RuntimeError,ValueError) as exc:
         result.update(status='blocked',stop_reason='execution_blocked',verifier_note=redact(str(exc))[:1000])
     result.update(run_id=run_id,attempts=len(result['history']),accounting=account.snapshot(),
@@ -270,10 +307,13 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         'executed_checks':locals().get('executed_count',0),
                         'research_seconds':locals().get('research_seconds',0)},
         environment={'python':platform.python_version(),'platform':platform.system()},
+        warnings=['Host execution has no OS containment'] if backend=='host' else [],
         execution_isolation={'mode':backend,'unsafe_host_authorized':permissions.unsafe_host,
                              'protected_assets_detached':workspace is not None})
     if workspace:
         result['acceptance_integrity']=workspace.evidence()
+    if control.observer_errors:
+        result['warnings'].append('Event observer failures: '+', '.join(control.observer_errors))
     checkpoint('completed',result=result)
     result['paths']=save_report(result,Path(output) if output else spec.root/'.olyder')
     for name in exporters:
@@ -301,7 +341,7 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
     store=RunStore(Path(workspace).resolve()/'.olyder'/'runs')
     state=store.read(run_id)
     if state.get('phase') not in ('completed',) and not (
-            recover and state.get('phase') in ('builder_completed','verified')):
+            recover and state.get('phase') in ('builder_completed','verified','verifying')):
         return {'run_id':run_id,'status':'blocked','stop_reason':'uncertain_inflight_execution',
                 'accounting':state.get('accounting'), 'replayed_builder':False}
     contract=store.path(run_id)/'contract.json'
@@ -332,6 +372,8 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
             raise WorkspaceViolation('Verifier changed protected inputs during resume')
         item.update(run_id=run_id,resumed_verification_only=True,replayed_builder=False,
                     accounting=state.get('accounting'),stop_reason='resume_verification')
+        if state.get('ai_review_required') and item['status']=='passed':
+            item.update(status='needs_review',independent_critic_status='not_replayed_requires_review')
     except (OSError,ValueError,RuntimeError) as exc:
         item={'run_id':run_id,'status':'blocked','stop_reason':'resume_integrity_or_state',
               'verifier_note':redact(str(exc))[:1000]}

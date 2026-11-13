@@ -32,3 +32,20 @@ def test_default_container_blocks_external_egress(tmp_path):
     result = run_checks([{"id": "egress", "type": "command", "argv": ["python", "-c", code], "timeout": 35}],
                         tmp_path, allow_exec=True, sandbox="docker")
     assert result[0].status == "pass", result[0].details
+
+
+def test_sdk_builder_cannot_see_detached_oracle(tmp_path):
+    import json
+    from olyder.sdk import run, Permissions
+    (tmp_path/'tests').mkdir()
+    (tmp_path/'tests'/'oracle.py').write_text('from answer import value;assert value==42')
+    (tmp_path/'answer.py').write_text('value=0')
+    builder="from pathlib import Path;assert not Path('tests').exists();assert not Path('olyder.json').exists();Path('answer.py').write_text('value=42')"
+    spec=tmp_path/'olyder.json';spec.write_text(json.dumps({'goal':'42',
+        'builder':{'argv':['python','-c',builder]},'checks':[{'id':'oracle','type':'command',
+            'argv':['python','-c',"exec(open('tests/oracle.py').read())"],'timeout':35}],
+        'limits':{'max_seconds':90,'max_iterations':1}}))
+    result=run(spec,permissions=Permissions(allow_exec=True,execute_builder=True),backend='docker')
+    assert result['status']=='passed', result
+    assert (tmp_path/'answer.py').read_text()=='value=42'
+    assert (tmp_path/'tests'/'oracle.py').read_text()=='from answer import value;assert value==42'

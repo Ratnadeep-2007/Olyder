@@ -21,11 +21,23 @@ class ExecutableAgent:
 
     def capabilities(self):
         return Capabilities(structured_usage=self.telemetry != 'unknown',
-                            streaming=True, notes='CLI spend is post-hoc; no provider hard limit')
+                            streaming=True, notes='Live event metadata only; usage is post-hoc; no provider hard limit')
 
     def parse(self, stream):
         if self.telemetry in ('codex', 'opencode'):
-            return parse_agent_log(stream, self.telemetry).snapshot()
+            usage=parse_agent_log(stream, self.telemetry).snapshot()
+            if self.telemetry=='opencode' and usage['usage_complete']:
+                usage['input_tokens']+=usage['cached_tokens']
+                base=usage['input_tokens']+usage['output_tokens']
+                if usage['observed_tokens']==base+usage['reasoning_tokens']:
+                    usage['output_tokens']+=usage['reasoning_tokens']
+                    usage['reasoning_accounting']='separate_output'
+                elif usage['observed_tokens']==base:
+                    usage['reasoning_accounting']='included_in_output'
+                else:
+                    usage['usage_complete']=False
+                    usage['reasoning_accounting']='unknown'
+            return usage
         result = {'provider': self.name, 'observed_tokens': None,
                   'input_tokens': None, 'output_tokens': None,
                   'cached_tokens': None, 'usage_complete': False,
@@ -90,6 +102,28 @@ def get_agent(name: str) -> AgentAdapter:
         return _agents[name]
     except KeyError as exc:
         raise ValueError(f'Unknown agent: {name}; explicitly register an adapter first') from exc
+
+
+def bind_model(adapter, model):
+    if model is None:
+        return adapter
+    if not isinstance(model,str) or not model or len(model)>512 or '\0' in model:
+        raise ValueError('Invalid selected model')
+    class ConfiguredAgent:
+        name=adapter.name
+        api_version=API_VERSION
+        def command(self,prompt):
+            argv=adapter.command(prompt)
+            if self.name in ('codex','opencode','claude'):
+                return [*argv[:-1],'--model='+model,argv[-1]]
+            return argv
+        def parse(self,stream):
+            usage=adapter.parse(stream)
+            usage.update(model=model,model_origin='requested_configuration')
+            return usage
+        def capabilities(self):
+            return adapter.capabilities()
+    return ConfiguredAgent()
 
 
 def agent_capabilities():

@@ -83,6 +83,9 @@ class AgentUsage:
                     self.completed = True
                 counts = part.get("tokens")
                 if isinstance(counts, dict):
+                    if any(type(counts.get(k)) is not int or counts[k]<0 for k in ('input','output')):
+                        self.malformed_events += 1
+                        return
                     cache = counts.get("cache") or {}
                     if not isinstance(cache, dict):
                         cache = {}

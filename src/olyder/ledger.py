@@ -62,7 +62,7 @@ class BudgetLedger:
                              for r in self._requests.values()), Decimal(0))
             if allocated + amount + self.verifier_reserve > self.limit:
                 raise QuotaExceeded('Admission would spend mandatory verifier reserve or exceed limit')
-            self._requests[request_id] = {'estimate': amount, 'actual': None, 'state': 'reserved'}
+            self._requests[request_id] = {'estimate': amount, 'actual': None, 'state': 'reserved', 'role':'builder'}
 
     def settle(self, request_id, actual):
         amount = None if actual is None else money(actual)
@@ -81,6 +81,11 @@ class BudgetLedger:
         """Transfer protected funds into an active verifier reservation atomically."""
         amount = money(upper_bound)
         with self._lock:
+            old=self._requests.get(request_id)
+            if old:
+                if old['state']=='reserved' and old['estimate']==amount and old.get('role')=='verifier':
+                    return
+                raise MoneyError('Conflicting verifier reservation')
             if amount > self.verifier_reserve:
                 raise QuotaExceeded('Mandatory verifier reserve unavailable')
             self.verifier_reserve -= amount
@@ -91,6 +96,7 @@ class BudgetLedger:
                 self.strict = False
                 try:
                     self.reserve(request_id, amount)
+                    self._requests[request_id]['role']='verifier'
                 finally:
                     self.strict = strict
             except Exception:
@@ -102,6 +108,8 @@ class BudgetLedger:
             r = self._requests.get(request_id)
             if not r or r['state'] not in ('reserved', 'released'):
                 raise MoneyError('Cannot release unknown or settled usage')
+            if r['state']=='reserved' and r.get('role')=='verifier':
+                self.verifier_reserve+=r['estimate']
             r['state'] = 'released'
 
     def reconcile(self, request_id, actual):
@@ -137,7 +145,7 @@ class BudgetLedger:
                     'verifier_reserve':str(self.verifier_reserve),'strict':self.strict,
                     'requests':{k:{'estimate':str(v['estimate']),
                         'actual':str(v['actual']) if v['actual'] is not None else None,
-                        'state':v['state']} for k,v in self._requests.items()}}
+                        'state':v['state'],'role':v.get('role','builder')} for k,v in self._requests.items()}}
 
     @classmethod
     def restore(cls, value):
@@ -150,5 +158,8 @@ class BudgetLedger:
             actual=None if record['actual'] is None else money(record['actual'])
             if (record['state']=='settled') != (actual is not None):
                 raise MoneyError('Inconsistent ledger checkpoint settlement')
-            ledger._requests[identifier]={'estimate':money(record['estimate']),'actual':actual,'state':record['state']}
+            role=record.get('role','builder')
+            if role not in ('builder','verifier'):
+                raise MoneyError('Invalid ledger request role')
+            ledger._requests[identifier]={'estimate':money(record['estimate']),'actual':actual,'state':record['state'],'role':role}
         return ledger

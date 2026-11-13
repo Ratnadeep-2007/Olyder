@@ -44,3 +44,36 @@ def test_read_api_rejects_unknown_token(tmp_path):
     from olyder.api import dispatch
     assert dispatch('/v1/plan','wrong','token',tmp_path)[0]==401
     assert dispatch('/v1/not-a-command','token','token',tmp_path)[0]==404
+
+
+def test_live_read_api(tmp_path):
+    import os
+    import socket
+    import subprocess
+    import time
+    import urllib.request
+    import urllib.error
+    path=tmp_path/'olyder.json';path.write_text(json.dumps({'goal':'read','checks':[
+        {'id':'file','type':'file','path':'olyder.json'}]}))
+    with socket.socket() as listener:
+        listener.bind(('127.0.0.1',0));port=listener.getsockname()[1]
+    token='FAKE_LOCAL_API_TOKEN_123456789'
+    script=f'from olyder.api import serve;serve({str(tmp_path)!r},token={token!r},port={port})'
+    process=subprocess.Popen([sys.executable,'-c',script],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    try:
+        deadline=time.monotonic()+5
+        while True:
+            try:
+                request=urllib.request.Request(f'http://127.0.0.1:{port}/v1/verify',headers={'Authorization':'Bearer '+token})
+                with urllib.request.urlopen(request,timeout=1) as response:
+                    assert json.load(response)['status']=='passed'
+                break
+            except urllib.error.URLError:
+                if time.monotonic()>deadline:
+                    raise
+                time.sleep(.05)
+        with pytest.raises(urllib.error.HTTPError) as denied:
+            urllib.request.urlopen(f'http://127.0.0.1:{port}/v1/verify',timeout=1)
+        assert denied.value.code==401
+    finally:
+        process.terminate();process.wait(timeout=5)

@@ -155,6 +155,20 @@ def load_spec(path: str | Path) -> Spec:
         raise ConfigError('budget.strict must be boolean')
     if monetary.get('strict') and 'max_cost_usd' not in monetary:
         raise ConfigError('Strict monetary admission requires max_cost_usd')
+    if monetary.get('currency','USD')!='USD':
+        raise ConfigError('Runtime monetary admission currently supports USD only')
+    if 'max_cost_usd' in monetary:
+        from .ledger import BudgetLedger
+        BudgetLedger('configuration-validation',monetary['max_cost_usd'],
+                     verifier_reserve=monetary.get('verifier_reserve_usd','0'))
+    if 'pricing' in monetary:
+        from .accounting import PricingSnapshot
+        if not isinstance(monetary['pricing'],dict):
+            raise ConfigError('budget.pricing must be a dated versioned pricing snapshot')
+        try:
+            PricingSnapshot(**monetary['pricing'])
+        except (TypeError,ValueError) as exc:
+            raise ConfigError('Invalid pricing snapshot') from exc
     from .contracts import validate_requirements
     validate_requirements(obj, ids)
     return Spec(file, file.parent, obj, hashlib.sha256(content).hexdigest())

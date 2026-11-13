@@ -28,7 +28,7 @@ class PricingSnapshot:
 
     def estimate(self, usage):
         inp, out = usage.get('input_tokens'), usage.get('output_tokens')
-        cached = usage.get('cached_tokens', 0) or 0
+        cached = usage.get('cached_tokens')
         if not usage.get('usage_complete') or any(type(x) is not int or x < 0 for x in (inp,out,cached)) or cached > inp:
             return None
         if cached and self.cached_per_million_usd is None:
@@ -63,7 +63,20 @@ class RuntimeAccounting:
 
     def settle(self, request_id, usage=None):
         role = self.pending.pop(request_id)
-        observation = dict(usage or {})
+        allowed={'provider','model','model_origin','input_tokens','output_tokens','cached_tokens',
+                 'reasoning_tokens','observed_tokens','usage_complete','estimated_cost_usd',
+                 'origin','elapsed_seconds','status','usage_events','malformed_events','reasoning_accounting'}
+        observation = {k:v for k,v in (usage or {}).items() if k in allowed}
+        from .privacy import redact
+        for key,value in list(observation.items()):
+            if isinstance(value,str):
+                observation[key]=redact(value)[:500]
+        estimate=observation.get('estimated_cost_usd')
+        if estimate is not None:
+            try:
+                observation['estimated_cost_usd']=str(money(estimate))
+            except ValueError:
+                observation['estimated_cost_usd']=None
         # No trusted billing channel is implemented by CLI agents. Even their
         # self-reported cost is observed/estimated, never a reconciled invoice.
         observation.update(request_id=request_id, role=role, billed_cost_usd=None)

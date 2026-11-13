@@ -97,7 +97,7 @@ def _observation(usage, model, provider, estimate=None):
     inp, out = usage.get('prompt_tokens',usage.get('input_tokens')), usage.get('completion_tokens',usage.get('output_tokens'))
     valid = all(type(x) is int and x >= 0 for x in (inp,out))
     details=usage.get('prompt_tokens_details')
-    cache = details.get('cached_tokens',0) if isinstance(details,dict) else 0
+    cache = details.get('cached_tokens') if isinstance(details,dict) else None
     if type(cache) is not int or cache<0 or not valid or cache>inp:
         cache=None
     return {'provider':provider,'model':model,'input_tokens':inp if valid else None,

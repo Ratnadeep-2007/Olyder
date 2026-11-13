@@ -14,7 +14,7 @@ import secrets
 from dataclasses import dataclass
 from pathlib import Path
 
-from .control import current, Cancelled
+from .control import current, ResourceLimit
 
 
 class ExecutionError(RuntimeError):
@@ -82,14 +82,15 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
     except FileNotFoundError as exc:
         raise ExecutionError(f"Executable unavailable: {exc.filename}") from exc
     control = current.get()
-    if control:
-        control.emit('process_started', pid=process.pid)
     try:
+        if control:
+            control.emit('process_started', pid=process.pid)
         while process.poll() is None:
             if control:
                 control.check()
+                control.poll_output()
                 if os.fstat(stdout.fileno()).st_size > control.max_output_bytes:
-                    raise Cancelled('Captured output exceeded resource bound')
+                    raise ResourceLimit('Captured output exceeded resource bound')
             remaining = timeout - (time.monotonic() - start)
             if remaining <= 0:
                 raise subprocess.TimeoutExpired(argv, timeout)
@@ -98,20 +99,24 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
             except subprocess.TimeoutExpired:
                 continue
         if control:
+            control.poll_output()
+            if os.fstat(stdout.fileno()).st_size > control.max_output_bytes:
+                raise ResourceLimit('Captured output exceeded resource bound')
             control.emit('process_completed', returncode=process.returncode)
         return ExitStatus(process.returncode, False, time.monotonic() - start)
-    except (subprocess.TimeoutExpired, KeyboardInterrupt, Cancelled, TimeoutError) as interrupt:
-        if os.name == "nt":
-            try:
-                subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
-            except (OSError, subprocess.TimeoutExpired):
-                process.kill()
-        else:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+    except BaseException as interrupt:
+        if process.poll() is None:
+            if os.name == "nt":
+                try:
+                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+                except (OSError, subprocess.TimeoutExpired):
+                    process.kill()
+            else:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
