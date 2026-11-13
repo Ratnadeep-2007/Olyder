@@ -17,7 +17,7 @@ from .report import save_report
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="olyder", description="Independent verification and bounded AI repair loops")
-    p.add_argument("--version", action="version", version="Olyder 0.3.0")
+    p.add_argument("--version", action="version", version="Olyder 0.4.0")
     sub = p.add_subparsers(dest="command", required=True)
     init = sub.add_parser("init", help="Generate a starter acceptance specification")
     init.add_argument("directory", nargs="?", default=".")
@@ -32,9 +32,21 @@ def parser() -> argparse.ArgumentParser:
             s.add_argument("--allow-network", action="store_true", help="Allow approved research URLs")
         if name in ("verify", "run"):
             s.add_argument("--allow-exec", action="store_true", help="Allow user-configured check commands / HTTP / browser execution")
+            s.add_argument("--sandbox", choices=["host", "docker"], default="host",
+                           help="Docker isolates builder/check commands; host is NOT a sandbox")
+            s.add_argument("--docker-image", default="python:3.13-slim",
+                           help="Reviewed image with needed tools, used only with --sandbox docker")
+            s.add_argument("--trace-browser", action="store_true",
+                           help="Opt-in: save browser failure traces (can contain sensitive data)")
         if name == "run":
             s.add_argument("--execute-builder", action="store_true", help="Allow configured agent CLI to edit the workspace")
             s.add_argument("--max-iterations", type=int, default=None)
+            s.add_argument("--agent", choices=["codex", "opencode"], default=None,
+                           help="Agent CLI with structured usage telemetry")
+            s.add_argument("--unsafe-host", action="store_true",
+                           help="Explicitly permit a builder to run on the host without OS isolation")
+            s.add_argument("--docker-network", choices=["none", "bridge"], default="none",
+                           help="Container egress: bridge is unrestricted (requires --allow-network)")
     skill = sub.add_parser("install-skill", help="Install agent SKILL.md into a project")
     skill.add_argument("--target", choices=["claude", "codex", "opencode", "both"], default="both")
     skill.add_argument("--project", default=".")
@@ -91,7 +103,10 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 0
         if args.command == "verify":
-            result = verify_once(spec, allow_exec=args.allow_exec, use_ai=args.ai, allow_network=args.allow_network, budget=budget)
+            result = verify_once(spec, allow_exec=args.allow_exec, use_ai=args.ai,
+                allow_network=args.allow_network, budget=budget, sandbox=args.sandbox,
+                docker_image=args.docker_image,
+                trace_dir=Path(args.output) / "browser-traces" if args.trace_browser else None)
             result["attempts"] = 1
             result["paths"] = save_report(result, Path(args.output))
         else:
@@ -99,8 +114,18 @@ def main(argv: list[str] | None = None) -> int:
                 raise ConfigError("--max-iterations must be from 1 to 20")
             if args.execute_builder and not args.allow_exec:
                 raise ConfigError("--execute-builder also requires --allow-exec")
-            result = run_loop(spec, allow_exec=args.allow_exec, execute_builder=args.execute_builder, use_ai=args.ai, allow_network=args.allow_network, output=Path(args.output), max_iterations=args.max_iterations)
-        print(json.dumps({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"], "paths": result["paths"]}, indent=2))
+            if args.execute_builder and args.sandbox == "host" and not args.unsafe_host:
+                raise ConfigError("Builder requires --sandbox docker or explicit --unsafe-host")
+            if args.docker_network == "bridge" and not args.allow_network:
+                raise ConfigError("Docker bridge networking requires --allow-network")
+            result = run_loop(spec, allow_exec=args.allow_exec,
+                execute_builder=args.execute_builder, use_ai=args.ai,
+                allow_network=args.allow_network, output=Path(args.output),
+                max_iterations=args.max_iterations, sandbox=args.sandbox,
+                docker_image=args.docker_image, docker_network=args.docker_network,
+                agent=args.agent,
+                trace_dir=Path(args.output) / "browser-traces" if args.trace_browser else None)
+        print(json.dumps({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"], "agent_usage": result.get("agent_usage"), "paths": result["paths"]}, indent=2))
         return 0 if result["status"] == "passed" else 1
     except (ConfigError, FileNotFoundError, ModelError, QuotaExceeded, ValueError, OSError) as exc:
         print(f"Olyder error: {exc}", file=sys.stderr)

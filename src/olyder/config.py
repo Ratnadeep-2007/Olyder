@@ -118,6 +118,12 @@ def load_spec(path: str | Path) -> Spec:
         raise ConfigError("builder must be an object")
     if "argv" in builder and (not isinstance(builder["argv"], list) or not builder["argv"] or not all(isinstance(s, str) and bool(s) for s in builder["argv"])):
         raise ConfigError("builder.argv must be a nonempty string list")
+    if "provider" in builder and builder["provider"] not in ("codex", "opencode"):
+        raise ConfigError("builder.provider must be codex or opencode")
+    env_names = builder.get("env", [])
+    if not isinstance(env_names, list) or len(env_names) > 20 or not all(
+        isinstance(name, str) and name.isidentifier() for name in env_names):
+        raise ConfigError("builder.env must contain at most 20 environment variable names")
     protected = obj.get("protected_paths", [])
     if not isinstance(protected, list) or len(protected) > 50 or not all(isinstance(x, str) and x.strip() for x in protected):
         raise ConfigError("protected_paths must be a list of up to 50 relative paths")
@@ -126,7 +132,7 @@ def load_spec(path: str | Path) -> Spec:
     limits = obj.get("limits", {})
     if not isinstance(limits, dict):
         raise ConfigError("limits must be an object")
-    for key in ("max_iterations", "max_tokens", "max_seconds"):
+    for key in ("max_iterations", "max_tokens", "max_seconds", "max_agent_tokens"):
         if key in limits and (type(limits[key]) is not int or limits[key] <= 0):
             raise ConfigError(f"limits.{key} must be positive integer")
     return Spec(file, file.parent, obj, hashlib.sha256(content).hexdigest())
