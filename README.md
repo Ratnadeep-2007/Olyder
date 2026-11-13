@@ -6,7 +6,7 @@
 
 Olyder is a free, open-source, **verification-driven execution layer** for coding agents. It combines a portable agent skill, a Python CLI, an optional independent LLM reviewer, a bounded correction loop, and evidence-based reports. No model subscription is needed for deterministic tests.
 
-> **Status: v0.3.0 security-hardening beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
+> **Status: v0.4.0 integration beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
 
 ## What it does
 
@@ -15,7 +15,7 @@ Olyder is a free, open-source, **verification-driven execution layer** for codin
 3. **Research ideas** from explicitly approved HTTPS source URLs. AI feasibility summaries are optional and must be treated as hypotheses, not proof of market demand.
 4. **Build** using your configured coding-agent CLI, only when explicitly permitted.
 5. **Verify independently** with observable tests; optional fresh LLM review sees requirements and test results, **never the builder's conversation or reasoning**.
-6. **Repair and retry** with targeted failure feedback, bounded attempts, a best-effort overall deadline, and a measurable-progress stop.
+6. **Repair and retry** with targeted failure feedback, bounded attempts, an overall fail-closed deadline check, and a measurable-progress stop.
 7. **Report** JSON, Markdown and a self-contained HTML file with pass/fail metrics, declared-check execution coverage, evidence, status, scope and budget.
 
 ## Quick start
@@ -63,10 +63,10 @@ In `olyder.json` configure a builder command as an **argument array**, never a s
 Start the autonomous loop **only after reviewing the builder and test commands**:
 
 ```bash
-olyder run --allow-exec --execute-builder
+olyder run --allow-exec --execute-builder --unsafe-host
 ```
 
-This executes the configured external coding-agent CLI, which may modify files and invoke additional tools. The builder's own model calls are **not tracked or controlled** by Olyder in v0.3. Do not run it outside an OS-enforced sandbox when code, prompts, or agents are untrusted. The acceptance spec file hash is locked, but its file bytes are not protected against a malicious process.
+This executes the configured external coding-agent CLI, which may modify files and invoke additional tools. Builder calls can now be **observed post hoc** with Codex/OpenCode JSONL adapters; this does not enforce external provider quotas or subscription limits. Do not run it outside an OS-enforced sandbox when code, prompts, or agents are untrusted. The acceptance spec file hash is locked, but its file bytes are not protected against a malicious process.
 
 Without `--execute-builder`, `olyder run` is a verify-only cycle that does not modify code. Without `--allow-exec`, command, HTTP and browser checks are blocked. HTTP/browser checks accessing a non-local host require explicit `--allow-network`, even when `--allow-exec` is set. **Blocked means not verified, not passed.**
 
@@ -88,9 +88,9 @@ On Windows PowerShell use `$env:OLYDER_MODEL="..."` etc. OpenAI-compatible model
 
 - Deterministic tests use **zero model tokens**.
 - `--ai` is opt-in, and each verifier/planner request gets fresh bounded context.
-- The local `max_tokens` budget limits estimated prompt+response tokens for Olyder's **own** API requests. It is **not** a read of your provider's remaining subscription quota, and it does not meter external builder-agent requests.
+- The local `max_tokens` budget limits estimated prompt+response tokens for Olyder's **own** API requests. It is **not** a read of your provider's remaining subscription quota. External Codex/OpenCode tokens are measured after completed CLI calls when telemetry is present; Olyder cannot prevent spend during a provider turn.
 - If the provider returns token usage, Olyder records it; otherwise it conservatively charges the reserved estimate.
-- Retries are iteration-bounded; checks with subprocesses have timeouts, and Olyder marks runs that exceed the overall deadline as blocked. External child processes may survive a timeout until a process-tree isolation layer is added.
+- Retries are iteration-bounded; checks with subprocesses have timeouts, and Olyder marks runs that exceed the overall deadline as blocked. Timeouts now terminate process groups/trees on supported systems; hostile detached processes may still evade best-effort host cleanup.
 - Full regression checks run for each iteration in v0.3 rather than reusing potentially stale pass results. Selective re-testing will be introduced only when impact analysis can establish sound coverage.
 
 ## Scenario types
@@ -166,6 +166,57 @@ For custom trusted datasets, add an explicit guard in `olyder.json`:
 ```
 
 **Security boundary:** fingerprinting detects accidental or straightforward builder modifications, but does NOT make the workspace an OS-enforced sandbox, prevent malicious child processes, or protect a verifier running with shared writable permissions. Use independently mounted read-only acceptance assets and separate OS privileges for hostile workloads. See [hardening validation](docs/ENHANCEMENT_VALIDATION.md).
+
+## v0.4: coding-agent adapters and explicit Docker execution isolation
+
+Codex and OpenCode adapters provide JSONL event parsing, post-hoc token usage,
+and an explicit completion/unknown flag. These are **not provider-side quota controls**.
+
+```json
+{
+  "builder": {"provider": "codex"},
+  "limits": {"max_iterations": 3, "max_seconds": 600, "max_agent_tokens": 10000}
+}
+```
+
+```bash
+# Trusted local project only. Explicit host opt-in; Codex's own workspace sandbox remains in effect.
+olyder run --allow-exec --execute-builder --agent codex --unsafe-host
+
+# Docker isolation: image must contain the agent CLI and its dependencies.
+# Default network=none is secure by default but incompatible with remote model calls.
+olyder run --allow-exec --execute-builder --agent opencode \
+  --sandbox docker --docker-image my-reviewed-opencode-image
+
+# Allow remote provider connectivity ONLY with explicit network consent.
+# Docker bridge permits broad outbound access, not per-domain egress filtering.
+olyder run --allow-exec --execute-builder --agent opencode \
+  --sandbox docker --docker-image my-reviewed-opencode-image \
+  --docker-network bridge --allow-network
+
+# Opt in to saving Playwright traces for browser failures.
+olyder verify --allow-exec --trace-browser
+```
+
+Container builder secrets are NOT inherited by default. If needed, specify the names
+(not values) of variables to forward under `builder.env`, such as
+`{"provider":"codex","env":["CODEX_API_KEY"]}`. Do not keep secrets in the
+workspace mounted into the container; be aware Docker bridge has unrestricted egress.
+The Docker sandbox only contains builder and `command` checks. HTTP and Playwright
+checks still run on the host using their existing opt-in controls.
+
+Local CLI execution now kills process groups/trees on timeout on supported systems;
+Docker attempts to force-remove its named container after a timeout. Neither
+ensures hostile detached processes are contained outside a real isolation boundary.
+
+- `--execute-builder` on the host now additionally needs `--unsafe-host`.
+- If Docker is unavailable, `--sandbox docker` blocks execution, with no host fallback.
+- OpenCode streams can omit the last usage event; Olyder reports `usage_complete=false`
+  and does not turn an otherwise passing run into an unquestioned success.
+- Soft agent-token caps stop *future* iterations; one provider turn can exceed the cap.
+- Browser traces contain potentially sensitive data and are off by default.
+
+See [v0.4 release and validation details](docs/V04_RELEASE_VALIDATION.md).
 
 ## Code review and release hardening
 

@@ -13,6 +13,7 @@ import ipaddress
 
 from .config import ConfigError, safe_path
 from .privacy import redact
+from .execution import docker_argv, managed_run, ExecutionError
 
 
 @dataclass
@@ -44,7 +45,7 @@ def _require_network(url: str, allow_network: bool) -> None:
         raise PermissionError("Non-local network access disabled; pass --allow-network after reviewing the URLs")
 
 
-def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False, deadline: float | None = None) -> tuple[bool, str]:
+def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False, deadline: float | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", trace_dir: Path | None = None) -> tuple[bool, str]:
     kind = check["type"]
     if kind == "file":
         p = safe_path(root, check["path"])
@@ -67,7 +68,12 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
             timeout = min(timeout, max(0.01, deadline - time.monotonic()))
         try:
             with tempfile.TemporaryFile(mode="w+t", encoding="utf-8", errors="replace") as captured:
-                cp = subprocess.run(check["argv"], cwd=root, stdout=captured, stderr=subprocess.STDOUT, text=True, timeout=timeout, errors="replace", shell=False)
+                command = check["argv"]
+                if sandbox == "docker":
+                    command = docker_argv(command, root, image=docker_image, writable=False)
+                elif sandbox != "host":
+                    raise ExecutionError("Unknown execution isolation mode")
+                outcome = managed_run(command, cwd=root, stdout=captured, timeout=timeout)
                 length = captured.tell()
                 captured.seek(max(0, length - 3000))
                 output = captured.read()
@@ -83,14 +89,14 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
                         matched = target in previous + chunk
                         previous = chunk[-max(0, len(target) - 1):] if len(target) > 1 else ""
             output = redact(output)
-            success = cp.returncode == check.get("exit_code", 0)
+            if outcome.timed_out:
+                return False, f"Timed out: command process tree terminated after {timeout:.2f}s"
+            success = outcome.returncode == check.get("exit_code", 0)
             if "contains" in check:
                 success = success and matched
-            return success, f"Exit {cp.returncode}; output condition {'matched' if 'contains' in check and matched else 'not matched' if 'contains' in check else 'not configured'}; tail: {output}"
-        except subprocess.TimeoutExpired:
-            return False, f"Timed out after {timeout}s"
-        except FileNotFoundError as exc:
-            return False, f"Executable not found: {exc.filename}"
+            return success, f"Exit {outcome.returncode}; output condition {'matched' if 'contains' in check and matched else 'not matched' if 'contains' in check else 'not configured'}; tail: {output}"
+        except ExecutionError as exc:
+            raise PermissionError(str(exc)) from exc
     if kind == "http":
         if not allow_exec:
             raise PermissionError("HTTP checks disabled; pass --allow-exec after reviewing spec")
@@ -139,6 +145,10 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
             executable = os.getenv("OLYDER_CHROMIUM_PATH")
             browser = pw.chromium.launch(headless=True, executable_path=executable or None)
             context = browser.new_context()
+            trace_active = trace_dir is not None
+            trace_ok = False
+            if trace_active:
+                context.tracing.start(screenshots=True, snapshots=True)
             if not allow_network:
                 # Block subresource requests to non-loopback addresses in the browser.
                 context.route("**/*", lambda route: route.continue_() if _is_local_url(route.request.url) else route.abort())
@@ -162,14 +172,23 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
                         page.goto(step["url"], timeout=timeout_ms)
                     else:
                         raise ConfigError(f"Unsupported browser action: {action}")
+                trace_ok = True
                 return True, f"Browser scenario completed; final URL {page.url}"
             finally:
+                if trace_active:
+                    if not trace_ok:
+                        from hashlib import sha256
+                        trace_dir.mkdir(parents=True, exist_ok=True)
+                        name = sha256(check["id"].encode()).hexdigest()[:16] + "-browser-trace.zip"
+                        context.tracing.stop(path=str(trace_dir / name))
+                    else:
+                        context.tracing.stop()
                 context.close()
                 browser.close()
     raise ConfigError(f"Unsupported check type: {kind}")
 
 
-def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: set[str] | None = None, allow_network: bool = False, deadline: float | None = None) -> list[Result]:
+def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: set[str] | None = None, allow_network: bool = False, deadline: float | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", trace_dir: Path | None = None) -> list[Result]:
     out = []
     for check in checks:
         if only is not None and check["id"] not in only:
@@ -178,7 +197,9 @@ def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: s
         try:
             if deadline is not None and start >= deadline:
                 raise PermissionError("Verification deadline exhausted; remaining checks were not executed")
-            ok, details = _run(check, root, allow_exec, allow_network=allow_network, deadline=deadline)
+            ok, details = _run(check, root, allow_exec, allow_network=allow_network,
+                               deadline=deadline, sandbox=sandbox, docker_image=docker_image,
+                               trace_dir=trace_dir)
             status = "pass" if ok else "fail"
             if deadline is not None and time.monotonic() >= deadline:
                 status = "blocked"
