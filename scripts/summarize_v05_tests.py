@@ -26,6 +26,6 @@ Path('docs/TEST_RESULTS_V05.json').write_text(json.dumps({
     'schema_version': 1, 'release_gate': 'INCOMPLETE', 'runs': runs,
     'live_provider': 'NOT_RUN', 'provider_dollars': None,
     'docker_live': 'BLOCKED: Docker Desktop Linux daemon pipe unavailable',
-    'native_github_ci': 'PENDING',
+    'native_github_ci': json.loads(Path('docs/validation/ci.json').read_text()) if Path('docs/validation/ci.json').exists() else 'PENDING',
 }, indent=2)+'\n')
 print(json.dumps([{k:v for k,v in r.items() if k != 'cases'} for r in runs], indent=2))
