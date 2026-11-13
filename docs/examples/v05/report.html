@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Olyder Verification Report</title><style>
+:root{color-scheme:light dark} body{font:15px/1.55 system-ui,-apple-system,sans-serif;max-width:1100px;margin:36px auto;padding:0 20px} h1{font-size:1.9rem}.subtle{color:gray}.stat{display:inline-block;padding:10px 18px;border:1px solid #8886;border-radius:8px;margin-right:8px}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{border-bottom:1px solid #8885;padding:10px;text-align:left;vertical-align:top}.pass{color:#24874e;font-weight:700}.fail{color:#bf4236;font-weight:700}.blocked{color:#bc8225;font-weight:700}pre{white-space:pre-wrap;word-break:break-word;margin:0}.mono{font-family:ui-monospace,monospace}small{color:gray}
+</style></head><body><h1>Olyder</h1><p class="subtle">Independent, evidence-based verification report</p><h2>Customers receive correct cart totals and invalid pricing inputs are rejected</h2><p><span class="stat">Status: <strong>passed</strong></span><span class="stat">Attempts: 1</span><span class="stat">Model tokens: 0</span></p><p><small>Acceptance specification: a98968c0d92c2f700e4600456289410f26a83effffd27747f4c39d6a4be0600e</small></p><h2>Objective metrics</h2><pre>{
+  &quot;declared_checks&quot;: 2,
+  &quot;executed_checks&quot;: 2,
+  &quot;passed_checks&quot;: 2,
+  &quot;failed_checks&quot;: 0,
+  &quot;blocked_checks&quot;: 0,
+  &quot;execution_coverage_percent&quot;: 100.0,
+  &quot;pass_rate_of_executed_percent&quot;: 100.0,
+  &quot;total_check_duration_ms&quot;: 109,
+  &quot;sources_requested&quot;: 0,
+  &quot;sources_fetched&quot;: 0,
+  &quot;sources_unavailable&quot;: 0
+}</pre><h2>Acceptance tests</h2><table><thead><tr><th>Scenario</th><th>Status</th><th>Type</th><th>Duration</th><th>Evidence</th></tr></thead><tbody><tr><td>pricing-module</td><td class='pass'>pass</td><td>file</td><td>0 ms</td><td><pre>Text content assertion</pre></td></tr>
+<tr><td>pricing-cases</td><td class='pass'>pass</td><td>command</td><td>109 ms</td><td><pre>Exit 0; output condition not configured; tail: test_checkout (test_pricing.PricingTests.test_checkout) ... ok
+test_discount (test_pricing.PricingTests.test_discount) ... ok
+test_rejects_negative_price (test_pricing.PricingTests.test_rejects_negative_price) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+</pre></td></tr></tbody></table><h2>Independent verifier</h2><p>Independent deterministic checks only; no LLM review requested.</p><h2>Source evidence</h2><ul></ul><h2>Coding-agent usage (post-hoc, not a provider quota)</h2><pre>{}</pre><h2>Execution isolation</h2><pre>{}</pre><h2>Acceptance and policy evidence</h2><pre>{
+  &quot;requirement_coverage&quot;: {
+    &quot;pricing-module&quot;: {
+      &quot;mandatory&quot;: true,
+      &quot;check_ids&quot;: [
+        &quot;pricing-module&quot;
+      ],
+      &quot;result_ids&quot;: [
+        &quot;pricing-module&quot;
+      ],
+      &quot;evidence_refs&quot;: [
+        &quot;checks/pricing-module&quot;
+      ],
+      &quot;satisfied&quot;: true
+    },
+    &quot;pricing-cases&quot;: {
+      &quot;mandatory&quot;: true,
+      &quot;check_ids&quot;: [
+        &quot;pricing-cases&quot;
+      ],
+      &quot;result_ids&quot;: [
+        &quot;pricing-cases&quot;
+      ],
+      &quot;evidence_refs&quot;: [
+        &quot;checks/pricing-cases&quot;
+      ],
+      &quot;satisfied&quot;: true
+    }
+  },
+  &quot;independent_critic_status&quot;: &quot;not_requested&quot;,
+  &quot;selected_checks&quot;: [
+    &quot;pricing-module&quot;,
+    &quot;pricing-cases&quot;
+  ],
+  &quot;full_suite_executed&quot;: true
+}</pre><h2>Scope</h2><p>Only defined acceptance checks are covered. This report does not establish production security or full real-world correctness.</p></body></html>

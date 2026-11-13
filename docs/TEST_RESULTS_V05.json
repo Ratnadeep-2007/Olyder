@@ -1,0 +1,3721 @@
+{
+  "schema_version": 1,
+  "release_gate": "INCOMPLETE",
+  "runs": [
+    {
+      "artifact": "docs/validation/baseline.xml",
+      "sha256": "b351dd039b802c80969a634248637bcafc63ed56e6b7101505c6d2f8588a54a2",
+      "tests": 178,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 4,
+      "passed": 172,
+      "seconds": 14.361,
+      "cases": [
+        {
+          "name": "test_L1_schema[minimal_valid]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[non_ascii_goal]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[empty_goal]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[missing_check_list]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[duplicate_check_ids]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[bool_command_timeout]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[invalid_http_scheme]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[embedded_credentials]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[missing_file_path]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[insecure_research_source]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[empty_builder_argument]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[existing_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[absent_file_expected_absent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[missing_file_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[contains_match]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[contains_mismatch]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[unicode_contains]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[nested_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[traversal_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[symlink_escape_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "failed"
+        },
+        {
+          "name": "test_L2_files[directory_not_regular_text_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[content_limited_to_first_megabyte]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[blocked_without_consent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[simple_success]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[failure_nonzero]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[expected_nonzero]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stdout_contains_true]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stdout_contains_false]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stderr_captured]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[cwd_workspace]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[secret_redacted]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[timeout_observed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[no_shell_injection]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[success_200]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[created_201]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[expected_404]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[expected_500]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[unexpected_404]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[content_found]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[content_missing]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[redirect_not_followed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[http_requires_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[nonlocal_http_without_network_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[unicode_utf8_content]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[browser_requires_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[load_real_page]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[click_button_changes_dom]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[fill_form_field]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[missing_text_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[current_url_regex]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[wrong_url_regex]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[navigation_to_next_page]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[click_link_navigation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[invalid_browser_selector_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[browser_external_without_network_consent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reserve_settle_actual]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[estimate_blocks_overspend]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reserve_exact_boundary]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[unicode_estimation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[settle_unknown_charges_reserved]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[actual_usage_can_exceed_reservation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[release_restores_budget]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reject_negative_output]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reject_negative_limit]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[missing_model_configuration]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[network_failure_settles_reservation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[deterministic_no_ai]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[clean_ai_assessment]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[ai_concern_forces_review]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[non_json_response]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[markdown_fenced_json]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[non_string_concern]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[json_array_instead_object]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[ai_cannot_override_failed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[blocked_takes_priority]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[select_none_does_not_pass]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[no_builder_history_shared]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[verify_only_no_builder]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_creates_output]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_modifies_spec_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_not_found_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_fails_nonzero_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[failure_then_repair]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[no_progress_terminates]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[max_iterations_stops]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[report_files_created]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[negative_iteration_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[deadline_exceeded_status]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_init]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_init_refuses_overwrite]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[skill_installs]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_plan]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_list_tools]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_verify_read_only]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_unknown_tool]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_invalid_params]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_notification_no_reply]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[html_escapes_payload]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[network_sources_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_rejects_missing_or_duplicate_checks",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_file_pass_and_fail",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_no_escape_via_parent_or_symlink",
+          "class": "tests.test_core",
+          "status": "failed"
+        },
+        {
+          "name": "test_execution_requires_opt_in",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_command_failure",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_budget_fails_closed",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_repair_loop_builder_creates_file",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_refuses_spec_modification_by_builder",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_does_not_call_builder_without_opt_in",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_plan_is_locked",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_blocked_sources_without_network",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_report_escapes_html",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_mcp_does_not_execute_shell",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_init_and_verify",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_independent_ai_verifier_receives_no_builder_history",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_concerns_never_override_real_tests",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_explicit_coverage_when_blocked",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_install_skill_creates_both_files",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_scenario_fields_rejected_before_execution",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_http_expected_404_and_redirect_is_not_followed",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_source_limit_and_embedded_auth_rejected",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexpected_runtime_check_error_is_reported_not_crash",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_mcp_rejects_malformed_params_without_crashing",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_readonly_workspace_prevents_test_mutation",
+          "class": "tests.test_docker_live",
+          "status": "skipped"
+        },
+        {
+          "name": "test_default_container_blocks_external_egress",
+          "class": "tests.test_docker_live",
+          "status": "skipped"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[301]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[302]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[307]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[308]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_valid_local_provider_fixture",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_duplicate_settlement_with_equal_sized_reservations",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_foreign_ticket_and_replayed_release",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_invalid_actual_does_not_lose_reservation",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_deadline_expiry_cannot_claim_http_success",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_cannot_rewrite_command_acceptance_test",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_cannot_rewrite_protected_test_directory",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_protected_paths_can_guard_custom_fixture",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_protected_path_outside_workspace_rejected",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_command_log_redacts_fake_bearer_secret",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[password: local_fake_password]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[token=local_fake_token]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[Authorization: Basic dGVzdDp0ZXN0]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[https://fake-user:fake-pass@example.org/api]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_live_browser_smoke",
+          "class": "tests.test_live_browser",
+          "status": "skipped"
+        },
+        {
+          "name": "test_external_source_blocked_means_needs_review",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_external_source_not_unreasonably_loops_builder",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_research_refuses_302_redirect",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_browser_fill_requires_explicit_value",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_url_regex_syntax_checked_before_run",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_http_metadata_endpoint_not_contacted_by_default",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_cannot_double_settle",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_cannot_double_release",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_unconfigured_does_not_consume_tokens",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_loop_uses_full_criteria_on_retry",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_supported_agent_templates[codex-prefix0]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_supported_agent_templates[opencode-prefix1]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_agent",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_codex_usage_counts_completed_turns",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_opencode_usage_dedupes_id_and_cache",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_opencode_missing_final_step_is_not_zero",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_agent_error_marks_incomplete",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_non_json_event_is_bounded_and_counted",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_default_policy_restricts_network_and_permissions",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_builder_mount_rw_and_explicit_env",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[-bad]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[invalid image]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[\\t]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_fails_closed_without_executable",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_missing_docker_blocks_check",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_managed_subprocess_returns_stdout",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_managed_process_timeout",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_timeout_terminates_process_group_child",
+          "class": "tests.test_v04",
+          "status": "skipped"
+        },
+        {
+          "name": "test_config_rejects_unknown_provider",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_blocks_unisolated_builder_without_unsafe_host",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_blocks_bridge_without_network_consent",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_fake_codex_adapter_end_to_end",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_incomplete_agent_telemetry_not_reported_as_full_pass",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_agent_usage_soft_cap_stops_retry",
+          "class": "tests.test_v04",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/v05-red.xml",
+      "sha256": "9c0980fc7ee5b41033b91940c855f52f9dfd4eb92f8e4e90fd585b1e0c360664",
+      "tests": 4,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "seconds": 0.181,
+      "cases": [
+        {
+          "name": "test_subset_never_claims_acceptance",
+          "class": "tests.test_v05_verdict",
+          "status": "failed"
+        },
+        {
+          "name": "test_expired_requested_critic_is_unresolved",
+          "class": "tests.test_v05_verdict",
+          "status": "failed"
+        },
+        {
+          "name": "test_unmapped_requirement[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "failed"
+        },
+        {
+          "name": "test_unmapped_requirement[False]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/ledger-red.xml",
+      "sha256": "e6c5ca5b520951b1ec972bfbbcd2bde633d47eb548fb85a120106fd15ce5cc44",
+      "tests": 1,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "passed": 0,
+      "seconds": 0.176,
+      "cases": [
+        {
+          "name": "tests.test_v05_ledger",
+          "class": "",
+          "status": "error"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/policy-red.xml",
+      "sha256": "2f5c283b5607888006cc7a85f21977ade5c9a446040b3c55ccb0592056d31387",
+      "tests": 1,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "passed": 0,
+      "seconds": 0.194,
+      "cases": [
+        {
+          "name": "tests.test_v05_policy",
+          "class": "",
+          "status": "error"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/review-red.xml",
+      "sha256": "d40f0ca0610baf2b46095287cc459293e5a8eb6c378fe2186b81a1a910e10691",
+      "tests": 3,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0,
+      "seconds": 0.198,
+      "cases": [
+        {
+          "name": "test_critic_only_failure_never_rebuilds",
+          "class": "tests.test_v05_verdict",
+          "status": "failed"
+        },
+        {
+          "name": "test_iteration_exhaustion_has_stop_reason",
+          "class": "tests.test_v05_verdict",
+          "status": "failed"
+        },
+        {
+          "name": "test_builder_reserve_still_runs_checks",
+          "class": "tests.test_v05_verdict",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/v05-foundations.xml",
+      "sha256": "170b0bf9f5993ec6feeb98cd5367fb8171ec32035cf49f788492ca7d47173f82",
+      "tests": 60,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 60,
+      "seconds": 0.34,
+      "cases": [
+        {
+          "name": "test_subset_never_claims_acceptance",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_expired_requested_critic_is_unresolved",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_unmapped_requirement[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_unmapped_requirement[False]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[0]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[3]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[2]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[None]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements0]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements1]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements2]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements3]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements4]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements5]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements6]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements7]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_check_cannot_modify_spec_and_pass",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_cannot_override_failure",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_unavailable_not_pass",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_adapter_defaults_do_not_auto_approve",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[economy]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[balanced]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[thorough]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_critic_only_failure_never_rebuilds",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_iteration_exhaustion_has_stop_reason",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_reserve_still_runs_checks",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[-1]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[0]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[NaN]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[Infinity]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[-Infinity]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[1.0]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[True]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[1e999999]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[None]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[no]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_exact_boundary_and_reserve",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_same_size_tickets_settle_independently",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_idempotent_same_callback_conflict_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_foreign_callback_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_not_zero_and_strict_blocks",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_release_and_reuse_id_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_concurrent_admission_never_oversubscribes",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_overrun_is_reported_and_blocks",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_uses_estimate_for_soft_admission",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_zero_settlement_is_known_zero",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_conflicting_reservation_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[economy-1]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[balanced-2]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[thorough-3]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[economy]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[balanced]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[thorough]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[blocked]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[needs_review]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[unexecuted]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_progress_is_check_specific",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_fewer_failures_with_real_pass_is_progress",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_mode_rejected",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/final-windows.xml",
+      "sha256": "b843a82308daccaabe3e0b80fa5d829c4c2ca11af7d0620236ea612c011691fa",
+      "tests": 238,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 4,
+      "passed": 232,
+      "seconds": 16.813,
+      "cases": [
+        {
+          "name": "test_L1_schema[minimal_valid]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[non_ascii_goal]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[empty_goal]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[missing_check_list]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[duplicate_check_ids]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[bool_command_timeout]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[invalid_http_scheme]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[embedded_credentials]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[missing_file_path]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[insecure_research_source]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[empty_builder_argument]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[existing_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[absent_file_expected_absent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[missing_file_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[contains_match]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[contains_mismatch]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[unicode_contains]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[nested_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[traversal_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[symlink_escape_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "failed"
+        },
+        {
+          "name": "test_L2_files[directory_not_regular_text_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[content_limited_to_first_megabyte]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[blocked_without_consent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[simple_success]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[failure_nonzero]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[expected_nonzero]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stdout_contains_true]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stdout_contains_false]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stderr_captured]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[cwd_workspace]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[secret_redacted]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[timeout_observed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[no_shell_injection]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[success_200]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[created_201]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[expected_404]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[expected_500]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[unexpected_404]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[content_found]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[content_missing]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[redirect_not_followed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[http_requires_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[nonlocal_http_without_network_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[unicode_utf8_content]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[browser_requires_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[load_real_page]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[click_button_changes_dom]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[fill_form_field]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[missing_text_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[current_url_regex]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[wrong_url_regex]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[navigation_to_next_page]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[click_link_navigation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[invalid_browser_selector_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[browser_external_without_network_consent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reserve_settle_actual]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[estimate_blocks_overspend]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reserve_exact_boundary]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[unicode_estimation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[settle_unknown_charges_reserved]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[actual_usage_can_exceed_reservation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[release_restores_budget]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reject_negative_output]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reject_negative_limit]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[missing_model_configuration]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[network_failure_settles_reservation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[deterministic_no_ai]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[clean_ai_assessment]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[ai_concern_forces_review]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[non_json_response]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[markdown_fenced_json]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[non_string_concern]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[json_array_instead_object]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[ai_cannot_override_failed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[blocked_takes_priority]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[select_none_does_not_pass]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[no_builder_history_shared]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[verify_only_no_builder]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_creates_output]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_modifies_spec_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_not_found_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_fails_nonzero_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[failure_then_repair]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[no_progress_terminates]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[max_iterations_stops]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[report_files_created]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[negative_iteration_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[deadline_exceeded_status]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_init]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_init_refuses_overwrite]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[skill_installs]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_plan]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_list_tools]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_verify_read_only]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_unknown_tool]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_invalid_params]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_notification_no_reply]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[html_escapes_payload]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[network_sources_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_rejects_missing_or_duplicate_checks",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_file_pass_and_fail",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_no_escape_via_parent_or_symlink",
+          "class": "tests.test_core",
+          "status": "failed"
+        },
+        {
+          "name": "test_execution_requires_opt_in",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_command_failure",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_budget_fails_closed",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_repair_loop_builder_creates_file",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_refuses_spec_modification_by_builder",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_does_not_call_builder_without_opt_in",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_plan_is_locked",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_blocked_sources_without_network",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_report_escapes_html",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_mcp_does_not_execute_shell",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_init_and_verify",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_independent_ai_verifier_receives_no_builder_history",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_concerns_never_override_real_tests",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_explicit_coverage_when_blocked",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_install_skill_creates_both_files",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_scenario_fields_rejected_before_execution",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_http_expected_404_and_redirect_is_not_followed",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_source_limit_and_embedded_auth_rejected",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexpected_runtime_check_error_is_reported_not_crash",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_mcp_rejects_malformed_params_without_crashing",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_readonly_workspace_prevents_test_mutation",
+          "class": "tests.test_docker_live",
+          "status": "skipped"
+        },
+        {
+          "name": "test_default_container_blocks_external_egress",
+          "class": "tests.test_docker_live",
+          "status": "skipped"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[301]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[302]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[307]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[308]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_valid_local_provider_fixture",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_duplicate_settlement_with_equal_sized_reservations",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_foreign_ticket_and_replayed_release",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_invalid_actual_does_not_lose_reservation",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_deadline_expiry_cannot_claim_http_success",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_cannot_rewrite_command_acceptance_test",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_cannot_rewrite_protected_test_directory",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_protected_paths_can_guard_custom_fixture",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_protected_path_outside_workspace_rejected",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_command_log_redacts_fake_bearer_secret",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[password: local_fake_password]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[token=local_fake_token]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[Authorization: Basic dGVzdDp0ZXN0]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[https://fake-user:fake-pass@example.org/api]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_live_browser_smoke",
+          "class": "tests.test_live_browser",
+          "status": "skipped"
+        },
+        {
+          "name": "test_external_source_blocked_means_needs_review",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_external_source_not_unreasonably_loops_builder",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_research_refuses_302_redirect",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_browser_fill_requires_explicit_value",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_url_regex_syntax_checked_before_run",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_http_metadata_endpoint_not_contacted_by_default",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_cannot_double_settle",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_cannot_double_release",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_unconfigured_does_not_consume_tokens",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_loop_uses_full_criteria_on_retry",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_supported_agent_templates[codex-prefix0]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_supported_agent_templates[opencode-prefix1]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_agent",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_codex_usage_counts_completed_turns",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_opencode_usage_dedupes_id_and_cache",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_opencode_missing_final_step_is_not_zero",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_agent_error_marks_incomplete",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_non_json_event_is_bounded_and_counted",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_default_policy_restricts_network_and_permissions",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_builder_mount_rw_and_explicit_env",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[-bad]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[invalid image]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[\\t]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_fails_closed_without_executable",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_missing_docker_blocks_check",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_managed_subprocess_returns_stdout",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_managed_process_timeout",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_timeout_terminates_process_group_child",
+          "class": "tests.test_v04",
+          "status": "skipped"
+        },
+        {
+          "name": "test_config_rejects_unknown_provider",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_blocks_unisolated_builder_without_unsafe_host",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_blocks_bridge_without_network_consent",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_fake_codex_adapter_end_to_end",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_incomplete_agent_telemetry_not_reported_as_full_pass",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_agent_usage_soft_cap_stops_retry",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[-1]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[0]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[NaN]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[Infinity]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[-Infinity]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[1.0]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[True]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[1e999999]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[None]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[no]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_exact_boundary_and_reserve",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_same_size_tickets_settle_independently",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_idempotent_same_callback_conflict_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_foreign_callback_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_not_zero_and_strict_blocks",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_release_and_reuse_id_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_concurrent_admission_never_oversubscribes",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_overrun_is_reported_and_blocks",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_uses_estimate_for_soft_admission",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_zero_settlement_is_known_zero",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_conflicting_reservation_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[economy-1]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[balanced-2]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[thorough-3]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[economy]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[balanced]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[thorough]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[blocked]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[needs_review]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[unexecuted]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_progress_is_check_specific",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_fewer_failures_with_real_pass_is_progress",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_mode_rejected",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_subset_never_claims_acceptance",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_expired_requested_critic_is_unresolved",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_unmapped_requirement[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_unmapped_requirement[False]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[0]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[3]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[2]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[None]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements0]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements1]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements2]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements3]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements4]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements5]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements6]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements7]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_check_cannot_modify_spec_and_pass",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_cannot_override_failure",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_unavailable_not_pass",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_adapter_defaults_do_not_auto_approve",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[economy]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[balanced]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[thorough]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_critic_only_failure_never_rebuilds",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_iteration_exhaustion_has_stop_reason",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_reserve_still_runs_checks",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "artifact": "docs/validation/final-linux.xml",
+      "sha256": "94c0a8d8c6b63a1411538bafc5792648bc9d8ab0aa2c2d8c7e4f2b5bf6095b96",
+      "tests": 238,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 235,
+      "seconds": 15.974,
+      "cases": [
+        {
+          "name": "test_L1_schema[minimal_valid]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[non_ascii_goal]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[empty_goal]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[missing_check_list]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[duplicate_check_ids]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[bool_command_timeout]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[invalid_http_scheme]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[embedded_credentials]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[missing_file_path]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[insecure_research_source]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L1_schema[empty_builder_argument]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[existing_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[absent_file_expected_absent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[missing_file_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[contains_match]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[contains_mismatch]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[unicode_contains]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[nested_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[traversal_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[symlink_escape_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[directory_not_regular_text_file]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L2_files[content_limited_to_first_megabyte]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[blocked_without_consent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[simple_success]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[failure_nonzero]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[expected_nonzero]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stdout_contains_true]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stdout_contains_false]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[stderr_captured]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[cwd_workspace]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[secret_redacted]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[timeout_observed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L3_commands[no_shell_injection]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[success_200]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[created_201]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[expected_404]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[expected_500]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[unexpected_404]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[content_found]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[content_missing]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[redirect_not_followed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[http_requires_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[nonlocal_http_without_network_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L4_http[unicode_utf8_content]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[browser_requires_opt_in]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[load_real_page]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[click_button_changes_dom]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[fill_form_field]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[missing_text_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[current_url_regex]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[wrong_url_regex]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[navigation_to_next_page]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[click_link_navigation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[invalid_browser_selector_fails]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L5_browser[browser_external_without_network_consent]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reserve_settle_actual]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[estimate_blocks_overspend]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reserve_exact_boundary]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[unicode_estimation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[settle_unknown_charges_reserved]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[actual_usage_can_exceed_reservation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[release_restores_budget]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reject_negative_output]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[reject_negative_limit]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[missing_model_configuration]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L6_quota[network_failure_settles_reservation]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[deterministic_no_ai]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[clean_ai_assessment]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[ai_concern_forces_review]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[non_json_response]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[markdown_fenced_json]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[non_string_concern]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[json_array_instead_object]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[ai_cannot_override_failed]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[blocked_takes_priority]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[select_none_does_not_pass]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L7_verifier[no_builder_history_shared]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[verify_only_no_builder]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_creates_output]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_modifies_spec_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_not_found_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[builder_fails_nonzero_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[failure_then_repair]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[no_progress_terminates]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[max_iterations_stops]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[report_files_created]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[negative_iteration_rejected]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L8_loop[deadline_exceeded_status]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_init]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_init_refuses_overwrite]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[skill_installs]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[cli_plan]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_list_tools]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_verify_read_only]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_unknown_tool]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_invalid_params]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[mcp_notification_no_reply]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[html_escapes_payload]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_L9_integration[network_sources_blocked]",
+          "class": "tests.test_99_scenarios",
+          "status": "passed"
+        },
+        {
+          "name": "test_rejects_missing_or_duplicate_checks",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_file_pass_and_fail",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_no_escape_via_parent_or_symlink",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_execution_requires_opt_in",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_command_failure",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_budget_fails_closed",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_repair_loop_builder_creates_file",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_refuses_spec_modification_by_builder",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_does_not_call_builder_without_opt_in",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_plan_is_locked",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_blocked_sources_without_network",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_report_escapes_html",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_mcp_does_not_execute_shell",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_init_and_verify",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_independent_ai_verifier_receives_no_builder_history",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_concerns_never_override_real_tests",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_explicit_coverage_when_blocked",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_install_skill_creates_both_files",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_scenario_fields_rejected_before_execution",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_http_expected_404_and_redirect_is_not_followed",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_source_limit_and_embedded_auth_rejected",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexpected_runtime_check_error_is_reported_not_crash",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_mcp_rejects_malformed_params_without_crashing",
+          "class": "tests.test_core",
+          "status": "passed"
+        },
+        {
+          "name": "test_readonly_workspace_prevents_test_mutation",
+          "class": "tests.test_docker_live",
+          "status": "skipped"
+        },
+        {
+          "name": "test_default_container_blocks_external_egress",
+          "class": "tests.test_docker_live",
+          "status": "skipped"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[301]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[302]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[307]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_auth_not_forwarded_by_redirect[308]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_valid_local_provider_fixture",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_duplicate_settlement_with_equal_sized_reservations",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_foreign_ticket_and_replayed_release",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_invalid_actual_does_not_lose_reservation",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_deadline_expiry_cannot_claim_http_success",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_cannot_rewrite_command_acceptance_test",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_cannot_rewrite_protected_test_directory",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_protected_paths_can_guard_custom_fixture",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_protected_path_outside_workspace_rejected",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_command_log_redacts_fake_bearer_secret",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[password: local_fake_password]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[token=local_fake_token]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[Authorization: Basic dGVzdDp0ZXN0]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_redact_common_credential_patterns[https://fake-user:fake-pass@example.org/api]",
+          "class": "tests.test_enhancement_probes",
+          "status": "passed"
+        },
+        {
+          "name": "test_live_browser_smoke",
+          "class": "tests.test_live_browser",
+          "status": "skipped"
+        },
+        {
+          "name": "test_external_source_blocked_means_needs_review",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_external_source_not_unreasonably_loops_builder",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_research_refuses_302_redirect",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_browser_fill_requires_explicit_value",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_url_regex_syntax_checked_before_run",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_http_metadata_endpoint_not_contacted_by_default",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_cannot_double_settle",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_quota_cannot_double_release",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_model_unconfigured_does_not_consume_tokens",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_loop_uses_full_criteria_on_retry",
+          "class": "tests.test_regressions_99",
+          "status": "passed"
+        },
+        {
+          "name": "test_supported_agent_templates[codex-prefix0]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_supported_agent_templates[opencode-prefix1]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_agent",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_codex_usage_counts_completed_turns",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_opencode_usage_dedupes_id_and_cache",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_opencode_missing_final_step_is_not_zero",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_agent_error_marks_incomplete",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_non_json_event_is_bounded_and_counted",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_default_policy_restricts_network_and_permissions",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_builder_mount_rw_and_explicit_env",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[-bad]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[invalid image]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_rejects_bad_image[\\t]",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_docker_fails_closed_without_executable",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_missing_docker_blocks_check",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_managed_subprocess_returns_stdout",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_managed_process_timeout",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_timeout_terminates_process_group_child",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_config_rejects_unknown_provider",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_blocks_unisolated_builder_without_unsafe_host",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_blocks_bridge_without_network_consent",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_fake_codex_adapter_end_to_end",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_incomplete_agent_telemetry_not_reported_as_full_pass",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_agent_usage_soft_cap_stops_retry",
+          "class": "tests.test_v04",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[-1]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[0]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[NaN]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[Infinity]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[-Infinity]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[1.0]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[True]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[1e999999]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[None]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_invalid_limits[no]",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_exact_boundary_and_reserve",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_same_size_tickets_settle_independently",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_idempotent_same_callback_conflict_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_foreign_callback_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_not_zero_and_strict_blocks",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_release_and_reuse_id_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_concurrent_admission_never_oversubscribes",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_overrun_is_reported_and_blocks",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_uses_estimate_for_soft_admission",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_zero_settlement_is_known_zero",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_conflicting_reservation_rejected",
+          "class": "tests.test_v05_ledger",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[economy-1]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[balanced-2]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_modes_bound_stagnation[thorough-3]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[economy]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[balanced]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_all_modes_reserve_final_time[thorough]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[blocked]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[needs_review]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unexecuted_is_not_progress[unexecuted]",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_progress_is_check_specific",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_fewer_failures_with_real_pass_is_progress",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_unknown_mode_rejected",
+          "class": "tests.test_v05_policy",
+          "status": "passed"
+        },
+        {
+          "name": "test_subset_never_claims_acceptance",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_expired_requested_critic_is_unresolved",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_unmapped_requirement[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_unmapped_requirement[False]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[0]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[3]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[True]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[2]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_unknown_schema[None]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements0]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements1]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements2]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements3]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements4]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements5]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements6]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_reject_invalid_requirements[requirements7]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_check_cannot_modify_spec_and_pass",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_cannot_override_failure",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_ai_unavailable_not_pass",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_adapter_defaults_do_not_auto_approve",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[economy]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[balanced]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_cli_modes_keep_full_suite[thorough]",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_critic_only_failure_never_rebuilds",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_iteration_exhaustion_has_stop_reason",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        },
+        {
+          "name": "test_builder_reserve_still_runs_checks",
+          "class": "tests.test_v05_verdict",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "live_provider": "NOT_RUN",
+  "provider_dollars": null,
+  "docker_live": "BLOCKED: Docker Desktop Linux daemon pipe unavailable",
+  "native_github_ci": "PENDING"
+}

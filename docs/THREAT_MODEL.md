@@ -31,3 +31,8 @@ No production-security claim should be made until these gaps have independently 
 ## Regression evidence
 
 See [99-scenario matrix and environment constraints](QA_99.md). Local and nonlocal network opt-ins are different; explicit consent does not create an OS sandbox.
+
+
+## v0.5 development delta
+
+Coverage and subset guards close observed false-PASS paths; locked spec bytes are checked around direct verification. Adapter defaults remove OpenCode auto-approval and Codex non-repository bypass. Monetary ledger concurrency protection is in-process only and not provider enforcement. Detached protected mounts, immutable checkpoints, full wall-clock cancellation and pricing/gateway reconciliation remain release blockers. Rootless Docker and an independently enforced egress proxy are recommended for hostile work; bridge networking is unrestricted. See KNOWN_LIMITATIONS.md.

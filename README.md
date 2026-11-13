@@ -251,3 +251,10 @@ CI tests Python 3.11 and 3.13 on Ubuntu and Windows. The [99-scenario evidence r
 ## License
 
 Apache License 2.0. Contributions and reproducible bug reports welcome.
+
+
+## v0.5 development work (release gates incomplete)
+
+This feature branch adds explicit requirement coverage, guards against subset-only acceptance, a tested in-process Decimal dollar ledger, and opt-in retry modes. It remains version 0.4.0 pending the full milestone gates. See [current validation](docs/TEST_REPORT_V05.md), [architecture and remaining work](docs/ARCHITECTURE_V05.md), and [limitations](docs/KNOWN_LIMITATIONS.md).
+
+`olyder run --mode balanced` selects bounded progress-aware retries and reserves 15 seconds before builder admission. It runs every check on every attempt; no test-count or monetary saving is claimed. Existing configs without a policy retain legacy behavior. New `olyder init` configs choose balanced. OpenCode's adapter no longer supplies auto-approval; configure and review its permissions explicitly. Codex requires a Git workspace.
