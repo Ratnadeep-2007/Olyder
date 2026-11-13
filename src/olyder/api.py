@@ -7,6 +7,7 @@ from pathlib import Path
 from .config import load_spec
 from .diagnostics import doctor
 from .engine import plan, verify_once
+from .privacy import redact_values
 
 
 def dispatch(path, supplied_token, token, workspace):
@@ -35,7 +36,7 @@ def serve(workspace, *, token, port=8765):
                     status,data=dispatch(self.path,self.headers.get('Authorization','').removeprefix('Bearer '),token,workspace)
                 except (OSError,ValueError,RuntimeError):
                     status,data=400,{'error':'invalid workspace or request'}
-            encoded=json.dumps(data).encode()
+            encoded=json.dumps(redact_values(data)).encode()
             self.send_response(status)
             self.send_header('Content-Type','application/json')
             self.send_header('Cache-Control','no-store')

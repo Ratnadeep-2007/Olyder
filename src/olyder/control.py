@@ -24,6 +24,9 @@ class RunControl:
     check_backend: object = None
     observer_errors: list = field(default_factory=list)
     poll_output: object = lambda: None
+    model_accounting: object = None
+    model_role: str = 'critic'
+    model_checkpoint: object = lambda phase: None
 
     def check(self):
         if self.cancelled():

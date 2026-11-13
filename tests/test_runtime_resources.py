@@ -57,3 +57,14 @@ def test_cancellation_kills_process(tmp_path):
             managed_run([sys.executable,'-c','import time;time.sleep(8)'],
                         cwd=tmp_path,stdout=output,timeout=5)
     assert time.monotonic()-started < 3
+
+
+def test_runtime_settlement_replay_is_idempotent():
+    account=RuntimeAccounting('run',{'max_cost_usd':'1','builder_upper_bound_usd':'0.2'})
+    request=account.admit('builder')
+    assert account.snapshot()['budget_verdict']=='unknown'
+    account.settle(request,{'observed_tokens':10,'usage_complete':True})
+    account.settle(request,{'observed_tokens':10,'usage_complete':True})
+    assert len(account.snapshot()['observations'])==1
+    with pytest.raises(ValueError):
+        account.settle(request,{'observed_tokens':11,'usage_complete':True})

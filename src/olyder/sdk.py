@@ -20,9 +20,10 @@ from .adapters import ExecutableAgent, bind_model, get_agent
 from .backends import get_backend
 from .config import Spec, load_spec
 from .control import Cancelled, ResourceLimit, RunControl, activate, current
-from .engine import plan, verify_once
+from .engine import _independent_review, plan, verify_once
 from .execution import ExecutionError, managed_run
 from .impact import select_checks
+from .models import ModelError
 from .policy import RunPolicy, progress
 from .privacy import redact
 from .quota import Budget, QuotaExceeded
@@ -143,7 +144,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
             sink(event)
     control=RunControl(deadline, cancelled=lambda: store.read(run_id).get('cancel_requested',False),
                        sink=emit, model_provider=model_provider)
-    result={'goal':spec.goal,'spec_sha256':spec.digest,'run_id':run_id,'status':'blocked',
+    result={'schema_version':2,'goal':spec.goal,'spec_sha256':spec.digest,'run_id':run_id,'status':'blocked',
             'checker_sha256':state['checker_sha256'],
             'checks':[],'history':[],'stop_reason':'initialization_failed',
             'sources':[],'independent_critic_status':'not_requested', 'budget':{}}
@@ -170,7 +171,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
             control.check_backend = get_backend('docker',image=docker_image) if backend == 'docker' else execution
             if permissions.execute_builder and not execution.capabilities().isolated and not permissions.unsafe_host:
                 raise PermissionError('Unisolated builder requires explicit unsafe_host grant')
-            if use_ai and account.ledger and money_zero(spec.raw.get('budget',{}).get('verifier_reserve_usd','0')):
+            if use_ai and permissions.execute_builder and account.ledger and money_zero(spec.raw.get('budget',{}).get('verifier_reserve_usd','0')):
                 raise QuotaExceeded('Requested independent AI review needs a positive verifier reserve')
             control.check()
             workspace=ProtectedWorkspace(spec,run_dir/'workspace')
@@ -232,10 +233,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                                 raise WorkspaceViolation('Protected checks require relative asset arguments')
                 checkpoint('verifying',attempt=number,proposal_digest=tree(workspace.builder))
                 critic_ticket=None
-                request_critic=use_ai and not builder_stop
-                if request_critic:
-                    critic_ticket=account.admit('critic')
-                    checkpoint('critic_started',attempt=number)
+                request_critic=False
                 observations_start=len(control.model_observations)
                 try:
                     proposed_tree=tree(workspace.builder)
@@ -254,7 +252,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                         trace_dir=Path(trace_dir) if trace_dir else None)
                     test_ms+=item['metrics']['total_check_duration_ms']
                     executed_count+=item['metrics']['executed_checks']
-                    if selected is not None and item['checks'] and all(c['status']=='pass' for c in item['checks']):
+                    if selected is not None and selected!={c['id'] for c in spec.checks} and item['checks'] and all(c['status']=='pass' for c in item['checks']):
                         selections[-1]['final_full_suite']=[c['id'] for c in spec.checks]
                         item=verify_once(verification_spec,allow_exec=permissions.allow_exec,
                             allow_network=permissions.allow_network,budget=token_budget,
@@ -262,11 +260,33 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                             docker_image=docker_image)
                         test_ms+=item['metrics']['total_check_duration_ms']
                         executed_count+=item['metrics']['executed_checks']
+                    if use_ai and not builder_stop:
+                        if item['status']=='passed':
+                            try:
+                                critic_ticket=account.admit('critic')
+                            except QuotaExceeded:
+                                item.update(status='needs_review',independent_critic_status='budget_unavailable',
+                                    verifier_note='Mandatory tests passed; requested AI review has no admissible budget')
+                            else:
+                                checkpoint('critic_started',attempt=number)
+                                observations_start=len(control.model_observations)
+                                try:
+                                    note,concerns=_independent_review(verification_spec,item['checks'],token_budget,ai=True)
+                                    item.update(verifier_note=note,ai_concerns=concerns,independent_critic_status='completed')
+                                    if concerns:
+                                        item['status']='needs_review'
+                                except (ModelError,QuotaExceeded):
+                                    item.update(status='needs_review',independent_critic_status='unavailable',
+                                        verifier_note='Requested AI review could not complete')
+                        else:
+                            item['independent_critic_status']='not_run_incomplete_verification'
                 finally:
                     if critic_ticket:
                         observed=control.model_observations[observations_start:]
                         account.settle(critic_ticket,observed[-1] if observed else None)
                 control.check()
+                if _digest(spec.path)!=spec.digest:
+                    raise WorkspaceViolation('Original contract changed during verification')
                 workspace.validate()
                 input_after=tree(root)
                 if trusted_before != {n:h for n,h in input_after.items() if workspace.is_protected(n)}:
@@ -328,11 +348,18 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
         result.update(status='blocked',stop_reason='deadline_exhausted')
     except (OSError,RuntimeError,ValueError) as exc:
         result.update(status='blocked',stop_reason='execution_blocked',verifier_note=redact(str(exc))[:1000])
+    agent_runs=[o for o in account.observations if o['role']=='builder']
     result.update(run_id=run_id,attempts=len(result['history']),accounting=account.snapshot(),
+        task_plan=plan(spec),agent_usage={'runs':agent_runs,
+            'observed_tokens':sum(o['observed_tokens'] for o in agent_runs) if agent_runs and all(o.get('usage_complete') and o.get('observed_tokens') is not None for o in agent_runs) else None,
+            'complete':bool(agent_runs) and all(o.get('usage_complete',False) for o in agent_runs),
+            'enforced_provider_quota':False},
         repaired_check_ids=sorted({identifier for attempt in result['history']
             for identifier in attempt.get('progress_delta',{}).get('newly_passing',[])}),
         budget_verdict=account.snapshot()['budget_verdict'],functional_verdict=result['status'],
-        wall_seconds=time.monotonic()-started,policy={'mode':selected_mode,'full_final_suite_required':True},
+        wall_seconds=time.monotonic()-started,policy={'mode':selected_mode,'full_final_suite_required':True,
+            'selected_by':'explicit_override' if mode else 'spec_policy' if spec.raw.get('policy',{}).get('mode') else 'balanced_default',
+            'final_time_reserve_seconds':policy.final_seconds,'enforcement_kind':'local_soft'},
         verification_selection=locals().get('selections',[]),
         resource_usage={'deterministic_check_ms':locals().get('test_ms',0),
                         'executed_checks':locals().get('executed_count',0),
@@ -341,7 +368,8 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
         application_status=application_status,verification_target='detached_proposal',
         warnings=['Host execution has no OS containment'] if backend=='host' else [],
         execution_isolation={'mode':backend,'unsafe_host_authorized':permissions.unsafe_host,
-                             'protected_assets_detached':workspace is not None})
+                             'protected_assets_detached':workspace is not None,
+                             'http_browser_checks':'host','trusted_python_callbacks':'host'})
     if workspace:
         result['acceptance_integrity']=workspace.evidence()
         result['artifact_refs']={'contract':str(run_dir/'contract.json'),

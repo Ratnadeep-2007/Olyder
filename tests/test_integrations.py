@@ -55,7 +55,6 @@ def test_malformed_plugin_contract_is_rejected(tmp_path,data):
 
 
 def test_live_read_api(tmp_path):
-    import os
     import socket
     import subprocess
     import time
@@ -67,7 +66,8 @@ def test_live_read_api(tmp_path):
         listener.bind(('127.0.0.1',0));port=listener.getsockname()[1]
     token='FAKE_LOCAL_API_TOKEN_123456789'
     script=f'from olyder.api import serve;serve({str(tmp_path)!r},token={token!r},port={port})'
-    process=subprocess.Popen([sys.executable,'-c',script],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    log=(tmp_path/'api.stderr').open('w+')
+    process=subprocess.Popen([sys.executable,'-c',script],stdout=subprocess.DEVNULL,stderr=log)
     try:
         deadline=time.monotonic()+5
         while True:
@@ -77,6 +77,9 @@ def test_live_read_api(tmp_path):
                     assert json.load(response)['status']=='passed'
                 break
             except urllib.error.URLError:
+                if process.poll() is not None:
+                    log.seek(0)
+                    pytest.fail('API process exited: '+log.read())
                 if time.monotonic()>deadline:
                     raise
                 time.sleep(.05)
@@ -84,7 +87,7 @@ def test_live_read_api(tmp_path):
             urllib.request.urlopen(f'http://127.0.0.1:{port}/v1/verify',timeout=1)
         assert denied.value.code==401
     finally:
-        process.terminate();process.wait(timeout=5)
+        process.terminate();process.wait(timeout=5);log.close()
 
 
 def test_mcp_run_requires_server_side_grant(tmp_path):

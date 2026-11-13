@@ -90,15 +90,8 @@ class BudgetLedger:
                 raise QuotaExceeded('Mandatory verifier reserve unavailable')
             self.verifier_reserve -= amount
             try:
-                # Unknown builder billing must not prevent using funds that
-                # were protected specifically for mandatory verification.
-                strict = self.strict
-                self.strict = False
-                try:
-                    self.reserve(request_id, amount)
-                    self._requests[request_id]['role']='verifier'
-                finally:
-                    self.strict = strict
+                self.reserve(request_id, amount)
+                self._requests[request_id]['role']='verifier'
             except Exception:
                 self.verifier_reserve += amount
                 raise

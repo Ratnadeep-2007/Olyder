@@ -148,7 +148,7 @@ def load_spec(path: str | Path) -> Spec:
     if not isinstance(monetary, dict):
         raise ConfigError('budget must be an object')
     from .ledger import money
-    for key in ('max_cost_usd','builder_upper_bound_usd','verifier_reserve_usd'):
+    for key in ('max_cost_usd','builder_upper_bound_usd','verifier_reserve_usd','planner_upper_bound_usd','research_upper_bound_usd'):
         if key in monetary:
             money(monetary[key], positive=key == 'max_cost_usd')
     if type(monetary.get('strict',False)) is not bool:

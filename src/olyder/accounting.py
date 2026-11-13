@@ -1,10 +1,22 @@
 """Runtime monetary admission; CLI/client estimates never become invoices."""
+import hashlib
+import json
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import wraps
+from threading import RLock
 from uuid import uuid4
 
 from .ledger import BudgetLedger, money
 from .quota import QuotaExceeded
+
+
+def synchronized(method):
+    @wraps(method)
+    def locked(self,*args,**kwargs):
+        with self._lock:
+            return method(self,*args,**kwargs)
+    return locked
 
 
 @dataclass(frozen=True)
@@ -49,10 +61,16 @@ class RuntimeAccounting:
             verifier_reserve=c.get('verifier_reserve_usd','0'), strict=c.get('strict',False)) if c.get('max_cost_usd') is not None else None
         self.observations = []
         self.pending = {}
+        self._lock=RLock()
 
+    @synchronized
     def admit(self, role):
         request_id = str(uuid4())
-        upper = self.config.get('builder_upper_bound_usd') if role == 'builder' else self.config.get('verifier_reserve_usd')
+        fields={'builder':'builder_upper_bound_usd','critic':'verifier_reserve_usd',
+                'planner':'planner_upper_bound_usd','research':'research_upper_bound_usd'}
+        if role not in fields:
+            raise ValueError('Unknown resource role')
+        upper=self.config.get(fields[role])
         if self.ledger:
             if upper is None or money(upper) == 0:
                 raise QuotaExceeded(f'No positive reviewed upper bound for {role}; spend cannot be bounded')
@@ -63,8 +81,10 @@ class RuntimeAccounting:
         self.pending[request_id] = role
         return request_id
 
+    @synchronized
     def settle(self, request_id, usage=None):
-        role = self.pending.pop(request_id)
+        if usage is not None and not isinstance(usage,dict):
+            raise ValueError('Usage observation must be an object')
         allowed={'provider','model','model_origin','input_tokens','output_tokens','cached_tokens',
                  'reasoning_tokens','observed_tokens','usage_complete','estimated_cost_usd',
                  'origin','elapsed_seconds','status','usage_events','malformed_events','reasoning_accounting'}
@@ -79,9 +99,16 @@ class RuntimeAccounting:
                 observation['estimated_cost_usd']=str(money(estimate))
             except ValueError:
                 observation['estimated_cost_usd']=None
+        signature=hashlib.sha256(json.dumps(observation,sort_keys=True).encode()).hexdigest()
+        if request_id not in self.pending:
+            previous=next((o for o in self.observations if o['request_id']==request_id),None)
+            if previous is not None and previous.get('settlement_digest')==signature:
+                return
+            raise ValueError('Foreign or conflicting settlement callback')
+        role=self.pending.pop(request_id)
         # No trusted billing channel is implemented by CLI agents. Even their
         # self-reported cost is observed/estimated, never a reconciled invoice.
-        observation.update(request_id=request_id, role=role, billed_cost_usd=None)
+        observation.update(request_id=request_id, role=role, billed_cost_usd=None,settlement_digest=signature)
         observation.setdefault('origin','unavailable')
         observation.setdefault('usage_complete',False)
         observation.setdefault('observed_tokens',None)
@@ -94,9 +121,10 @@ class RuntimeAccounting:
         if self.ledger:
             self.ledger.settle(request_id, None)
 
+    @synchronized
     def snapshot(self):
         return {'ledger':self.ledger.snapshot() if self.ledger else None,
                 'ledger_checkpoint':self.ledger.checkpoint() if self.ledger else None,
                 'observations':list(self.observations), 'pending_requests':dict(self.pending),
                 'enforcement_kind':'local_soft',
-                'budget_verdict':'unknown' if any(o['billed_cost_usd'] is None for o in self.observations) else 'not_applicable'}
+                'budget_verdict':'unknown' if self.pending or any(o['billed_cost_usd'] is None for o in self.observations) else 'not_applicable'}

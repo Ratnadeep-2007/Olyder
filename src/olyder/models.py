@@ -26,6 +26,22 @@ def _open_model_request(req: request.Request, timeout: float):
 
 
 def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, max_tokens: int = 500) -> str:
+    control=current.get()
+    if control and control.model_accounting is not None:
+        control.check()
+        request=control.model_accounting.admit(control.model_role)
+        control.model_checkpoint('model_started')
+        offset=len(control.model_observations)
+        try:
+            return _chat_body(prompt,budget,system=system,model=model,max_tokens=max_tokens)
+        finally:
+            observations=control.model_observations[offset:]
+            control.model_accounting.settle(request,observations[-1] if observations else None)
+            control.model_checkpoint('model_completed')
+    return _chat_body(prompt,budget,system=system,model=model,max_tokens=max_tokens)
+
+
+def _chat_body(prompt: str, budget: Budget, *, system: str, model: str | None = None, max_tokens: int = 500) -> str:
     control = current.get()
     if control:
         control.check()

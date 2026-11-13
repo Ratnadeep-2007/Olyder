@@ -15,6 +15,13 @@ from .quota import Budget, QuotaExceeded
 from .report import save_report
 
 
+from .privacy import redact_values
+
+
+def _json(value, *args, **kwargs):
+    return json.dumps(redact_values(value), *args, **kwargs)
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="olyder", description="Independent verification and bounded AI repair loops")
     p.add_argument("--version", action="version", version="Olyder 0.4.0")
@@ -95,19 +102,19 @@ def main(argv: list[str] | None = None) -> int:
             from .state import RunStore
             result=RunStore(Path(args.workspace).resolve()/'.olyder'/'runs').prune(
                 older_than_days=args.older_than_days,apply=args.apply)
-            print(json.dumps(result,indent=2));return 0
+            print(_json(result,indent=2));return 0
         if args.command=='reconcile':
             from .state import RunStore
             state=RunStore(Path(args.workspace).resolve()/'.olyder'/'runs').reconcile(
                 args.run_id,args.request_id,args.amount_usd,args.reference)
-            print(json.dumps(state['accounting'],indent=2));return 0
+            print(_json(state['accounting'],indent=2));return 0
         if args.command=='bench':
             from .benchmark import benchmark
             result=benchmark(args.output,repetitions=args.repetitions,repository=args.repository)
-            print(json.dumps(result['summary'],indent=2));return 0
+            print(_json(result['summary'],indent=2));return 0
         if args.command=='doctor':
             from .diagnostics import doctor
-            print(json.dumps(doctor(),indent=2));return 0
+            print(_json(doctor(),indent=2));return 0
         if args.command=='serve':
             import os
             from .api import serve
@@ -124,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 state=store.read(args.run_id)
                 result=state.get('result',state) if args.command=='report' else state
-            print(json.dumps(result,indent=2))
+            print(_json(result,indent=2))
             return 1 if args.command=='resume' and result['status']!='passed' else 0
         if args.command == "mcp":
             from .mcp import serve
@@ -158,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Refusing to overwrite {file}; use --force", file=sys.stderr)
                 return 2
             file.parent.mkdir(parents=True, exist_ok=True)
-            file.write_text(json.dumps(DEFAULT, indent=2) + "\n", encoding="utf-8")
+            file.write_text(_json(DEFAULT, indent=2) + "\n", encoding="utf-8")
             print(f"Created {file}. Review all configured commands before running with --allow-exec.")
             return 0
         if args.command=='run':
@@ -168,16 +175,21 @@ def main(argv: list[str] | None = None) -> int:
         spec = load_spec(args.spec)
         budget = Budget(int(spec.raw.get("limits", {}).get("max_tokens", 30000)))
         if args.command == "plan":
-            result = plan(spec, budget, use_ai=args.ai)
-            print(json.dumps(result, indent=2, ensure_ascii=False))
-            return 0
+            if args.ai:
+                from .analysis import run_analysis
+                result=run_analysis('plan',spec.path,use_ai=True)
+            else:
+                result = plan(spec, budget, use_ai=False)
+            print(_json(result, indent=2, ensure_ascii=False))
+            return 1 if result.get('status') in ('blocked','budget_exhausted','cancelled') else 0
         if args.command == "idea":
-            result = evaluate_idea(spec, network_allowed=args.allow_network, use_ai=args.ai, budget=budget)
+            from .analysis import run_analysis
+            result = run_analysis('idea',spec.path,allow_network=args.allow_network,use_ai=args.ai)
             out = Path(args.output)
             out.mkdir(parents=True, exist_ok=True)
-            (out / "idea-research.json").write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
-            print(json.dumps(result, indent=2, ensure_ascii=False))
-            return 0
+            (out / "idea-research.json").write_text(_json(result, indent=2, ensure_ascii=False), encoding="utf-8")
+            print(_json(result, indent=2, ensure_ascii=False))
+            return 1 if result.get('status') in ('blocked','budget_exhausted','cancelled') else 0
         if args.command == "verify":
             from .sdk import run, Permissions
             result = run(spec.path, permissions=Permissions(allow_exec=args.allow_exec,
@@ -202,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
                 docker_image=args.docker_image, docker_network=args.docker_network,
                 agent=args.agent,
                 trace_dir=Path(args.output)/'browser-traces' if args.trace_browser else None)
-        print(json.dumps({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"],
+        print(_json({"status": result["status"], "attempts": result["attempts"], "budget": result["budget"],
             "run_id":result.get('run_id'),'functional_verdict':result.get('functional_verdict'),
             'budget_verdict':result.get('budget_verdict'),'stop_reason':result.get('stop_reason'),
             'artifact_status':result.get('artifact_status'),"agent_usage": result.get("agent_usage"), "paths": result["paths"]}, indent=2))

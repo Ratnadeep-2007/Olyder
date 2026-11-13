@@ -77,3 +77,33 @@ def test_unittest_module_oracle_resolves_to_trusted_file(tmp_path):
         'checks':[{'id':'unit','type':'command','argv':[sys.executable,'-m','unittest','test_value','-v']}]}))
     assert run(path,permissions=Permissions(allow_exec=True))['status']=='passed'
 
+
+def test_final_critic_reserve_survives_failed_repair_attempt(tmp_path):
+    class Provider:
+        api_version=1
+        calls=0
+        def complete(self,*args,**kwargs):
+            self.calls+=1
+            return {'content':'{"concerns":[],"note":"Bounded evidence reviewed"}',
+                    'usage':{'input_tokens':10,'output_tokens':5,'total_tokens':15}}
+    code="from pathlib import Path;p=Path('answer.py');p.write_text('answer = 42' if '#first' in p.read_text() else 'answer = 0 #first')"
+    provider=Provider()
+    result=run(project(tmp_path,code,budget={'max_cost_usd':'1','builder_upper_bound_usd':'0.2','verifier_reserve_usd':'0.3'}),
+        permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True),use_ai=True,model_provider=provider)
+    assert result['status']=='passed'
+    assert result['attempts']==2
+    assert provider.calls==1
+
+
+def test_strict_unknown_builder_blocks_paid_critic_but_keeps_test_evidence(tmp_path):
+    class Provider:
+        api_version=1
+        def complete(self,*args,**kwargs):
+            raise AssertionError('Unknown strict spend must block further paid calls')
+    result=run(project(tmp_path,budget={'max_cost_usd':'1','builder_upper_bound_usd':'0.2',
+        'verifier_reserve_usd':'0.3','strict':True}),use_ai=True,model_provider=Provider(),
+        permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True))
+    assert result['status']=='needs_review'
+    assert result['checks'][0]['status']=='pass'
+    assert result['independent_critic_status']=='budget_unavailable'
+

@@ -84,3 +84,13 @@ def test_third_party_style_plugin_executes_real_check(tmp_path,capsys):
     assert main(['run','--spec',str(spec),'--output',str(tmp_path/'out'),'--plugin',str(plugin),
         '--grant-plugin',manifest['name'],'--allow-exec','--execute-builder','--unsafe-host'])==0
     assert (tmp_path/'hello.py').exists()
+
+
+def test_reports_do_not_render_untrusted_markdown_images(tmp_path):
+    from olyder.report import save_report
+    from pathlib import Path
+    result=save_report({'goal':'![track](https://example.invalid/collect)',
+        'status':'blocked','verifier_note':'Authorization: Bearer FAKE_PRIVATE_KEY'},tmp_path)
+    markdown=Path(result['markdown']).read_text()
+    assert '![track](' not in markdown
+    assert 'FAKE_PRIVATE_KEY' not in Path(result['json']).read_text()

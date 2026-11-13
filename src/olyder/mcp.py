@@ -7,6 +7,7 @@ from pathlib import Path
 from .config import load_spec
 from .engine import plan, verify_once
 from .quota import Budget
+from .privacy import redact_values
 
 
 TOOLS = [
@@ -61,7 +62,7 @@ def process(msg: dict, workspace: Path, *, run_permissions=None, sandbox='host',
                 result=run(spec.path,permissions=run_permissions,backend=sandbox,docker_image=docker_image)
             else:
                 return {**base, "error": {"code": -32601, "message": "Unknown tool"}}
-            value = {"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}], "isError": False}
+            value = {"content": [{"type": "text", "text": json.dumps(redact_values(result), ensure_ascii=False)}], "isError": False}
         else:
             return {**base, "error": {"code": -32601, "message": "Method not found"}}
         return {**base, "result": value}

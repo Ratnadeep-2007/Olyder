@@ -22,3 +22,14 @@ def redact(text: str) -> str:
         else:
             output = rule.sub(r"\1[REDACTED]", output)
     return output
+
+
+def redact_values(value):
+    """Preserve JSON structure while redacting textual fields, never raw JSON."""
+    if isinstance(value,str):
+        return redact(value)
+    if isinstance(value,list):
+        return [redact_values(v) for v in value]
+    if isinstance(value,dict):
+        return {k:redact_values(v) for k,v in value.items()}
+    return value

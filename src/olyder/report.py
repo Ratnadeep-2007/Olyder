@@ -3,10 +3,22 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from pathlib import Path
+
+from .privacy import redact_values
+
+
+def _safe_values(value):
+    return redact_values(value)
+
+
+def _md(value):
+    return re.sub(r'([\\`*_{}\[\]()#+.!|>])',r'\\\1',html.escape(str(value)))
 
 
 def save_report(report: dict, output_dir: Path) -> dict[str, str]:
+    report=_safe_values(report)
     output_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     json_path, md_path, html_path = (output_dir / n for n in ("report.json", "report.md", "report.html"))
     json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -18,10 +30,10 @@ def save_report(report: dict, output_dir: Path) -> dict[str, str]:
         "artifact_refs", "verification_target", "application_status", "repaired_check_ids", "checker_sha256"
     ) if k in report}
     checks = report.get("checks", [])
-    md = ["# Olyder Verification Report", "", f"**Goal:** {report.get('goal','')}", f"**Status:** {report.get('status','unknown')}", f"**Spec SHA-256:** `{report.get('spec_sha256','')}`", f"**Attempts:** {report.get('attempts',0)}", "", "## Acceptance checks", ""]
+    md = ["# Olyder Verification Report", "", f"**Goal:** {_md(report.get('goal',''))}", f"**Status:** {report.get('status','unknown')}", f"**Spec SHA-256:** `{report.get('spec_sha256','')}`", f"**Attempts:** {report.get('attempts',0)}", "", "## Acceptance checks", ""]
     for c in checks:
-        md.append(f"- **{c['id']}** — {c['status'].upper()} ({c['type']}, {c['duration_ms']}ms): {c['details'].replace(chr(10), ' ')[:400]}")
-    md.extend(["", "## Objective metrics", "", "```json", json.dumps(report.get("metrics", {}), indent=2), "```", "", "## Verification", "", report.get("verifier_note", "Not requested"), "", "## Budget", "", "```json", json.dumps(report.get("budget", {}), indent=2), "```", "", "## External evidence", ""])
+        md.append(f"- **{_md(c['id'])}** — {c['status'].upper()} ({_md(c['type'])}, {c['duration_ms']}ms): {_md(c['details'].replace(chr(10), ' ')[:400])}")
+    md.extend(["", "## Objective metrics", "", "```json", json.dumps(report.get("metrics", {}), indent=2), "```", "", "## Verification", "", _md(report.get("verifier_note", "Not requested")), "", "## Budget", "", "```json", json.dumps(report.get("budget", {}), indent=2), "```", "", "## External evidence", ""])
     for src in report.get("sources", []):
         md.append(f"- {src['url']} — {src['status']} ({src.get('reason','')})")
     md.extend(["", "## Limitations", "", "A passing report proves only the declared checks ran and passed in the observed environment. It does not prove that all possible real-world requirements are satisfied."])
