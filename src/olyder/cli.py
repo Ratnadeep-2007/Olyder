@@ -6,6 +6,7 @@ import json
 import sys
 from pathlib import Path
 
+from . import __version__
 from .config import DEFAULT, ConfigError, load_spec
 from .engine import plan
 from .models import ModelError
@@ -19,7 +20,7 @@ def _json(value, *args, **kwargs):
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="olyder", description="Independent verification and bounded AI repair loops")
-    p.add_argument("--version", action="version", version="Olyder 0.4.0")
+    p.add_argument("--version", action="version", version=f"Olyder {__version__}")
     sub = p.add_subparsers(dest="command", required=True)
     sub.add_parser('doctor',help='Read-only setup and capability diagnostics')
     bench=sub.add_parser('bench',help='Run offline paired executable fixtures; never calls paid agents')

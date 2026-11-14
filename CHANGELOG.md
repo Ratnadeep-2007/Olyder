@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0b1 — first PyPI beta candidate (pending owner approval)
+
+- Distribution renamed from unpublished `olyder-agent` to `olyder` to support
+  the intended `pip install olyder` flow when published.
+- One-command editor skill setup, including project and global native skill
+  locations, conflict-safe repeated installs, and correct `description` metadata.
+- GitHub Actions builds/checks wheel and sdist and clean-installs the wheel
+  across Windows, Ubuntu and macOS.
+- Release-tag and version consistency validation, content/secret checks,
+  and PyPI Trusted Publishing through an approval-gated GitHub environment.
+- All previously documented limitations remain: no real paid vendor benchmark,
+  no provider-enforced quota cap, and no complete ACP TCK. Experimental ACP
+  external-client support remains **unmerged** in a separate draft PR.
+- First public upload requires the package owner's PyPI account and publisher
+  authorization; committing this candidate alone does not publish it.
+
+
 ## Unreleased v0.5 foundations (not release-ready)
 
 - Explicit schema-2 requirement coverage and subset/critic completion guards.

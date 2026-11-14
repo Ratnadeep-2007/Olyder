@@ -1,0 +1,8 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+recursive-include src/olyder/data *.md
+prune .github
+prune .olyder
+global-exclude __pycache__ *.py[cod] *.pyd *.so
+global-exclude .env .env.* *.pem *.p12 *.pfx id_rsa id_ed25519
