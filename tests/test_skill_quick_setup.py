@@ -1,6 +1,4 @@
 """Zero-model, no-network Antigravity quick-setup regression checks."""
-from pathlib import Path
-
 from olyder.cli import main
 
 
