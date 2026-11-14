@@ -25,6 +25,7 @@ and flags with a **known ACP v1 agent implementation**):
   "api_version": 1,
   "kind": "agent",
   "protocol": "acp-v1",
+  "runner_python": "python3",
   "name": "my-acp-agent",
   "argv": ["YOUR_AGENT_BINARY", "ACP_STDIN_MODE"],
   "permissions": ["execute", "write_workspace"]
@@ -41,6 +42,12 @@ olyder run --spec ./olyder.json --plugin /path/to/agent.json \
   --grant-plugin my-acp-agent --allow-exec --execute-builder \
   --sandbox docker --docker-image YOUR_REVIEWED_IMAGE
 ```
+
+The optional `runner_python` field selects the interpreter **inside the
+chosen execution backend**. For a reviewed Linux container that installs
+Olyder and the ACP SDK, use `"runner_python": "python3"`; for a Windows
+host virtual environment you can omit the field to use the current Python
+interpreter. Do not assume the host's absolute Python path exists in Docker.
 
 Docker does not fall back to host. If a trusted local experiment must use
 the host, replace the sandbox flags with `--unsafe-host`, knowing that
