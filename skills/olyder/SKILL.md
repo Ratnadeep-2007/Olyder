@@ -1,6 +1,6 @@
 ---
 name: olyder
-summary: Execute and verify original acceptance contracts with explicit permissions and evidence.
+description: Independently verify code against agreed acceptance requirements with Olyder, review evidence, and coordinate explicitly authorized repair runs.
 ---
 
 # Olyder integration skill
