@@ -41,7 +41,7 @@ def test_unicode_frame_limit_counts_utf8_bytes(monkeypatch, tmp_path):
 
 
 def test_invalid_utf8_does_not_disconnect_mcp_stdio(monkeypatch, tmp_path):
-    stream = io.TextIOWrapper(io.BytesIO(b"\\xff\n" + _ping(9).encode("utf-8")),
+    stream = io.TextIOWrapper(io.BytesIO(bytes([255, 10]) + _ping(9).encode("utf-8")),
                               encoding="utf-8")
     messages = _serve(monkeypatch, tmp_path, stream)
     assert messages[0]["error"]["code"] == -32700
