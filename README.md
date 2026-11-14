@@ -6,7 +6,7 @@
 
 Olyder is a free, open-source, **verification-driven execution layer** for coding agents. It combines a portable agent skill, a Python CLI, an optional independent LLM reviewer, a bounded correction loop, and evidence-based reports. No model subscription is needed for deterministic tests.
 
-> **Status: unreleased universal-engine development branch; package version 0.4.0.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
+> **Status: PyPI beta release candidate 0.5.0b1 (not yet published).** Tested CLI/SDK foundation and experimental protocol integrations; not a production security sandbox, not autonomous general web research, not a provider hard quota and not a guarantee of correctness. See [limitations](#security--limitations).
 
 ## What it does
 
@@ -38,10 +38,17 @@ and SDK retain explicit execution permissions.
 See [ACP editor setup and limitations](docs/ACP_BRIDGE.md) for a sample editor
 configuration and interoperability test scope.
 
+## First public beta — release plan
+
+Beta distribution: `olyder==0.5.0b1`. `pip install olyder` will be
+available **only after PyPI publication succeeds**. The release workflow uses
+verified source/wheel artifacts, a matching prerelease tag, and human-approved
+Trusted Publishing. See [PyPI release runbook](docs/PYPI_RELEASE.md) and
+[known limitations](docs/KNOWN_LIMITATIONS.md).
+
 ## Install and enable Olyder skills (Windows)
 
-> The package is **not yet published on PyPI as `olyder`**. Until publication,
-> install the current `main` branch directly from GitHub:
+> The first **`olyder` 0.5.0b1 beta** is being prepared for PyPI. **Until the public upload is confirmed**, install the GitHub source. Once published, normal installation will be `python -m pip install olyder`.
 
 ```powershell
 python -m pip install --upgrade git+https://github.com/Ratnadeep-2007/Olyder.git
