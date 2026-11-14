@@ -53,6 +53,6 @@ jobs:
       - name: Install ACP optional integration
         run: python -m pip install -e '.[acp]' pytest
       - name: Independent SDK/stdio contract tests
-        run: python -m pytest -q tests/test_acp_bridge.py
+        run: python -m pytest -q tests/test_acp_bridge.py tests/test_acp_external.py
       - name: Existing interoperability and MCP checks
         run: python -m pytest -q tests/test_mcp_hardening.py tests/test_interoperability_diagnostics.py
