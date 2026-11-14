@@ -61,7 +61,7 @@ def install_skill(target: str, project: str | Path = ".", *, global_scope: bool 
             elif not force and (not repeatable or path.read_text(encoding="utf-8") != content):
                 conflicts.append(str(path))
     if conflicts:
-        raise ConfigError("Existing or unsafe skill; use --force only for regular existing files: " +
+        raise ConfigError("Existing skill or unsafe path; use --force only for regular existing files: " +
                           ", ".join(conflicts))
     result: list[tuple[str, Path]] = []
     for path in paths:
