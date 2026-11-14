@@ -107,3 +107,45 @@ def test_real_acp_stdio_client_with_independent_sdk(tmp_path):
             text = received[-1][1].content.text
             assert '"blocked"' in text
     asyncio.run(asyncio.wait_for(scenario(), timeout=25))
+
+def test_acp_overlapping_turns_and_cancellation_are_fail_closed(monkeypatch, tmp_path):
+    from threading import Event
+    from olyder import acp_bridge
+
+    root = _project(tmp_path)
+    agent = OlyderACPAgent(root)
+    started, release = Event(), Event()
+    observed = []
+
+    class Sink:
+        async def session_update(self, *args, **kwargs):
+            observed.append(kwargs)
+    agent.on_connect(Sink())
+
+    def slow_command(_workspace, _prompt):
+        started.set()
+        release.wait(timeout=3)
+        return 'late response that must not reach the client'
+
+    monkeypatch.setattr(acp_bridge, 'read_only_command', slow_command)
+
+    async def scenario():
+        sid = (await agent.new_session(cwd=str(root), mcp_servers=[])).session_id
+        first = asyncio.create_task(agent.prompt(sid, [acp.text_block('plan')]))
+        assert await asyncio.to_thread(started.wait, 2)
+        with pytest.raises(ValueError, match='already running'):
+            await agent.prompt(sid, [acp.text_block('verify')])
+        await agent.cancel(sid)
+        release.set()
+        result = await first
+        assert result.stop_reason == 'cancelled'
+        assert not observed
+        await agent.close_session(sid)
+        with pytest.raises(ValueError, match='Unknown'):
+            await agent.prompt(sid, [acp.text_block('help')])
+
+    try:
+        asyncio.run(asyncio.wait_for(scenario(), timeout=8))
+    finally:
+        release.set()
+
