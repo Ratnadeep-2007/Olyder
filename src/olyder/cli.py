@@ -81,6 +81,8 @@ def parser() -> argparse.ArgumentParser:
     skill.add_argument("--target", choices=["claude", "codex", "opencode", "both"], default="both")
     skill.add_argument("--project", default=".")
     skill.add_argument("--force", action="store_true", help="Overwrite existing skill file")
+    acp = sub.add_parser("acp", help="Run optional read-only ACP v1 editor bridge over stdio")
+    acp.add_argument("--workspace", default=".")
     mcp = sub.add_parser("mcp", help="Run read-only-by-default MCP JSON-RPC server over stdio")
     mcp.add_argument("--workspace", default=".")
     mcp.add_argument('--allow-exec',action='store_true')
@@ -130,6 +132,12 @@ def main(argv: list[str] | None = None) -> int:
                 result=state.get('result',state) if args.command=='report' else state
             print(_json(result,indent=2))
             return 1 if args.command=='resume' and result['status']!='passed' else 0
+        if args.command == "acp":
+            try:
+                from .acp_bridge import serve as serve_acp
+            except ImportError as exc:
+                raise ConfigError("ACP bridge requires: pip install 'olyder-agent[acp]'") from exc
+            return serve_acp(Path(args.workspace).resolve())
         if args.command == "mcp":
             from .mcp import serve
             from .sdk import Permissions
