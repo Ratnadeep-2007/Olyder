@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib.resources
 import json
 import sys
 from pathlib import Path
@@ -77,14 +76,16 @@ def parser() -> argparse.ArgumentParser:
                            help="Explicitly permit a builder to run on the host without OS isolation")
             s.add_argument("--docker-network", choices=["none", "bridge"], default="none",
                            help="Container egress: bridge is unrestricted (requires --allow-network)")
-    skill = sub.add_parser("install-skill", help="Install agent SKILL.md into a project")
-    skill.add_argument("--target", choices=["claude", "codex", "opencode", "antigravity", "both"], default="both")
-    setup = sub.add_parser("setup", help="One-command project skill setup (default: Antigravity)")
-    setup.add_argument("editor", nargs="?", choices=["antigravity", "opencode", "codex", "claude"], default="antigravity")
-    setup.add_argument("--project", default=".")
-    setup.add_argument("--force", action="store_true", help="Overwrite an existing, customized skill")
+    skill = sub.add_parser("install-skill", help="Install Olyder skill locally or globally")
+    skill.add_argument("--target", choices=["claude", "codex", "opencode", "antigravity", "gemini", "both", "all"], default="both")
     skill.add_argument("--project", default=".")
-    skill.add_argument("--force", action="store_true", help="Overwrite existing skill file")
+    skill.add_argument("--global", "-g", dest="global_scope", action="store_true", help="Make the skill available in all projects")
+    skill.add_argument("--force", action="store_true", help="Overwrite a customized existing skill")
+    setup = sub.add_parser("setup", help="Set up Olyder skills for one or every coding editor")
+    setup.add_argument("editor", nargs="?", choices=["antigravity", "gemini", "opencode", "codex", "claude", "all"], default="all")
+    setup.add_argument("--project", default=".")
+    setup.add_argument("--global", "-g", dest="global_scope", action="store_true", help="Install once for all your projects")
+    setup.add_argument("--force", action="store_true", help="Overwrite a customized existing skill")
     acp = sub.add_parser("acp", help="Run optional read-only ACP v1 editor bridge over stdio")
     acp.add_argument("--workspace", default=".")
     mcp = sub.add_parser("mcp", help="Run read-only-by-default MCP JSON-RPC server over stdio")
@@ -151,34 +152,16 @@ def main(argv: list[str] | None = None) -> int:
                 allow_exec=args.allow_exec,execute_builder=args.execute_builder,unsafe_host=args.unsafe_host),
                 sandbox=args.sandbox,docker_image=args.docker_image)
         if args.command in ("install-skill", "setup"):
-            project = Path(args.project).expanduser().resolve()
-            if not project.is_dir():
-                raise ConfigError("Project directory does not exist")
+            from .skill_install import install_skill
             target = args.editor if args.command == "setup" else args.target
-            paths = []
-            if target in ("claude", "both"):
-                paths.append(project / ".claude" / "skills" / "olyder" / "SKILL.md")
-            if target in ("codex", "opencode", "antigravity", "both"):
-                paths.append(project / ".agents" / "skills" / "olyder" / "SKILL.md")
-            content = importlib.resources.files("olyder").joinpath("data/SKILL.md").read_text(encoding="utf-8")
-            # setup is repeatable: identical installs are left untouched.
-            def already_installed(path):
-                return path.is_file() and path.read_text(encoding="utf-8") == content
-            conflicts = [str(f) for f in paths
-                         if f.exists() and not args.force and
-                         (args.command != "setup" or not already_installed(f))]
-            if conflicts:
-                raise ConfigError("Existing skill; use --force to overwrite: " + ", ".join(conflicts))
-            for file in paths:
-                if args.command == "setup" and already_installed(file):
-                    print(f"Already installed: {file}")
-                    continue
-                file.parent.mkdir(parents=True, exist_ok=True)
-                file.write_text(content, encoding="utf-8")
-                print(f"Installed skill: {file}")
+            installs = install_skill(target, args.project, global_scope=args.global_scope,
+                                     force=args.force, repeatable=args.command == "setup")
+            for status, file in installs:
+                print(f"{status}: {file}")
             if args.command == "setup":
-                print(f"Ready for {target}. Open the project in your editor and ask the agent to use the Olyder skill.")
-                print("No coding agent or paid model was started. Review olyder.json before enabling verification or mutations.")
+                scope = "every project (global)" if args.global_scope else "this project"
+                print(f"Ready for {target} in {scope}. Restart or reload your editor's skills.")
+                print("No AI model was called; no project code or acceptance checks were executed.")
             return 0
         if args.command == "init":
             file = Path(args.directory).expanduser().resolve() / "olyder.json"
