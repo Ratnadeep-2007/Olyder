@@ -38,35 +38,47 @@ and SDK retain explicit execution permissions.
 See [ACP editor setup and limitations](docs/ACP_BRIDGE.md) for a sample editor
 configuration and interoperability test scope.
 
-## Easiest Antigravity setup (Windows)
+## Install and enable Olyder skills (Windows)
 
-Open a project folder in Google Antigravity. In its PowerShell terminal,
-paste the following **one line** (review commands before running them):
-
-```powershell
-py -m pip install git+https://github.com/Ratnadeep-2007/Olyder.git; if ($LASTEXITCODE -eq 0) { py -m olyder setup antigravity }
-```
-
-Olyder installs its discoverable skill at
-`.agents/skills/olyder/SKILL.md` inside the current project. No manual
-YAML changes, agent launches, network research or paid model calls are
-performed by the setup command. Running setup again is safe when the skill
-has not been modified; a customized skill is preserved unless you explicitly
-supply `--force`.
-
-After installation, start a new Antigravity agent conversation and ask:
-"Use the Olyder skill to inspect this project and propose acceptance checks.
-Do not run commands or change files without my approval."
-
-For an existing installation, setup alone is enough:
+> The package is **not yet published on PyPI as `olyder`**. Until publication,
+> install the current `main` branch directly from GitHub:
 
 ```powershell
-olyder setup antigravity
+python -m pip install --upgrade git+https://github.com/Ratnadeep-2007/Olyder.git
 ```
 
-The skill guides your editor agent but **does not itself verify code**.
-Actual Olyder verification requires an agreed `olyder.json` acceptance
-contract and explicit permission to execute any configured checks.
+One-time setup for **all supported editors and all your projects**:
+
+```powershell
+olyder setup --global
+```
+
+Or select an editor: `olyder setup opencode --global`,
+`olyder setup antigravity --global`, `olyder setup claude --global`,
+`olyder setup codex --global`. For just the **current project**, omit
+`--global`, e.g. `olyder setup opencode`.
+
+Olyder uses native editor skill discovery locations:
+
+| Editor | Project | Global |
+| --- | --- | --- |
+| OpenCode | `.opencode/skills/olyder/SKILL.md` and `.agents/skills/olyder/SKILL.md` | `~/.config/opencode/skills/olyder/SKILL.md` |
+| Antigravity/Gemini | `.agents/skills/olyder/SKILL.md` | `~/.gemini/config/skills/olyder/SKILL.md` |
+| Claude Code | `.claude/skills/olyder/SKILL.md` | `~/.claude/skills/olyder/SKILL.md` |
+| Codex | `.agents/skills/olyder/SKILL.md` | `~/.agents/skills/olyder/SKILL.md` |
+
+Run setup again safely: identical files are skipped, customized files are
+preserved until you explicitly pass `--force`. No manual YAML edits are
+required. Restart or reload editor skills, then ask the coding agent
+to use the **Olyder** skill. OpenCode also accepts `@olyder`;
+Antigravity supports `/olyder`.
+
+`setup` installs only agent instructions. It never starts agents, edits
+source code, runs verification checks, contacts AI providers or enables
+unsafe permissions. Actual verification requires a reviewed `olyder.json`
+and explicit test execution consent. If `py` is not recognized on Windows,
+use `python -m pip` as shown above. A missing `python` command requires
+fixing the local Python installation or PATH first.
 
 ## Quick start
 

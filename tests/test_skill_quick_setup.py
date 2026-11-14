@@ -17,10 +17,11 @@ def test_antigravity_quick_setup_is_idempotent(tmp_path, capsys):
     assert skill.stat().st_mtime_ns == before
 
 
-def test_default_setup_targets_antigravity(tmp_path):
+def test_default_setup_targets_all_supported_editors(tmp_path):
     assert main(["setup", "--project", str(tmp_path)]) == 0
     assert (tmp_path / ".agents" / "skills" / "olyder" / "SKILL.md").is_file()
-    assert not (tmp_path / ".claude").exists()
+    assert (tmp_path / ".opencode" / "skills" / "olyder" / "SKILL.md").is_file()
+    assert (tmp_path / ".claude" / "skills" / "olyder" / "SKILL.md").is_file()
     assert not (tmp_path / "olyder.json").exists()
 
 

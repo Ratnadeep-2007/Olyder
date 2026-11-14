@@ -10,6 +10,26 @@ olyder verify --spec examples/demo-app/olyder.json --allow-exec
 
 The demo runs actual pricing unit tests without a model. Generated example evidence is in docs/examples/universal/. Review executable checks before granting --allow-exec.
 
+## Quick global editor setup
+
+After installing Olyder, run `olyder setup --global` once. This installs
+the packaged skill into all supported editors' native global skill folders
+(OpenCode, Antigravity, Claude Code and Codex). You can instead target a single
+editor: `olyder setup opencode --global` or
+`olyder setup antigravity --global`. To install only in the current
+project, omit `--global`.
+
+The global installer does not modify the current project. `setup` is
+repeatable, will not overwrite custom skills unless `--force` is explicitly
+supplied, and never invokes an LLM or executes checks. OpenCode project
+installations use both `.opencode/skills/olyder/SKILL.md` (native) and
+`.agents/skills/olyder/SKILL.md` (compatibility). Antigravity's global
+location is `~/.gemini/config/skills/olyder/SKILL.md`.
+
+The older `olyder install-skill --target ...` command remains available,
+now with `--global` and explicit `antigravity` / `gemini` targets.
+Refresh editor skill discovery or start a new conversation after setup.
+
 ## Configuration
 
 `olyder init` creates a starter spec. Preserve goal/check IDs and review builder.argv before enabling mutation. Existing schema-1 specs remain readable; schema 2 adds explicit requirements:
