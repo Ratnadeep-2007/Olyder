@@ -7,9 +7,11 @@ implemented. The existing v0.5 feature branch is unreleased and stays on PR #4.
 
 Olyder's universal Python SDK and CLI already run independently of any editor.
 Its current MCP endpoint is local **stdio with the 2025-03-26 handshake**,
-read-only by default. Its existing plugin contract is **Olyder-specific**, not
-Agent Client Protocol (ACP), and its optional loopback HTTP API is **not an MCP
-HTTP transport**. Docker is optional. The latest code hardens stdio against
+read-only by default. The optional **ACP v1 read-only editor bridge** is
+implemented using the official Python SDK and has an independent SDK stdio
+integration test. This does not certify full ACP conformance or support ACP v2.
+Olyder's *internal plugin contract* remains Olyder-specific, not ACP.
+The optional loopback HTTP API is **not an MCP HTTP transport**. Docker is optional. The latest code hardens stdio against
 oversized frames and redacts caught tool error messages.
 
 Universal core != universal out-of-the-box interoperability. A client/agent
@@ -29,10 +31,10 @@ must explicitly support a compatible contract or be adapted.
   Add both old/new protocol conformance tests before claiming support.
   Keep local stdio as the first supported transport; remote MCP needs real
   authorization, transport, origin and token-handling design.
-- **ACP:** Agent Client Protocol enables editor-to-agent interoperability
-  beyond IDE-specific wrappers. Evaluate a dedicated ACP adapter/bridge
-  and run the public ACP TCK. ACP is different from MCP; do not represent
-  MCP tools as an ACP implementation.
+- **ACP:** The optional ACP v1 bridge exposes only safe read-only planning,
+  file verification, status and help from an independent stdio client.
+  Complete the public ACP TCK and a named editor live study before a full
+  conformance claim. ACP is different from MCP. ACP v2 is not supported.
 - **No IDE-specific core:** Thin adapters or process launchers for
   VS Code, Cursor and JetBrains must all call the same Olyder SDK.
 
@@ -91,7 +93,7 @@ must explicitly support a compatible contract or be adapted.
 
 ## Gate to a universal-platform claim
 
-Do not release as IDE/agent universal until independent MCP and ACP
+Do not release as IDE/agent universal until independent full MCP and ACP
 conformance, at least one real editor integration, cross-platform isolation
 and cancellation evidence, and honest billing provenance are recorded.
 A successful smoke test of a named subprocess adapter alone is insufficient.
