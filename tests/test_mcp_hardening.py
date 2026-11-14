@@ -65,3 +65,17 @@ def test_mcp_notifications_do_not_emit_responses(monkeypatch, tmp_path):
     assert _serve(monkeypatch, tmp_path, io.StringIO(raw + _ping(3))) == [
         {"jsonrpc": "2.0", "id": 3, "result": {}}
     ]
+
+def test_unexpected_agent_exception_stays_in_tool_result(monkeypatch, tmp_path):
+    # Unexpected runtime or third-party failures cannot kill the MCP session
+    # or expose arbitrary exception text to the client.
+    def failing_spec(_path):
+        raise RuntimeError("unfiltered-private-internal-value")
+    monkeypatch.setattr(mcp, "load_spec", failing_spec)
+    request = json.dumps({"jsonrpc": "2.0", "id": 17, "method": "tools/call",
+                          "params": {"name": "olyder_plan"}}) + "\n"
+    messages = _serve(monkeypatch, tmp_path, io.StringIO(request + _ping(18)))
+    assert messages[0]["result"]["isError"] is True
+    assert "RuntimeError" in messages[0]["result"]["content"][0]["text"]
+    assert "unfiltered-private-internal-value" not in json.dumps(messages)
+    assert messages[1] == {"jsonrpc": "2.0", "id": 18, "result": {}}
