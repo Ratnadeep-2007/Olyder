@@ -123,7 +123,10 @@ class OlyderACPAgent(Agent):
         if self._conn is not None:
             await self._conn.session_update(
                 session_id=session_id,
-                update=AgentMessageChunk(content=TextContentBlock(type='text', text=response)),
+                update=AgentMessageChunk(
+                    sessionUpdate='agent_message_chunk',
+                    content=TextContentBlock(type='text', text=response),
+                ),
             )
         return PromptResponse(stop_reason='end_turn')
 
