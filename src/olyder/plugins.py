@@ -33,7 +33,7 @@ def load_agent_manifest(path, *, grants):
         if data.get('telemetry', 'unknown') != 'unknown':
             raise ValueError('ACP client telemetry is not independently verified')
         from .acp_external import ACPProcessAgent
-        adapter = ACPProcessAgent(name, data.get('argv'))
+        adapter = ACPProcessAgent(name, data.get('argv'), python=data.get('runner_python'))
     elif protocol == 'executable':
         adapter = ExecutableAgent(name, data.get('argv'), data.get('telemetry', 'unknown'))
     else:
