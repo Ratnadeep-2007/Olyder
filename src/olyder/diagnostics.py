@@ -1,6 +1,7 @@
 """Read-only setup diagnostics; availability is not a live integration test."""
 import platform
 import shutil
+from importlib.util import find_spec
 
 from .adapters import agent_capabilities
 
@@ -14,7 +15,11 @@ def doctor():
                 'mcp': {'transport': 'stdio', 'protocol_version': '2025-03-26',
                         'mutation': 'explicit_server_grant'},
                 'http_api': {'transport': 'authenticated_loopback', 'mutation': False},
-                'acp': {'implemented': False, 'conformance': 'not_run'},
+                'acp': {'implemented': True, 'protocol_version': 1,
+                        'transport': 'stdio', 'mode': 'read_only',
+                        'optional_sdk_installed': find_spec('acp') is not None,
+                        'conformance': 'official_sdk_stdio_integration',
+                        'full_tck': 'not_run', 'live_editor': 'not_run'},
                 'mcp_2026_07_28': {'implemented': False, 'conformance': 'not_run'},
             },
             'warnings':['Host execution is not OS isolation',
