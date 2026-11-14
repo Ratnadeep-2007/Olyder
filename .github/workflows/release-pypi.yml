@@ -1,0 +1,69 @@
+name: Publish Olyder beta to PyPI
+
+on:
+  release:
+    types: [published]
+
+# The OIDC privilege belongs ONLY to the separately approved publisher job.
+permissions: {}
+
+jobs:
+  verify-and-package:
+    name: Verify tagged beta release and build artifacts
+    if: github.event.release.prerelease == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Ensure the tagged source is already merged into main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build tools
+        run: python -m pip install --upgrade build twine
+      - name: Build clean distributions
+        run: python -m build
+      - name: Verify name, version, contents, and release tag
+        run: python scripts/verify_distribution.py
+      - name: Validate PyPI long description
+        run: python -m twine check --strict dist/olyder-0.5.0b1.tar.gz dist/olyder-0.5.0b1-py3-none-any.whl
+      - name: Smoke the built wheel in a clean environment
+        run: |
+          python -m venv .wheel-smoke
+          .wheel-smoke/bin/python -m pip install --no-index --find-links dist "olyder==0.5.0b1"
+          .wheel-smoke/bin/python scripts/smoke_installed.py
+      - name: Upload the exact verified distribution files
+        uses: actions/upload-artifact@v4
+        with:
+          name: olyder-verified-beta-dist
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish only after PyPI environment approval
+    needs: verify-and-package
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/olyder/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download verified distribution files
+        uses: actions/download-artifact@v4
+        with:
+          name: olyder-verified-beta-dist
+          path: dist/
+      - name: Trusted Publishing via short-lived OIDC token
+        uses: pypa/gh-action-pypi-publish@release/v1
