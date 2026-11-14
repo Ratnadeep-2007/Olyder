@@ -18,6 +18,26 @@ Olyder is a free, open-source, **verification-driven execution layer** for codin
 6. **Repair and retry** with targeted failure feedback, bounded attempts, an overall fail-closed deadline check, and a measurable-progress stop.
 7. **Report** JSON, Markdown and a self-contained HTML file with pass/fail metrics, declared-check execution coverage, evidence, status, scope and budget.
 
+## Experimental ACP editor integration
+
+Olyder can run as a **read-only ACP v1 agent** for compatible editors using an
+optional dependency. This is a transport for deterministic Olyder tools,
+not an autonomous conversational coding model or a verified ACP v2 implementation.
+
+```bash
+python -m pip install -e '.[acp]'
+olyder acp --workspace /absolute/path/to/project
+```
+
+Send `plan`, `verify`, `status`, or `help` from the ACP client. The editor
+cannot add MCP servers, select a different project root, invoke shell checks,
+make network requests, or execute builders through this bridge. Command/HTTP/
+browser checks remain **blocked** and never count as passes. The primary CLI
+and SDK retain explicit execution permissions.
+
+See [ACP editor setup and limitations](docs/ACP_BRIDGE.md) for a sample editor
+configuration and interoperability test scope.
+
 ## Quick start
 
 Requires Python 3.11+.
