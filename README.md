@@ -38,6 +38,36 @@ and SDK retain explicit execution permissions.
 See [ACP editor setup and limitations](docs/ACP_BRIDGE.md) for a sample editor
 configuration and interoperability test scope.
 
+## Easiest Antigravity setup (Windows)
+
+Open a project folder in Google Antigravity. In its PowerShell terminal,
+paste the following **one line** (review commands before running them):
+
+```powershell
+py -m pip install git+https://github.com/Ratnadeep-2007/Olyder.git; if ($LASTEXITCODE -eq 0) { py -m olyder setup antigravity }
+```
+
+Olyder installs its discoverable skill at
+`.agents/skills/olyder/SKILL.md` inside the current project. No manual
+YAML changes, agent launches, network research or paid model calls are
+performed by the setup command. Running setup again is safe when the skill
+has not been modified; a customized skill is preserved unless you explicitly
+supply `--force`.
+
+After installation, start a new Antigravity agent conversation and ask:
+"Use the Olyder skill to inspect this project and propose acceptance checks.
+Do not run commands or change files without my approval."
+
+For an existing installation, setup alone is enough:
+
+```powershell
+olyder setup antigravity
+```
+
+The skill guides your editor agent but **does not itself verify code**.
+Actual Olyder verification requires an agreed `olyder.json` acceptance
+contract and explicit permission to execute any configured checks.
+
 ## Quick start
 
 Requires Python 3.11+.
