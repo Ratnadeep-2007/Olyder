@@ -64,7 +64,7 @@ def verify() -> None:
         entries = set(tar.getnames())
         _assert_no_sensitive_entries(entries)
         prefix = f"olyder-{version}/"
-        assert all(x.startswith(prefix) for x in entries), "Unexpected source archive layout"
+        assert all(x == f"olyder-{version}" or x.startswith(prefix) for x in entries), "Unexpected source archive layout"
         for file in ("README.md", "LICENSE", "pyproject.toml", "src/olyder/data/SKILL.md"):
             assert prefix + file in entries, f"Missing source artifact: {file}"
         meta_entry = tar.extractfile(prefix + "PKG-INFO")
