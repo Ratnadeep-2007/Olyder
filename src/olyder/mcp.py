@@ -7,8 +7,10 @@ from pathlib import Path
 
 from .config import load_spec
 from .engine import plan, verify_once
-from .privacy import redact_values
+from .privacy import redact, redact_values
 from .quota import Budget
+
+MAX_MCP_FRAME_BYTES = 1024 * 1024  # Upper bound per newline-delimited request.
 
 TOOLS = [
     {
@@ -67,18 +69,40 @@ def process(msg: dict, workspace: Path, *, run_permissions=None, sandbox='host',
             return {**base, "error": {"code": -32601, "message": "Method not found"}}
         return {**base, "result": value}
     except (OSError, ValueError, KeyError) as exc:
-        return {**base, "result": {"content": [{"type": "text", "text": f"Olyder: {str(exc)[:240]}"}], "isError": True}}
+        return {**base, "result": {"content": [{"type": "text", "text": f"Olyder: {redact(str(exc))[:240]}"}], "isError": True}}
 
 
 def serve(workspace: Path, *, run_permissions=None, sandbox='host', docker_image='python:3.13-slim') -> int:
-    for raw in sys.stdin:
-        try:
-            msg = json.loads(raw)
-            response = process(msg, workspace,run_permissions=run_permissions,sandbox=sandbox,docker_image=docker_image)
-            if response is not None:
-                sys.stdout.write(json.dumps(response) + "\n")
-                sys.stdout.flush()
-        except (ValueError, TypeError) as exc:
-            sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {type(exc).__name__}"}}) + "\n")
+    """Serve bounded UTF-8 JSON-RPC frames without unbounded readline allocations.
+
+    stdio MCP is line-delimited. Oversized frames are drained in small pieces so
+    the following valid request on the same connection is not lost. Never echo
+    malformed input or credentials to stdout.
+    """
+    stream = getattr(sys.stdin, 'buffer', sys.stdin)
+    while True:
+        raw = stream.readline(MAX_MCP_FRAME_BYTES + 1)
+        if not raw:
+            break
+        newline = raw.endswith(b'\n' if isinstance(raw, bytes) else '\n')
+        size = len(raw) if isinstance(raw, bytes) else len(raw.encode('utf-8'))
+        if size > MAX_MCP_FRAME_BYTES:
+            while not newline:
+                segment = stream.readline(8192)
+                if not segment:
+                    break
+                newline = segment.endswith(b'\n' if isinstance(segment, bytes) else '\n')
+            response = {'jsonrpc': '2.0', 'id': None, 'error':
+                        {'code': -32600, 'message': 'MCP frame exceeds size limit'}}
+        else:
+            try:
+                msg = json.loads(raw.decode('utf-8') if isinstance(raw, bytes) else raw)
+                response = process(msg, workspace, run_permissions=run_permissions,
+                                   sandbox=sandbox, docker_image=docker_image)
+            except (ValueError, TypeError, UnicodeError, RecursionError) as exc:
+                response = {'jsonrpc': '2.0', 'id': None, 'error':
+                            {'code': -32700, 'message': 'Parse error: ' + type(exc).__name__}}
+        if response is not None:
+            sys.stdout.write(json.dumps(response, ensure_ascii=False) + '\n')
             sys.stdout.flush()
     return 0
