@@ -113,3 +113,14 @@ def test_acp_completion_parser_is_fail_closed():
                     "stop_reason": "refusal"}) + "\n",
     ]:
         assert agent.parse(io.StringIO(response))["status"] == "failed"
+
+
+def test_explicit_container_python_runner(tmp_path):
+    _, manifest, _ = _setup(tmp_path, agent_name="acp-test-container-python")
+    payload = json.loads(manifest.read_text())
+    payload["runner_python"] = "python3"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    adapter = load_agent_manifest(manifest, grants={"acp-test-container-python"})
+    # A Docker image's Python path need not match the host interpreter path.
+    assert adapter.command("build")[0] == "python3"
+    assert adapter.capabilities().isolated is False  # Backend selects isolation.
