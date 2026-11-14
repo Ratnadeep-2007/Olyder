@@ -70,6 +70,12 @@ def process(msg: dict, workspace: Path, *, run_permissions=None, sandbox='host',
         return {**base, "result": value}
     except (OSError, ValueError, KeyError) as exc:
         return {**base, "result": {"content": [{"type": "text", "text": f"Olyder: {redact(str(exc))[:240]}"}], "isError": True}}
+    except Exception as exc:
+        # A failing third-party adapter or runtime error must not terminate the
+        # stdio server or echo arbitrary exception text (which can contain data).
+        return {**base, "result": {"content": [{"type": "text",
+                 "text": "Olyder: internal tool failure (" + type(exc).__name__ + ")"}],
+                 "isError": True}}
 
 
 def serve(workspace: Path, *, run_permissions=None, sandbox='host', docker_image='python:3.13-slim') -> int:
