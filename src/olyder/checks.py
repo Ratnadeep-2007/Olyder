@@ -1,19 +1,18 @@
 """Execute reproducible acceptance checks with observed evidence, not AI assertions."""
 from __future__ import annotations
 
-import re
-import subprocess
-import tempfile
+import ipaddress
 import os
+import re
+import tempfile
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from urllib import request, error, parse
-import ipaddress
+from urllib import error, parse, request
 
 from .config import ConfigError, safe_path
+from .execution import ExecutionError, docker_argv, managed_run
 from .privacy import redact
-from .execution import docker_argv, managed_run, ExecutionError
 
 
 @dataclass
@@ -47,6 +46,11 @@ def _require_network(url: str, allow_network: bool) -> None:
 
 def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False, deadline: float | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", trace_dir: Path | None = None) -> tuple[bool, str]:
     kind = check["type"]
+    if kind.startswith('plugin:'):
+        if not allow_exec:
+            raise PermissionError('Verifier plugins require explicit execution permission')
+        from .plugins import verify_plugin
+        return verify_plugin(check,root,{'allow_exec':allow_exec,'allow_network':allow_network})
     if kind == "file":
         p = safe_path(root, check["path"])
         expected = check.get("exists", True)
@@ -69,7 +73,11 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
         try:
             with tempfile.TemporaryFile(mode="w+t", encoding="utf-8", errors="replace") as captured:
                 command = check["argv"]
-                if sandbox == "docker":
+                from .control import current
+                control = current.get()
+                if control and control.check_backend is not None:
+                    command = control.check_backend.prepare(command, root, writable=False)
+                elif sandbox == "docker":
                     command = docker_argv(command, root, image=docker_image, writable=False)
                 elif sandbox != "host":
                     raise ExecutionError("Unknown execution isolation mode")
@@ -208,13 +216,12 @@ def run_checks(checks: list[dict], root: Path, allow_exec: bool = False, only: s
             status, details = "blocked", str(exc)
         except (ConfigError, OSError, ValueError, KeyError, re.error) as exc:
             status, details = "fail", f"Invalid check or I/O: {type(exc).__name__}: {str(exc)[:250]}"
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 -- optional check plugins have third-party exception types.
             # Optional browser dependencies may raise provider-specific exceptions.
             # Treat these as failed checks rather than crashing the whole verification run.
             details = f"Unexpected check failure: {type(exc).__name__}"
-            if kind := check.get("type"):
-                if kind == "browser":
-                    details += ": " + str(exc).splitlines()[0][:180]
+            if check.get("type") == "browser":
+                details += ": " + str(exc).splitlines()[0][:180]
             status = "fail"
         out.append(Result(check["id"], status, check["type"], round((time.monotonic()-start)*1000), redact(details[:3000])))
     return out

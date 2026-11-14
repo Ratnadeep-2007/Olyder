@@ -5,13 +5,20 @@ Only URLs explicitly written in the spec are retrieved. Retrieved content is unt
 import hashlib
 import html
 import re
-from urllib import request, error, parse
+import time
+from datetime import UTC, datetime
+from urllib import error, parse, request
 
 
 def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
     evidence = []
     for url in sources[:12]:
-        record = {"url": url, "status": "blocked", "excerpt": "", "sha256": ""}
+        from .control import current
+        control = current.get()
+        if control:
+            control.check()
+        record = {"url": url, "status": "blocked", "excerpt": "", "sha256": "",
+                  "classification":"unanswered", "retrieved_at":datetime.now(UTC).isoformat()}
         if not network_allowed:
             record["reason"] = "External retrieval disabled; pass --allow-network"
             evidence.append(record)
@@ -29,7 +36,8 @@ def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
                     return None
 
             opener = request.build_opener(RefuseRedirect)
-            with opener.open(req, timeout=12) as response:
+            timeout=max(.01,min(12,control.deadline-time.monotonic())) if control else 12
+            with opener.open(req, timeout=timeout) as response:
                 data = response.read(80_000)
                 record["status"] = "fetched"
                 record["sha256"] = hashlib.sha256(data).hexdigest()
@@ -38,6 +46,7 @@ def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
                 plain = re.sub(r"\s+", " ", html.unescape(plain))
                 record["excerpt"] = plain[:4000]
                 record["reason"] = "Fetched excerpt; not independently verified"
+                record['classification'] = 'observed_not_corroborated'
         except error.HTTPError as exc:
             record["status"] = "blocked" if 300 <= exc.code < 400 else "error"
             record["reason"] = "Redirect refused; list the destination explicitly in sources" if 300 <= exc.code < 400 else f"HTTP status {exc.code}"
@@ -45,4 +54,6 @@ def collect(sources: list[str], *, network_allowed: bool) -> list[dict]:
             record["status"] = "error"
             record["reason"] = f"Retrieval failed: {type(exc).__name__}"
         evidence.append(record)
+        if control:
+            control.check()
     return evidence

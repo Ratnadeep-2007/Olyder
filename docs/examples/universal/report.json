@@ -1,0 +1,220 @@
+{
+  "schema_version": 2,
+  "goal": "Customers receive correct cart totals and invalid pricing inputs are rejected",
+  "spec_sha256": "a98968c0d92c2f700e4600456289410f26a83effffd27747f4c39d6a4be0600e",
+  "run_id": "5611a807060340f996e235d7541a1c6c",
+  "status": "passed",
+  "checker_sha256": "f5e34962d141522ace7345ac843bc53e1e47bf776272e4f8e3b9b178fd44cd3f",
+  "checks": [
+    {
+      "id": "pricing-module",
+      "status": "pass",
+      "type": "file",
+      "duration_ms": 0,
+      "details": "Text content assertion"
+    },
+    {
+      "id": "pricing-cases",
+      "status": "pass",
+      "type": "command",
+      "duration_ms": 125,
+      "details": "Exit 0; output condition not configured; tail: test_checkout (test_pricing.PricingTests.test_checkout) ... ok\ntest_discount (test_pricing.PricingTests.test_discount) ... ok\ntest_rejects_negative_price (test_pricing.PricingTests.test_rejects_negative_price) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n"
+    }
+  ],
+  "history": [
+    {
+      "number": 1,
+      "status": "passed",
+      "checks": [
+        {
+          "id": "pricing-module",
+          "status": "pass",
+          "type": "file",
+          "duration_ms": 0,
+          "details": "Text content assertion"
+        },
+        {
+          "id": "pricing-cases",
+          "status": "pass",
+          "type": "command",
+          "duration_ms": 125,
+          "details": "Exit 0; output condition not configured; tail: test_checkout (test_pricing.PricingTests.test_checkout) ... ok\ntest_discount (test_pricing.PricingTests.test_discount) ... ok\ntest_rejects_negative_price (test_pricing.PricingTests.test_rejects_negative_price) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n"
+        }
+      ],
+      "progress_delta": {
+        "newly_passing": [],
+        "regressions": [],
+        "failed": [],
+        "blockers": [],
+        "improved": false,
+        "changed_files": [
+          "README.md",
+          "pricing.py"
+        ],
+        "failure_signature": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "code_diff_hash": "968e5aa67397f3c14ade52a1b80b30dce8c58ca130ada87d435ef12266b293db"
+    }
+  ],
+  "stop_reason": "acceptance_passed",
+  "sources": [],
+  "independent_critic_status": "not_requested",
+  "budget": {
+    "limit": 4000,
+    "spent": 0,
+    "calls": 0,
+    "remaining_estimated": 4000
+  },
+  "requirement_coverage": {
+    "pricing-module": {
+      "mandatory": true,
+      "check_ids": [
+        "pricing-module"
+      ],
+      "result_ids": [
+        "pricing-module"
+      ],
+      "evidence_refs": [
+        "checks/pricing-module"
+      ],
+      "satisfied": true
+    },
+    "pricing-cases": {
+      "mandatory": true,
+      "check_ids": [
+        "pricing-cases"
+      ],
+      "result_ids": [
+        "pricing-cases"
+      ],
+      "evidence_refs": [
+        "checks/pricing-cases"
+      ],
+      "satisfied": true
+    }
+  },
+  "selected_checks": [
+    "pricing-module",
+    "pricing-cases"
+  ],
+  "full_suite_executed": true,
+  "metrics": {
+    "declared_checks": 2,
+    "executed_checks": 2,
+    "passed_checks": 2,
+    "failed_checks": 0,
+    "blocked_checks": 0,
+    "execution_coverage_percent": 100.0,
+    "pass_rate_of_executed_percent": 100.0,
+    "total_check_duration_ms": 125,
+    "sources_requested": 0,
+    "sources_fetched": 0,
+    "sources_unavailable": 0
+  },
+  "verifier_note": "Independent deterministic checks only; no LLM review requested.",
+  "ai_concerns": [],
+  "attempts": 1,
+  "accounting": {
+    "ledger": null,
+    "ledger_checkpoint": null,
+    "observations": [],
+    "pending_requests": {},
+    "enforcement_kind": "local_soft",
+    "budget_verdict": "not_applicable"
+  },
+  "task_plan": {
+    "goal": "Customers receive correct cart totals and invalid pricing inputs are rejected",
+    "tasks": [
+      {
+        "id": "pricing-module",
+        "objective": "Ensure acceptance check 'pricing-module' passes",
+        "check_id": "pricing-module",
+        "requirement_ids": [],
+        "affected_paths": [],
+        "depends_on": [],
+        "risk": "low"
+      },
+      {
+        "id": "pricing-cases",
+        "objective": "Ensure acceptance check 'pricing-cases' passes",
+        "check_id": "pricing-cases",
+        "requirement_ids": [],
+        "affected_paths": [],
+        "depends_on": [],
+        "risk": "requires_execution_review"
+      }
+    ],
+    "locked_spec_sha256": "a98968c0d92c2f700e4600456289410f26a83effffd27747f4c39d6a4be0600e",
+    "planner": "deterministic"
+  },
+  "agent_usage": {
+    "runs": [],
+    "observed_tokens": null,
+    "complete": false,
+    "enforced_provider_quota": false
+  },
+  "repaired_check_ids": [],
+  "budget_verdict": "not_applicable",
+  "functional_verdict": "passed",
+  "wall_seconds": 1.8589999999967404,
+  "policy": {
+    "mode": "balanced",
+    "full_final_suite_required": true,
+    "selected_by": "balanced_default",
+    "final_time_reserve_seconds": 15,
+    "enforcement_kind": "local_soft"
+  },
+  "verification_selection": [
+    {
+      "attempt": 1,
+      "selected": [
+        "pricing-module",
+        "pricing-cases"
+      ],
+      "reason": "full_suite_default",
+      "changed_files": [
+        "README.md",
+        "pricing.py"
+      ]
+    }
+  ],
+  "resource_usage": {
+    "deterministic_check_ms": 125,
+    "executed_checks": 2,
+    "research_seconds": 0.0
+  },
+  "environment": {
+    "python": "3.11.15",
+    "platform": "Windows"
+  },
+  "application_status": "not_attempted",
+  "verification_target": "detached_proposal",
+  "warnings": [
+    "Host execution has no OS containment"
+  ],
+  "execution_isolation": {
+    "mode": "host",
+    "unsafe_host_authorized": false,
+    "protected_assets_detached": true,
+    "http_browser_checks": "host",
+    "trusted_python_callbacks": "host"
+  },
+  "acceptance_integrity": {
+    "trusted_snapshot_sha256": "cf45c47d09d6e1a0ee89be204782b7cc6b6189026be481a528290991d56c4d54",
+    "protected_paths": [
+      "features",
+      "olyder.json",
+      "specs",
+      "test_pricing.py",
+      "tests"
+    ],
+    "manifest_sha256": "ab246f24297f1fb5316f7878084cfe47679ac17edae8ab8033f42d679b0784e4"
+  },
+  "artifact_refs": {
+    "contract": "C:\\Users\\ratna\\Olyder\\examples\\demo-app\\.olyder\\runs\\5611a807060340f996e235d7541a1c6c\\contract.json",
+    "manifest": "C:\\Users\\ratna\\Olyder\\examples\\demo-app\\.olyder\\runs\\5611a807060340f996e235d7541a1c6c\\workspace\\manifest.json",
+    "proposal": "C:\\Users\\ratna\\Olyder\\examples\\demo-app\\.olyder\\runs\\5611a807060340f996e235d7541a1c6c\\workspace\\builder",
+    "harness": "C:\\Users\\ratna\\Olyder\\examples\\demo-app\\.olyder\\runs\\5611a807060340f996e235d7541a1c6c\\workspace\\harness"
+  },
+  "paths": {}
+}

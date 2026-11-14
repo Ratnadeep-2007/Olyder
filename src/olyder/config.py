@@ -52,7 +52,9 @@ def load_spec(path: str | Path) -> Spec:
             raise ConfigError(f"Check {i} has missing or duplicate id")
         ids.add(c["id"])
         kind = c.get("type")
-        if kind not in ("file", "command", "http", "browser"):
+        from .plugins import _verifiers
+        if kind not in ("file", "command", "http", "browser") and not (
+            isinstance(kind,str) and kind.startswith('plugin:') and kind[7:] in _verifiers):
             raise ConfigError(f"Check {c['id']}: type must be file, command, http or browser")
         if kind == "command":
             argv = c.get("argv")
@@ -69,9 +71,8 @@ def load_spec(path: str | Path) -> Spec:
             timeout = c.get("timeout", 60)
             if type(timeout) is not int or not 1 <= timeout <= 300:
                 raise ConfigError(f"Check {c['id']}: timeout must be an integer from 1 to 300")
-        if kind == "command":
-            if "exit_code" in c and (type(c["exit_code"]) is not int or not 0 <= c["exit_code"] <= 255):
-                raise ConfigError(f"Check {c['id']}: exit_code must be an integer from 0 to 255")
+        if kind == "command" and "exit_code" in c and (type(c["exit_code"]) is not int or not 0 <= c["exit_code"] <= 255):
+            raise ConfigError(f"Check {c['id']}: exit_code must be an integer from 0 to 255")
         if kind in ("http", "browser"):
             u = c.get("url")
             parsed = urlparse(u) if isinstance(u, str) else None
@@ -118,8 +119,12 @@ def load_spec(path: str | Path) -> Spec:
         raise ConfigError("builder must be an object")
     if "argv" in builder and (not isinstance(builder["argv"], list) or not builder["argv"] or not all(isinstance(s, str) and bool(s) for s in builder["argv"])):
         raise ConfigError("builder.argv must be a nonempty string list")
-    if "provider" in builder and builder["provider"] not in ("codex", "opencode"):
-        raise ConfigError("builder.provider must be codex or opencode")
+    if "provider" in builder:
+        from .adapters import get_agent
+        try:
+            get_agent(builder["provider"])
+        except (ValueError, TypeError) as exc:
+            raise ConfigError("builder.provider must name an explicitly registered adapter") from exc
     env_names = builder.get("env", [])
     if not isinstance(env_names, list) or len(env_names) > 20 or not all(
         isinstance(name, str) and name.isidentifier() for name in env_names):
@@ -135,6 +140,36 @@ def load_spec(path: str | Path) -> Spec:
     for key in ("max_iterations", "max_tokens", "max_seconds", "max_agent_tokens"):
         if key in limits and (type(limits[key]) is not int or limits[key] <= 0):
             raise ConfigError(f"limits.{key} must be positive integer")
+    policy = obj.get("policy", {})
+    if not isinstance(policy, dict) or ("mode" in policy and policy["mode"] not in ("economy", "balanced", "thorough")):
+        raise ConfigError("policy.mode must be economy, balanced or thorough")
+    monetary = obj.get('budget', {})
+    if not isinstance(monetary, dict):
+        raise ConfigError('budget must be an object')
+    from .ledger import money
+    for key in ('max_cost_usd','builder_upper_bound_usd','verifier_reserve_usd','planner_upper_bound_usd','research_upper_bound_usd'):
+        if key in monetary:
+            money(monetary[key], positive=key == 'max_cost_usd')
+    if type(monetary.get('strict',False)) is not bool:
+        raise ConfigError('budget.strict must be boolean')
+    if monetary.get('strict') and 'max_cost_usd' not in monetary:
+        raise ConfigError('Strict monetary admission requires max_cost_usd')
+    if monetary.get('currency','USD')!='USD':
+        raise ConfigError('Runtime monetary admission currently supports USD only')
+    if 'max_cost_usd' in monetary:
+        from .ledger import BudgetLedger
+        BudgetLedger('configuration-validation',monetary['max_cost_usd'],
+                     verifier_reserve=monetary.get('verifier_reserve_usd','0'))
+    if 'pricing' in monetary:
+        from .accounting import PricingSnapshot
+        if not isinstance(monetary['pricing'],dict):
+            raise ConfigError('budget.pricing must be a dated versioned pricing snapshot')
+        try:
+            PricingSnapshot(**monetary['pricing'])
+        except (TypeError,ValueError) as exc:
+            raise ConfigError('Invalid pricing snapshot') from exc
+    from .contracts import validate_requirements
+    validate_requirements(obj, ids)
     return Spec(file, file.parent, obj, hashlib.sha256(content).hexdigest())
 
 
@@ -149,6 +184,8 @@ def safe_path(root: Path, path: str) -> Path:
 
 
 DEFAULT = {
+    "schema_version": 2,
+    "policy": {"mode": "balanced"},
     "goal": "Describe the user-visible outcome and requirements here",
     "checks": [
         {"id": "readme-exists", "type": "file", "path": "README.md", "exists": True},

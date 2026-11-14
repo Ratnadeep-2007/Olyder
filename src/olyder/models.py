@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import json
 import os
-from urllib import request, error, parse
+from urllib import error, parse, request
 
+from .control import current
 from .quota import Budget
 
 
@@ -25,6 +26,50 @@ def _open_model_request(req: request.Request, timeout: float):
 
 
 def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, max_tokens: int = 500) -> str:
+    control=current.get()
+    if control and control.model_accounting is not None:
+        control.check()
+        request=control.model_accounting.admit(control.model_role)
+        control.model_checkpoint('model_started')
+        offset=len(control.model_observations)
+        try:
+            return _chat_body(prompt,budget,system=system,model=model,max_tokens=max_tokens)
+        finally:
+            observations=control.model_observations[offset:]
+            control.model_accounting.settle(request,observations[-1] if observations else None)
+            control.model_checkpoint('model_completed')
+    return _chat_body(prompt,budget,system=system,model=model,max_tokens=max_tokens)
+
+
+def _chat_body(prompt: str, budget: Budget, *, system: str, model: str | None = None, max_tokens: int = 500) -> str:
+    control = current.get()
+    if control:
+        control.check()
+    if control and control.model_provider is not None:
+        reservation = budget.reserve(system + prompt, max_tokens)
+        try:
+            provider = control.model_provider
+            if provider.api_version != 1:
+                raise ValueError('Incompatible model provider protocol')
+            response = provider.complete(prompt, system=system, max_tokens=max_tokens)
+            if not isinstance(response,dict):
+                raise TypeError('Provider response must be an object')
+            content = response['content']
+            if not isinstance(content, str):
+                raise TypeError('Model content must be text')
+            usage = response.get('usage', {})
+            if not isinstance(usage,dict):
+                usage={}
+            total = usage.get('total_tokens')
+            budget.settle(reservation, total if type(total) is int and total >= 0 else None)
+            control.model_observations.append(_observation(usage, response.get('model'),
+                response.get('provider','custom'), response.get('estimated_cost_usd')))
+            control.check()
+            return content
+        except (KeyError, ValueError, TypeError, OSError) as exc:
+            if reservation.ticket in budget._active:
+                budget.settle(reservation, None)
+            raise ModelError('Custom model provider failed: '+type(exc).__name__) from exc
     model = model or os.getenv("OLYDER_MODEL")
     api_key = os.getenv("OLYDER_API_KEY")
     base = os.getenv("OLYDER_BASE_URL", "https://api.openai.com/v1")
@@ -48,10 +93,12 @@ def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, 
     }
     try:
         req = request.Request(base.rstrip("/") + "/chat/completions", data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
-        with _open_model_request(req, timeout=45) as resp:
+        timeout = max(.01, min(45, control.deadline - __import__('time').monotonic())) if control else 45
+        with _open_model_request(req, timeout=timeout) as resp:
             obj = json.loads(resp.read(2_000_000))
         content = obj["choices"][0]["message"]["content"]
-        usage = obj.get("usage", {}).get("total_tokens")
+        usage_data=obj.get('usage')
+        usage = usage_data.get('total_tokens') if isinstance(usage_data,dict) else None
         if not isinstance(content, (str, list, dict)):
             raise TypeError("Unsupported model response content")
     except (error.HTTPError, error.URLError, OSError, KeyError, ValueError, TypeError, IndexError) as exc:
@@ -59,4 +106,22 @@ def chat(prompt: str, budget: Budget, *, system: str, model: str | None = None, 
         budget.settle(reservation, None)
         raise ModelError(f"Model request failed: {type(exc).__name__}") from exc
     budget.settle(reservation, usage if type(usage) is int and usage >= 0 else None)
+    if control:
+        control.model_observations.append(_observation(obj.get('usage', {}), model, 'openai_compatible'))
+        control.check()
     return content if isinstance(content, str) else json.dumps(content)
+
+
+def _observation(usage, model, provider, estimate=None):
+    if not isinstance(usage,dict):
+        usage={}
+    inp, out = usage.get('prompt_tokens',usage.get('input_tokens')), usage.get('completion_tokens',usage.get('output_tokens'))
+    valid = all(type(x) is int and x >= 0 for x in (inp,out))
+    details=usage.get('prompt_tokens_details')
+    cache = details.get('cached_tokens') if isinstance(details,dict) else None
+    if type(cache) is not int or cache<0 or not valid or cache>inp:
+        cache=None
+    return {'provider':provider,'model':model,'input_tokens':inp if valid else None,
+            'output_tokens':out if valid else None,'cached_tokens':cache,
+            'observed_tokens':inp+out if valid else None,'usage_complete':valid,
+            'estimated_cost_usd':estimate,'billed_cost_usd':None,'origin':'model_response'}

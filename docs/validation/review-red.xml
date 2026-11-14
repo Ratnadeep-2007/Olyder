@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.198" timestamp="2026-11-13T18:30:44.736259+05:30" hostname="RatnadeepLOQ"><testcase classname="tests.test_v05_verdict" name="test_critic_only_failure_never_rebuilds" time="0.019"><failure message="assert 3 == 1&#10; +  where 3 = len([1, 1, 1])">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-7/test_critic_only_failure_never0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000159AF5C3350&gt;
+
+    def test_critic_only_failure_never_rebuilds(tmp_path, monkeypatch):
+        from olyder import engine
+        from olyder.models import ModelError
+        spec = fixture(tmp_path)
+        (tmp_path/'absent').touch()
+        calls = []
+        def builder(*a, **kw):
+            calls.append(1)
+            return 'ok', None
+        def critic(*a, **kw):
+            raise ModelError('unavailable')
+        monkeypatch.setattr(engine, '_invoke_builder', builder)
+        monkeypatch.setattr(engine, 'chat', critic)
+        result = engine.run_loop(spec, allow_exec=True, execute_builder=True,
+            use_ai=True, allow_network=False, output=tmp_path/'out')
+        assert result['status'] == 'needs_review'
+&gt;       assert len(calls) == 1
+E       assert 3 == 1
+E        +  where 3 = len([1, 1, 1])
+
+tests\test_v05_verdict.py:119: AssertionError</failure></testcase><testcase classname="tests.test_v05_verdict" name="test_iteration_exhaustion_has_stop_reason" time="0.009"><failure message="assert '{&quot;failed_che...oncerns&quot;: []}' == 'verification_only'&#10;  &#10;  - verification_only&#10;  + {&quot;failed_checks&quot;: [{&quot;id&quot;: &quot;absent&quot;, &quot;status&quot;: &quot;fail&quot;, &quot;evidence&quot;: &quot;Expected exists=True for absent&quot;}], &quot;ai_concerns&quot;: []}">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-7/test_iteration_exhaustion_has_0')
+
+    def test_iteration_exhaustion_has_stop_reason(tmp_path):
+        from olyder.engine import run_loop
+        spec = fixture(tmp_path)
+        result = run_loop(spec, allow_exec=False, execute_builder=False,
+            use_ai=False, allow_network=False, output=tmp_path/'out', max_iterations=1)
+&gt;       assert result['stop_reason'] == 'verification_only'
+E       assert '{"failed_che...oncerns": []}' == 'verification_only'
+E         
+E         - verification_only
+E         + {"failed_checks": [{"id": "absent", "status": "fail", "evidence": "Expected exists=True for absent"}], "ai_concerns": []}
+
+tests\test_v05_verdict.py:127: AssertionError</failure></testcase><testcase classname="tests.test_v05_verdict" name="test_builder_reserve_still_runs_checks" time="0.007"><failure message="assert 0 == 2&#10; +  where 0 = len([])">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-7/test_builder_reserve_still_run0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000159AF62E990&gt;
+
+    def test_builder_reserve_still_runs_checks(tmp_path, monkeypatch):
+        from olyder import engine
+        spec = fixture(tmp_path, limits={'max_seconds':5})
+        def forbidden(*a, **kw):
+            raise AssertionError('Builder must not be admitted')
+        monkeypatch.setattr(engine, '_invoke_builder', forbidden)
+        result = engine.run_loop(spec, allow_exec=True, execute_builder=True,
+            use_ai=False, allow_network=False, output=tmp_path/'out', mode='balanced')
+&gt;       assert len(result['checks']) == 2
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+tests\test_v05_verdict.py:138: AssertionError</failure></testcase></testsuite></testsuites>

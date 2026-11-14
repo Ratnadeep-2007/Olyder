@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.207" timestamp="2026-11-13T23:19:43.368634+05:30" hostname="RatnadeepLOQ"><testcase classname="tests.test_integrations" name="test_loopback_api_startup_does_not_resolve_dns" time="0.014"><failure message="AssertionError: Fixed loopback service must not depend on reverse DNS">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-80/test_loopback_api_startup_does0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002C0EEF8D610&gt;
+
+    def test_loopback_api_startup_does_not_resolve_dns(tmp_path,monkeypatch):
+        import socket
+        from olyder.api import create_server
+        def forbidden_lookup(*args):
+            raise AssertionError('Fixed loopback service must not depend on reverse DNS')
+        monkeypatch.setattr(socket,'getfqdn',forbidden_lookup)
+&gt;       with create_server(tmp_path,token='FAKE_LOCAL_API_TOKEN_123456789',port=0) as server:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_integrations.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\olyder\api.py:52: in create_server
+    return ThreadingHTTPServer(('127.0.0.1',port),Handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\socketserver.py:456: in __init__
+    self.server_bind()
+..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\http\server.py:142: in server_bind
+    self.server_name = socket.getfqdn(host)
+                       ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = ('127.0.0.1',)
+
+    def forbidden_lookup(*args):
+&gt;       raise AssertionError('Fixed loopback service must not depend on reverse DNS')
+E       AssertionError: Fixed loopback service must not depend on reverse DNS
+
+tests\test_integrations.py:53: AssertionError</failure></testcase></testsuite></testsuites>

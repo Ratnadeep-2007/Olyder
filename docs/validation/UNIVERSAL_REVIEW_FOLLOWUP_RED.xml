@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="1" tests="7" time="5.536" timestamp="2026-11-13T21:45:06.733257+05:30" hostname="RatnadeepLOQ"><testcase classname="tests.test_universal_review_followup" name="test_custom_model_not_fabricated" time="0.000"><failure message="Failed: DID NOT RAISE ValueError">def test_custom_model_not_fabricated():
+&gt;       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_universal_review_followup.py:28: Failed</failure></testcase><testcase classname="tests.test_universal_review_followup" name="test_root_uid_mapping_only_touches_detached_tree" time="0.008"><failure message="AttributeError: 'DockerBackend' object has no attribute 'prepare_detached'">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_root_uid_mapping_only_tou0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000269BF118050&gt;
+
+    def test_root_uid_mapping_only_touches_detached_tree(tmp_path,monkeypatch):
+        builder=tmp_path/'builder';builder.mkdir();(builder/'app.py').write_text('value=1')
+        original=tmp_path/'original';original.mkdir();(original/'keep').write_text('same')
+        calls=[]
+        monkeypatch.setattr(os,'getuid',lambda:0,raising=False)
+        monkeypatch.setattr(os,'chown',lambda path,uid,gid,**kw:calls.append((path,uid,gid)),raising=False)
+&gt;       DockerBackend().prepare_detached(builder,writable=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'DockerBackend' object has no attribute 'prepare_detached'
+
+tests\test_universal_review_followup.py:38: AttributeError</failure></testcase><testcase classname="tests.test_universal_review_followup" name="test_refused_directory_removal_preserves_original_files" time="0.726"><failure message="OSError: [WinError 145] The directory is not empty: 'C:\\Users\\ratna\\AppData\\Local\\Temp\\pytest-of-ratna\\pytest-60\\test_refused_directory_removal0\\project\\pkg'">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_refused_directory_removal0')
+
+    def test_refused_directory_removal_preserves_original_files(tmp_path):
+        root=tmp_path/'project';root.mkdir();spec=basic(root)
+        (root/'pkg').mkdir();(root/'pkg'/'main.py').write_text('keep')
+        (root/'pkg'/'__pycache__').mkdir();(root/'pkg'/'__pycache__'/'cache').write_text('private')
+        ws=ProtectedWorkspace(load_spec(spec),tmp_path/'state')
+        (ws.builder/'pkg'/'main.py').unlink();(ws.builder/'pkg').rmdir();ws.harness()
+        with pytest.raises(WorkspaceViolation):
+&gt;           ws.apply()
+
+tests\test_universal_review_followup.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\olyder\workspace.py:242: in apply
+    path.rmdir()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_refused_directory_removal0/project/pkg')
+
+    def rmdir(self):
+        """
+        Remove this directory.  The directory must be empty.
+        """
+&gt;       os.rmdir(self)
+E       OSError: [WinError 145] The directory is not empty: 'C:\\Users\\ratna\\AppData\\Local\\Temp\\pytest-of-ratna\\pytest-60\\test_refused_directory_removal0\\project\\pkg'
+
+..\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py:1156: OSError</failure></testcase><testcase classname="tests.test_universal_review_followup" name="test_verifier_output_directory_not_applied_as_source" time="1.137"><failure message="AssertionError: assert 'blocked' == 'passed'&#10;  &#10;  - passed&#10;  + blocked">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_verifier_output_directory0')
+
+    def test_verifier_output_directory_not_applied_as_source(tmp_path):
+        spec=basic(tmp_path,"from pathlib import Path;Path('check-output').mkdir();from app import value;assert value==1")
+        result=run(spec,permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True))
+&gt;       assert result['status']=='passed'
+E       AssertionError: assert 'blocked' == 'passed'
+E         
+E         - passed
+E         + blocked
+
+tests\test_universal_review_followup.py:57: AssertionError</failure></testcase><testcase classname="tests.test_universal_review_followup" name="test_verifier_cannot_repair_input_and_claim_proposal_passed" time="1.669"><failure message="AssertionError: assert 'passed' == 'blocked'&#10;  &#10;  - blocked&#10;  + passed">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_verifier_cannot_repair_in0')
+
+    def test_verifier_cannot_repair_input_and_claim_proposal_passed(tmp_path):
+        spec=basic(tmp_path,"from pathlib import Path;Path('app.py').write_text('value=42');from app import value;assert value==42")
+        result=run(spec,permissions=Permissions(allow_exec=True,execute_builder=True,unsafe_host=True))
+&gt;       assert result['status']=='blocked'
+E       AssertionError: assert 'passed' == 'blocked'
+E         
+E         - blocked
+E         + passed
+
+tests\test_universal_review_followup.py:64: AssertionError</failure></testcase><testcase classname="tests.test_universal_review_followup" name="test_report_failure_keeps_terminal_execution_checkpoint" time="1.741"><failure message="OSError: fixture report failure">tmp_path = WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_report_failure_keeps_term0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000269BF11BC10&gt;
+
+    def test_report_failure_keeps_terminal_execution_checkpoint(tmp_path,monkeypatch):
+        spec=basic(tmp_path)
+        def fail(*args,**kwargs):
+            raise OSError('fixture report failure')
+        monkeypatch.setattr('olyder.sdk.save_report',fail)
+&gt;       result=run(spec,permissions=Permissions(allow_exec=True))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_universal_review_followup.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\olyder\sdk.py:329: in run
+    result['paths']=save_report(result,Path(output) if output else spec.root/'.olyder')
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = ({'goal': 'one', 'spec_sha256': '88baa02749f0482d7ec4e1dfec05233469ada470972611aeefdddf775ec36609', 'run_id': '69ca7bf....}, WindowsPath('C:/Users/ratna/AppData/Local/Temp/pytest-of-ratna/pytest-60/test_report_failure_keeps_term0/.olyder'))
+kwargs = {}
+
+    def fail(*args,**kwargs):
+&gt;       raise OSError('fixture report failure')
+E       OSError: fixture report failure
+
+tests\test_universal_review_followup.py:71: OSError</failure></testcase><testcase classname="tests.test_universal_review_followup" name="test_cleanup_group_after_leader_exits" time="0.001"><skipped type="pytest.skip" message="POSIX process group after leader exit">C:\Users\ratna\Olyder\tests\test_universal_review_followup.py:81: POSIX process group after leader exit</skipped></testcase></testsuite></testsuites>

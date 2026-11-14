@@ -15,6 +15,7 @@ classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :
 
 [project.optional-dependencies]
 browser = ["playwright>=1.50"]
+acp = ["agent-client-protocol>=0.12,<0.13"]
 dev = ["pytest>=8", "ruff>=0.9"]
 
 [project.scripts]

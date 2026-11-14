@@ -1,12 +1,12 @@
 # Olyder
 
-**Build. Challenge. Verify.**  ·  [GitHub](https://github.com/Ratnadeep-2007/Olyder)
+**Build. Challenge. Verify.**  Â·  [GitHub](https://github.com/Ratnadeep-2007/Olyder)
 
 **Build with an agent. Verify with evidence. Repair only what's failing.**
 
 Olyder is a free, open-source, **verification-driven execution layer** for coding agents. It combines a portable agent skill, a Python CLI, an optional independent LLM reviewer, a bounded correction loop, and evidence-based reports. No model subscription is needed for deterministic tests.
 
-> **Status: v0.4.0 integration beta.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
+> **Status: unreleased universal-engine development branch; package version 0.4.0.** Real executable core and tests; not a production security sandbox, not autonomous general web research, and not a guarantee of correctness. See [limitations](#security--limitations).
 
 ## What it does
 
@@ -17,6 +17,26 @@ Olyder is a free, open-source, **verification-driven execution layer** for codin
 5. **Verify independently** with observable tests; optional fresh LLM review sees requirements and test results, **never the builder's conversation or reasoning**.
 6. **Repair and retry** with targeted failure feedback, bounded attempts, an overall fail-closed deadline check, and a measurable-progress stop.
 7. **Report** JSON, Markdown and a self-contained HTML file with pass/fail metrics, declared-check execution coverage, evidence, status, scope and budget.
+
+## Experimental ACP editor integration
+
+Olyder can run as a **read-only ACP v1 agent** for compatible editors using an
+optional dependency. This is a transport for deterministic Olyder tools,
+not an autonomous conversational coding model or a verified ACP v2 implementation.
+
+```bash
+python -m pip install -e '.[acp]'
+olyder acp --workspace /absolute/path/to/project
+```
+
+Send `plan`, `verify`, `status`, or `help` from the ACP client. The editor
+cannot add MCP servers, select a different project root, invoke shell checks,
+make network requests, or execute builders through this bridge. Command/HTTP/
+browser checks remain **blocked** and never count as passes. The primary CLI
+and SDK retain explicit execution permissions.
+
+See [ACP editor setup and limitations](docs/ACP_BRIDGE.md) for a sample editor
+configuration and interoperability test scope.
 
 ## Quick start
 
@@ -44,7 +64,7 @@ olyder verify --allow-exec
 
 The installer intentionally does not automatically run build tools, install browsers, or call models.
 
-## Autonomous builder → verifier loop
+## Autonomous builder â†’ verifier loop
 
 In `olyder.json` configure a builder command as an **argument array**, never a shell expression:
 
@@ -229,11 +249,11 @@ python -m pip install -e '.[dev]'
 python -m pytest -q
 ```
 
-CI tests Python 3.11 and 3.13 on Ubuntu and Windows. The [99-scenario evidence report](docs/QA_99.md) covers nine levels, including simulated Playwright adapter cases; a live-browser smoke test is opt-in and has not passed in the hosted test environment. Project includes a cross-platform example, typed public inputs, no mandatory runtime dependencies, strict JSON specification validation and escaped HTML report generation.
+CI tests Python 3.11 and 3.13 on Ubuntu, Windows and macOS, with a separate live Linux Docker job. Consult the [current validation report](docs/TEST_REPORT_V05.md) for actual job outcomes. The [99-scenario evidence report](docs/QA_99.md) covers nine levels, including simulated Playwright adapter cases; live-browser validation remains opt-in and unverified. The project has no mandatory runtime dependencies.
 
 ## Security & limitations
 
-- **No OS-level sandboxing yet.** A user-chosen workspace is *not* a containment boundary for subprocesses. Commands and AI coding agents may read/write outside it if their OS privileges permit. Run in a VM, container or properly configured OS sandbox. Git worktrees are not security boundaries.
+- **Host execution is not OS isolation.** A user-chosen workspace is *not* a containment boundary for subprocesses. Commands and AI coding agents may read/write outside it if their OS privileges permit. Run in a VM, container or properly configured OS sandbox. Git worktrees are not security boundaries.
 - External builder CLIs can use their own networks, credentials, model subscriptions and tools. Olyder's local budget cannot cap those third-party operations.
 - AI prompts can leak test-result snippets to a configured provider; test logs may contain secrets. Simple output redaction is not comprehensive. Don't enable `--ai` for sensitive logs without sanitization.
 - HTTP checks and external source retrieval refuse automatic redirects; browser navigation is constrained to loopback unless explicitly authorized, but hostile DNS, redirects, subprocesses, and external dependencies still create SSRF/network risk. Use trusted specifications and isolated test services; no comprehensive SSRF protection is claimed.
@@ -241,13 +261,22 @@ CI tests Python 3.11 and 3.13 on Ubuntu and Windows. The [99-scenario evidence r
 - No automatic acceptance-criteria discovery or automatic real-market research from arbitrary search queries in this release.
 - An attacker with workspace write access may modify the test infrastructure itself; isolation of the builder/verifier requires separate runtime credentials and permissions.
 
-## Roadmap
+## Remaining engineering priorities
 
-1. **OS-level isolation adapters** (Docker/WSL2/Linux namespaces, Windows sandbox), deny-by-default network and secrets policies.
-2. **Provider-aware rate limits and full builder usage accounting** via supported agent telemetry rather than guesses.
-3. **Dependency-aware test selection, coverage gates, cross-model verifier adapters**, and evaluation benchmarks.
-4. Richer scenario exploration, accessibility/performance metrics, approved external evidence connectors, and CI/PR annotations.
+1. Budget-authorized live adapter validation and invoice reconciliation; optional gateway enforcement must be tested before any hard-limit claim.
+2. Broader black-box/browser verification, transactional source application and crash/process-containment coverage. See the [per-task status report](docs/IMPLEMENTATION_REPORT.md).
 
 ## License
 
 Apache License 2.0. Contributions and reproducible bug reports welcome.
+
+
+
+
+## Universal engine development branch
+
+The CLI now uses a vendor-neutral Python SDK with detached builder/verifier workspaces, explicit agent/backend protocols, runtime Decimal monetary admission, durable local checkpoints, cancellation/reverification, opt-in dependency-aware intermediate checks, and final full-suite verification. Codex/OpenCode parsers are retained; Claude and explicit executable plugins have offline conformance coverage. No paid vendor integration or hard quota is claimed.
+
+New commands: doctor, status, resume, cancel, report, reconcile, prune, bench and an optional authenticated loopback read API. MCP stays read-only by default; mutation needs server-side grants. IDEs can use CLI tasks or local stdio MCP without a vendor plugin.
+
+Read the [integration guide](docs/UNIVERSAL_GUIDE.md), [architecture](docs/ARCHITECTURE_V05.md), [per-task implementation report](docs/IMPLEMENTATION_REPORT.md), [measured benchmark](docs/BENCHMARK_V05.md) and [limits](docs/KNOWN_LIMITATIONS.md). The original sections above describe the retained v0.4 features; new integrations should use olyder.sdk rather than the legacy shared-workspace engine API. This branch is not tagged or merged as a production release.

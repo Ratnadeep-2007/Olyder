@@ -1,0 +1,15 @@
+{
+  "api_version": 1,
+  "kind": "agent",
+  "name": "hello-agent",
+  "permissions": [
+    "execute",
+    "write_workspace"
+  ],
+  "telemetry": "unknown",
+  "argv": [
+    "python",
+    "-c",
+    "from pathlib import Path; Path('hello.py').write_text('def greet(): return '+repr('Hello Olyder'))"
+  ]
+}

@@ -7,16 +7,15 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-
 SUPPORTED = ("codex", "opencode")
 
 
 def agent_argv(provider: str, prompt: str) -> list[str]:
     if provider == "codex":
         return ["codex", "exec", "--json", "--sandbox", "workspace-write",
-                "--skip-git-repo-check", prompt]
+                prompt]
     if provider == "opencode":
-        return ["opencode", "run", "--format", "json", "--agent", "build", "--auto", prompt]
+        return ["opencode", "run", "--format", "json", "--agent", "build", prompt]
     raise ValueError(f"Unsupported coding agent: {provider}")
 
 
@@ -58,6 +57,9 @@ class AgentUsage:
                 self.completed = True
                 usage = event.get("usage")
                 if isinstance(usage, dict):
+                    if any(type(usage.get(k)) is not int or usage[k]<0 for k in ('input_tokens','output_tokens')):
+                        self.malformed_events += 1
+                        return
                     self.input_tokens += _count(usage.get("input_tokens"))
                     self.output_tokens += _count(usage.get("output_tokens"))
                     self.cached_tokens += _count(usage.get("cached_input_tokens"))
@@ -72,6 +74,9 @@ class AgentUsage:
                 if not isinstance(part, dict):
                     return
                 identifier = part.get("id")
+                if identifier is not None and not isinstance(identifier,str):
+                    self.malformed_events+=1
+                    return
                 if identifier and identifier in self._seen_parts:
                     return
                 if identifier:
@@ -80,6 +85,9 @@ class AgentUsage:
                     self.completed = True
                 counts = part.get("tokens")
                 if isinstance(counts, dict):
+                    if any(type(counts.get(k)) is not int or counts[k]<0 for k in ('input','output')):
+                        self.malformed_events += 1
+                        return
                     cache = counts.get("cache") or {}
                     if not isinstance(cache, dict):
                         cache = {}
@@ -100,28 +108,23 @@ class AgentUsage:
                 "reasoning_tokens": self.reasoning_tokens,
                 "observed_tokens": self.observed_total if self.usage_events else None,
                 "usage_events": self.usage_events,
-                "usage_complete": self.completed and self.usage_events > 0 and not self.failed,
+                "usage_complete": self.completed and self.usage_events > 0 and not self.failed and not self.malformed_events,
                 "status": "failed" if self.failed else "completed" if self.completed else "incomplete",
                 "malformed_events": self.malformed_events,
                 "quota_enforced": False}
 
 
 def parse_agent_log(path, provider: str, *, max_lines: int = 100000) -> AgentUsage:
+    from contextlib import nullcontext
+
     usage = AgentUsage(provider)
     if hasattr(path, "seek"):
         path.seek(0)
-        stream = path
-        close = False
-    else:
-        stream = open(path, "r", encoding="utf-8", errors="replace")
-        close = True
-    try:
+    with (nullcontext(path) if hasattr(path, "seek") else
+          open(path, "r", encoding="utf-8", errors="replace")) as stream:
         for i, line in enumerate(stream):
             if i >= max_lines:
                 usage.malformed_events += 1
                 break
             usage.accept(line)
-    finally:
-        if close:
-            stream.close()
     return usage

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "commands": [
+    {
+      "argv": [
+        ".wheel-smoke/Scripts/python.exe",
+        "-m",
+        "olyder",
+        "--help"
+      ],
+      "returncode": 0,
+      "stdout": "usage: olyder [-h] [--version]\n              {doctor,bench,reconcile,prune,status,resume,cancel,report,serve,init,plan,idea,verify,run,install-skill,mcp}\n              ...\n\nIndependent verification and bounded AI repair loops\n\npositional arguments:\n  {doctor,bench,reconcile,prune,status,resume,cancel,report,serve,init,plan,idea,verify,run,install-skill,mcp}\n    doctor              Read-only setup and capability diagnostics\n    bench               Run offline paired executable fixtures; never calls\n                        paid agents\n    reconcile           Record an explicit user-provided billing receipt\n    prune               List expired completed run artifacts; deletion needs\n                        --apply\n    serve               Optional authenticated loopback read API\n    init                Generate a starter acceptance specification\n    install-skill       Install agent SKILL.md into a project\n    mcp                 Run read-only-by-default MCP JSON-RPC server over\n                        stdio\n\noptions:\n  -h, --help            show this help message and exit\n  --version             show program's version number and exit\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        ".wheel-smoke/Scripts/python.exe",
+        "-m",
+        "olyder",
+        "doctor"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"python\": \"3.11.15\",\n  \"platform\": \"Windows\",\n  \"agents\": {\n    \"codex\": {\n      \"structured_usage\": true,\n      \"streaming\": true,\n      \"cancellation\": true,\n      \"isolated\": false,\n      \"provider_hard_limit\": false,\n      \"requires_git\": true,\n      \"notes\": \"Live event metadata only; usage is post-hoc; no provider hard limit\"\n    },\n    \"opencode\": {\n      \"structured_usage\": true,\n      \"streaming\": true,\n      \"cancellation\": true,\n      \"isolated\": false,\n      \"provider_hard_limit\": false,\n      \"requires_git\": false,\n      \"notes\": \"Live event metadata only; usage is post-hoc; no provider hard limit\"\n    },\n    \"claude\": {\n      \"structured_usage\": true,\n      \"streaming\": true,\n      \"cancellation\": true,\n      \"isolated\": false,\n      \"provider_hard_limit\": false,\n      \"requires_git\": false,\n      \"notes\": \"Live event metadata only; usage is post-hoc; no provider hard limit\"\n    }\n  },\n  \"executables\": {\n    \"codex\": true,\n    \"opencode\": true,\n    \"claude\": false,\n    \"docker\": true,\n    \"git\": true\n  },\n  \"docker_daemon\": \"not_probed\",\n  \"provider_billing\": \"not_connected\",\n  \"warnings\": [\n    \"Host execution is not OS isolation\",\n    \"CLI usage is post-hoc; billing may be unknown\",\n    \"Windows shell-script wrappers may require an explicit native argv adapter\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        ".wheel-smoke/Scripts/python.exe",
+        "-m",
+        "olyder",
+        "verify",
+        "--spec",
+        "examples/demo-app/olyder.json",
+        "--allow-exec",
+        "--output",
+        "docs/examples/universal"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"status\": \"passed\",\n  \"attempts\": 1,\n  \"budget\": {\n    \"limit\": 4000,\n    \"spent\": 0,\n    \"calls\": 0,\n    \"remaining_estimated\": 4000\n  },\n  \"run_id\": \"5611a807060340f996e235d7541a1c6c\",\n  \"functional_verdict\": \"passed\",\n  \"budget_verdict\": \"not_applicable\",\n  \"stop_reason\": \"acceptance_passed\",\n  \"artifact_status\": \"complete\",\n  \"agent_usage\": {\n    \"runs\": [],\n    \"observed_tokens\": null,\n    \"complete\": false,\n    \"enforced_provider_quota\": false\n  },\n  \"paths\": {\n    \"json\": \"docs\\\\examples\\\\universal\\\\report.json\",\n    \"markdown\": \"docs\\\\examples\\\\universal\\\\report.md\",\n    \"html\": \"docs\\\\examples\\\\universal\\\\report.html\"\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        ".wheel-smoke/Scripts/python.exe",
+        "-m",
+        "olyder",
+        "mcp",
+        "--workspace",
+        "examples/demo-app"
+      ],
+      "returncode": 0,
+      "stdout": "{\"jsonrpc\": \"2.0\", \"id\": 1, \"result\": {\"protocolVersion\": \"2025-03-26\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"olyder\", \"version\": \"0.4.0\"}}}\n{\"jsonrpc\": \"2.0\", \"id\": 2, \"result\": {\"tools\": [{\"name\": \"olyder_plan\", \"description\": \"Break project acceptance criteria into implementation tasks without changing them.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}, \"additionalProperties\": false}}, {\"name\": \"olyder_verify\", \"description\": \"Run file checks against locked requirements; never runs shell commands or external requests via MCP.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}, \"additionalProperties\": false}}]}}\n",
+      "stderr": ""
+    }
+  ],
+  "wheel": "dist\\olyder_agent-0.4.0-py3-none-any.whl",
+  "wheel_sha256": "da372c862b5186a6bd15ddfd77158b872f2f131fe725cfde63cf9078ce73dcb0"
+}
