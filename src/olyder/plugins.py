@@ -28,7 +28,16 @@ def load_agent_manifest(path, *, grants):
     permissions=data.get('permissions')
     if not isinstance(permissions,list) or not all(isinstance(p,str) for p in permissions) or set(permissions) != {'execute','write_workspace'}:
         raise ValueError('Agent plugins must declare execute and write_workspace permissions')
-    adapter=ExecutableAgent(name,data.get('argv'),data.get('telemetry','unknown'))
+    protocol = data.get('protocol', 'executable')
+    if protocol == 'acp-v1':
+        if data.get('telemetry', 'unknown') != 'unknown':
+            raise ValueError('ACP client telemetry is not independently verified')
+        from .acp_external import ACPProcessAgent
+        adapter = ACPProcessAgent(name, data.get('argv'), python=data.get('runner_python'))
+    elif protocol == 'executable':
+        adapter = ExecutableAgent(name, data.get('argv'), data.get('telemetry', 'unknown'))
+    else:
+        raise ValueError('Unsupported agent transport protocol')
     register_agent(adapter)
     return adapter
 
