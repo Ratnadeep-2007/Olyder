@@ -107,28 +107,37 @@ class OlyderACPAgent(Agent):
         if not Path(cwd).is_absolute() or Path(cwd).resolve(strict=True) != self.workspace:
             raise ValueError('ACP session cwd must equal authorized Olyder workspace')
         session_id = uuid4().hex
-        self._sessions[session_id] = {'cancelled': False}
+        self._sessions[session_id] = {'cancelled': False, 'busy': False}
         return NewSessionResponse(session_id=session_id)
 
     async def prompt(self, session_id: str, prompt: list, **kwargs) -> PromptResponse:
         session = self._sessions.get(session_id)
         if session is None:
             raise ValueError('Unknown ACP session')
+        # Reject overlapping turns rather than allowing a stale background
+        # response to overwrite a later turn or cancellation.
+        if session['busy']:
+            raise ValueError('An ACP prompt is already running in this session')
+        session['busy'] = True
         session['cancelled'] = False
-        text = _prompt_text(prompt)
-        # The dispatcher never runs commands or invokes provider models.
-        response = await asyncio.to_thread(read_only_command, self.workspace, text)
-        if session['cancelled']:
-            return PromptResponse(stop_reason='cancelled')
-        if self._conn is not None:
-            await self._conn.session_update(
-                session_id=session_id,
-                update=AgentMessageChunk(
-                    sessionUpdate='agent_message_chunk',
-                    content=TextContentBlock(type='text', text=response),
-                ),
-            )
-        return PromptResponse(stop_reason='end_turn')
+        try:
+            text = _prompt_text(prompt)
+            # No shell, network or paid model; cancellation is best-effort for
+            # an in-flight thread and must not emit a misleading final result.
+            response = await asyncio.to_thread(read_only_command, self.workspace, text)
+            if session['cancelled']:
+                return PromptResponse(stop_reason='cancelled')
+            if self._conn is not None:
+                await self._conn.session_update(
+                    session_id=session_id,
+                    update=AgentMessageChunk(
+                        sessionUpdate='agent_message_chunk',
+                        content=TextContentBlock(type='text', text=response),
+                    ),
+                )
+            return PromptResponse(stop_reason='end_turn')
+        finally:
+            session['busy'] = False
 
     async def cancel(self, session_id: str, **kwargs) -> None:
         session = self._sessions.get(session_id)
@@ -136,11 +145,13 @@ class OlyderACPAgent(Agent):
             session['cancelled'] = True
 
     async def close_session(self, session_id: str, **kwargs):
-        self._sessions.pop(session_id, None)
+        session = self._sessions.pop(session_id, None)
+        if session is not None:
+            session['cancelled'] = True
         return None
 
 
 def serve(workspace: str | Path) -> int:
     """Run optional SDK-backed ACP stdio server; no stdout startup chatter."""
-    asyncio.run(run_agent(OlyderACPAgent(workspace)))
+    asyncio.run(run_agent(OlyderACPAgent(workspace), stdio_buffer_limit_bytes=1024 * 1024))
     return 0
