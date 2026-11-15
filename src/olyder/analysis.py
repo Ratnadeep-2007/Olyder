@@ -1,8 +1,9 @@
-"""Budgeted, checkpointed planning/research jobs. No builder is executed."""
+"""Budgeted, checkpointed planning/research/architecture jobs. No builder is executed."""
 import hashlib
 import time
 
 from .accounting import RuntimeAccounting
+from .architecture import evaluate_architecture
 from .config import load_spec
 from .control import Cancelled, RunControl, activate
 from .engine import plan
@@ -13,8 +14,8 @@ from .quota import Budget, QuotaExceeded
 from .state import RunStore
 
 
-def run_analysis(kind, spec_path='olyder.json', *, use_ai=False, allow_network=False, model_provider=None):
-    if kind not in ('plan','idea') or type(use_ai) is not bool or type(allow_network) is not bool:
+def run_analysis(kind, spec_path='olyder.json', *, use_ai=False, allow_network=False, model_provider=None, files=()):
+    if kind not in ('plan','idea','architecture') or type(use_ai) is not bool or type(allow_network) is not bool:
         raise ValueError('Invalid analysis workflow or consent flags')
     spec=load_spec(spec_path)
     (spec.root/'.olyder').mkdir(mode=0o700,exist_ok=True)
@@ -38,8 +39,11 @@ def run_analysis(kind, spec_path='olyder.json', *, use_ai=False, allow_network=F
             control.check()
             if kind=='plan':
                 result.update(plan(spec,budget,use_ai=use_ai),status='planned_not_verified')
-            else:
+            elif kind=='idea':
                 result.update(evaluate_idea(spec,network_allowed=allow_network,use_ai=use_ai,budget=budget))
+            else:
+                result.update(evaluate_architecture(spec, files=list(files), network_allowed=allow_network,
+                                                    use_ai=use_ai, budget=budget))
             control.check()
             if hashlib.sha256(spec.path.read_bytes()).hexdigest()!=spec.digest:
                 raise ValueError('Original requirements changed during analysis')
