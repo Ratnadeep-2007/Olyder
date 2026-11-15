@@ -120,7 +120,7 @@ def test_real_builder_repairs_in_detached_proposal_and_applies(tmp_path):
 
 
 def test_builder_attempt_to_replace_acceptance_tests_is_blocked(tmp_path):
-    sabotage = 'from pathlib import Path;Path("tests/test_checkout.py").write_text("pass\\n")'
+    sabotage = 'from pathlib import Path;Path("tests").mkdir(exist_ok=True);Path("tests/test_checkout.py").write_text("pass\\n")'
     root = _project(tmp_path, with_builder=sabotage)
     result, report = _cli(root, "run", "--allow-exec", "--execute-builder", "--unsafe-host")
     assert result.returncode == 1, (result.stdout, result.stderr)
