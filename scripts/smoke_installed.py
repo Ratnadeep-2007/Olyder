@@ -38,6 +38,16 @@ def main() -> None:
             assert "description:" in path.read_text(encoding="utf-8")
         assert "Already installed" in _run("setup", "opencode", "--project", str(project))
         assert not (project / "olyder.json").exists(), "Setup must never invent a project contract"
+
+        antigravity_project = project / "Antigravity workspace"
+        antigravity_project.mkdir()
+        assert "Ready for antigravity" in _run("setup", "antigravity", cwd=antigravity_project)
+        antigravity_skill = antigravity_project / ".agents/skills/olyder/SKILL.md"
+        open_code_skill = project / ".agents/skills/olyder/SKILL.md"
+        assert antigravity_skill.read_bytes() == open_code_skill.read_bytes()
+        assert "Already installed" in _run("setup", "antigravity", cwd=antigravity_project)
+        assert not (antigravity_project / "olyder.json").exists()
+
         for flags, status, code in [((), "passed", 0), (("--fail",), "failed", 1)]:
             demo = json.loads(_run("demo", *flags, cwd=project, exit_code=code))
             assert demo["status"] == status
@@ -46,7 +56,7 @@ def main() -> None:
             report = json.loads((project / demo["paths"]["json"]).read_text(encoding="utf-8"))
             assert report["metrics"]["execution_coverage_percent"] == 100
         assert not (project / "olyder.json").exists()
-    print("Installed-wheel smoke passed (version, doctor, native skill, offline pass/fail reports)")
+    print("Installed-wheel smoke passed (version, doctor, Antigravity and OpenCode skills, offline pass/fail reports)")
 
 
 if __name__ == "__main__":

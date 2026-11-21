@@ -1,15 +1,16 @@
 # Olyder
 
-**Verify agent-written code against checks you define.**
+**Test AI-generated code against acceptance criteria you define.**
 
 Olyder turns an `olyder.json` acceptance specification into a reproducible verdict
-and HTML, Markdown, and JSON evidence. Run it after any coding agent or in CI.
+and HTML, Markdown, and JSON evidence. Use it with Google Antigravity, Codex,
+Claude Code, or OpenCode, or run it in GitHub Actions.
 Deterministic verification works with Python 3.11+ and uses zero model tokens.
 An optional reviewer can assess the observed evidence, and a repair loop can
 send failing checks back to a configured builder.
 
 [![CI](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml/badge.svg)](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml)
-[Quick start](#quick-start) · [Integration guide](docs/UNIVERSAL_GUIDE.md) · [Contribute](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Quick start](#quick-start) · [Antigravity skill](docs/ANTIGRAVITY.md) · [GitHub Actions](docs/GITHUB_ACTIONS.md) · [Contribute](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 ## Quick start
 
@@ -81,8 +82,8 @@ to the directory where you launched Olyder. Use `--output` to select it explicit
 
 | Use case | Entry point |
 | --- | --- |
-| Add local or CI verification | `olyder verify` and an `olyder.json` checked into your repository |
-| Give an editor the Olyder skill | `olyder setup opencode`, `setup antigravity`, `setup claude`, or `setup codex`. Add `--global` for all projects |
+| Add local or CI verification | `olyder verify` and a checked-in `olyder.json`. Use the [GitHub Actions starter](docs/GITHUB_ACTIONS.md) for pull requests |
+| Give an editor the Olyder skill | [`olyder setup antigravity`](docs/ANTIGRAVITY.md), `olyder setup codex`, `olyder setup opencode`, or `olyder setup claude`. Add `--global` for all projects |
 | Integrate a tool or application | Python [SDK](docs/UNIVERSAL_GUIDE.md) or read-only-by-default stdio `olyder mcp` |
 | Connect a compatible ACP editor | Optional [ACP v1 bridge](docs/ACP_BRIDGE.md) via `olyder[acp]` |
 | Review evidence with another model | `olyder verify --ai` with a configured OpenAI-compatible endpoint |

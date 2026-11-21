@@ -1,0 +1,11 @@
+{
+  "goal": "The project README has an installation section.",
+  "checks": [
+    {
+      "id": "installation-docs",
+      "type": "file",
+      "path": "README.md",
+      "contains": "## Install"
+    }
+  ]
+}

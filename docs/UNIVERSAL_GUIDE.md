@@ -30,6 +30,8 @@ location is `~/.gemini/config/skills/olyder/SKILL.md`.
 The older `olyder install-skill --target ...` command remains available,
 now with `--global` and explicit `antigravity` / `gemini` targets.
 Refresh editor skill discovery or start a new conversation after setup.
+See the [Antigravity setup and invocation guide](ANTIGRAVITY.md) and
+the [GitHub Actions verification starter](GITHUB_ACTIONS.md).
 
 ## Configuration
 

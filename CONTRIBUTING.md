@@ -16,9 +16,10 @@ ACP integration coverage has separate runtime prerequisites.
 
 ## Propose an improvement
 
-Open an issue with the user problem, expected behavior, and a reproducible
-example. Useful places to start include adding a model-free fixture, documenting
-a verified editor setup, and improving diagnostics for a blocked check.
+Use the **Verification or setup problem** issue form for a reproducible bug.
+Good first contributions include a small model-free fixture, a verified
+[Antigravity setup](docs/ANTIGRAVITY.md) example for another platform, and an
+improvement to the [GitHub Actions starter](docs/GITHUB_ACTIONS.md).
 For a verdict problem, include the Olyder version, operating system, Python
 version, and a small acceptance spec and report with private data removed.
 

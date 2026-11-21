@@ -5,6 +5,8 @@
 - Distribution renamed from unpublished `olyder-agent` to `olyder` to support
   the intended `pip install olyder` flow when published.
 - Offline pass/fail demo with real verification reports, exercised from the built wheel.
+- Antigravity setup guide and a GitHub Actions starter with verdict summaries
+  and downloadable acceptance evidence.
 - Protected test inputs reject new conventional acceptance files and preserve root pytest configuration.
 - Managed subprocesses and Chromium exclude Olyder's verifier and local API tokens.
 - One-command editor skill setup, including project and global native skill

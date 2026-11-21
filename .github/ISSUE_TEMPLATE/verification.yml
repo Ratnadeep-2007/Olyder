@@ -1,0 +1,39 @@
+name: Verification or setup problem
+description: Report an unexpected verdict, report problem, or editor setup issue
+title: "[Bug]: "
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where it happened
+      options:
+        - CLI
+        - GitHub Actions
+        - Antigravity
+        - Codex
+        - OpenCode
+        - Claude Code
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Olyder version and operating system
+      placeholder: Olyder 0.5.0b1 on Ubuntu, Python 3.13
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Include the command and a minimal spec if relevant. Remove credentials and private data.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and observed results
+      description: Include the verdict, exit code, or relevant report excerpt.
+    validations:
+      required: true

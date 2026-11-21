@@ -25,6 +25,22 @@ whether new issues include reproducible evidence. Treat stars and forks as
 signals of interest. Track usage through available aggregate release and package
 metrics.
 
+## GitHub discovery and Antigravity
+
+Research on 2026-11-21 compared a copyable PR workflow, a Marketplace Action,
+and Antigravity plugin packaging. Antigravity's App, CLI, and IDE all support
+Olyder's existing skill paths. A short guide with invocation and executable
+setup addresses the immediate onboarding gap. [Google Antigravity skills](https://antigravity.google/docs/skills)
+
+The pull-request starter uses the existing CLI and reports, so adopters can
+inspect it before copying and can run it without provider credentials. An
+independent Antigravity brief reached the same priority and suggested revisiting
+Marketplace packaging after stable adoption. GitHub repository search supports
+topics, descriptions, and READMEs. Use those surfaces to describe concrete
+workflows and measure adoption through successful verification runs and
+reproducible issues. No keyword search volumes were established.
+[GitHub repository search](https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories)
+
 ## Follow-up engineering
 
 1. Specify versioned strict validation for built-in checks, with a compatibility
