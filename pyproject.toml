@@ -3,7 +3,7 @@ requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "olyder"
+name = "Olyder"
 version = "0.5.0b1"
 description = "Verification-driven execution, independent checks, and evidence for AI coding agents"
 readme = "README.md"

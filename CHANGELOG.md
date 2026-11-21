@@ -2,8 +2,7 @@
 
 ## 0.5.0b1 — first PyPI beta candidate (pending owner approval)
 
-- Distribution renamed from unpublished `olyder-agent` to `olyder` to support
-  the intended `pip install olyder` flow when published.
+- Package metadata uses the public name **Olyder**. Install with `pip install olyder` after publication.
 - Offline pass/fail demo with real verification reports, exercised from the built wheel.
 - Antigravity setup guide and a GitHub Actions starter with verdict summaries
   and downloadable acceptance evidence.

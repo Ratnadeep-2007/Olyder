@@ -2,14 +2,14 @@
 
 ## Release status
 
-Candidate distribution: **`olyder`**, version **`0.5.0b1`** (first public beta).
+Candidate distribution **Olyder**, version **`0.5.0b1`** (first public beta).
+Use `olyder` as the normalized package name in the Trusted Publisher form.
 This page describes the release procedure. **Merging the PR does not publish a
 package; a PyPI project and GitHub release do not exist until the owner completes
 the account setup and explicitly releases the tagged build.**
 
-The existing program/CLI/module name remains `olyder`. The distribution was
-previously called `olyder-agent` in `pyproject.toml`; it has not previously
-been released to PyPI. The package contents are *beta*, not a production
+The CLI and Python module use `olyder`. This is the first PyPI release.
+The package contents are *beta*, not a production
 security sandbox, provider hard spending cap, comprehensive ACP client/TCK,
 or a model that independently researches the entire internet.
 

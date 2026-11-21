@@ -26,7 +26,7 @@ def _assert_no_sensitive_entries(names: set[str]) -> None:
 def verify() -> None:
     project = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
     name, version = project["name"], project["version"]
-    assert name == "olyder", f"Unexpected distribution name: {name}"
+    assert name == "Olyder", f"Unexpected distribution name: {name}"
     tag = os.environ.get("RELEASE_TAG")
     if tag:
         assert tag == f"v{version}", f"Release tag {tag!r} does not match package version {version!r}"
