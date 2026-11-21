@@ -4,6 +4,14 @@ on:
     branches: [main]
   pull_request:
 jobs:
+  reusable-verification:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/verify.yml
+    with:
+      spec-path: examples/demo-app/olyder.json
+      allow-exec: true
+
   tests:
     strategy:
       matrix:

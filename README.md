@@ -10,29 +10,37 @@ An optional reviewer can assess the observed evidence, and a repair loop can
 send failing checks back to a configured builder.
 
 [![CI](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml/badge.svg)](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml)
-[Quick start](#quick-start) · [Antigravity skill](docs/ANTIGRAVITY.md) · [GitHub Actions](docs/GITHUB_ACTIONS.md) · [Contribute](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[![PyPI](https://img.shields.io/pypi/v/olyder?include_prereleases)](https://pypi.org/project/olyder/)
+[Quick start](#quick-start) · [Verify your repository](#verify-your-repository) · [Antigravity skill](docs/ANTIGRAVITY.md) · [GitHub Actions](docs/GITHUB_ACTIONS.md) · [Contribute](CONTRIBUTING.md)
 
 ## Quick start
 
-The first PyPI beta, `0.5.0b1`, is a release candidate. Install from the GitHub
-source in a Python virtual environment while publication is pending. This
-installation route requires Git and network access. Create an environment with
-`python -m venv .venv` and activate it with `source .venv/bin/activate` on
-macOS/Linux or `.venv\Scripts\Activate.ps1` in PowerShell.
+Install the [PyPI beta](https://pypi.org/project/olyder/0.5.0b1/) with Python
+3.11 or newer. Create an environment with `python -m venv .venv` and activate
+it with `source .venv/bin/activate` on macOS and Linux or
+`.\.venv\Scripts\Activate.ps1` in PowerShell.
 
 ```sh
-python -m pip install "git+https://github.com/Ratnadeep-2007/Olyder.git"
-olyder demo
-olyder demo --fail
+python -m pip install "olyder==0.5.0b1"
+olyder --version
 ```
 
-The demo uses two file checks in a temporary project. The first command exits
-`0` and writes a report under `.olyder/demo/pass/`. The second deliberately fails
-one assertion, exits `1`, and writes a separate report under `.olyder/demo/fail/`.
-Open `report.html` or read `report.json` to see what ran and why the verdict
-changed. Both runs work offline and use zero model tokens. If you already have
-a reviewed wheel, install it without package-index access using
-`python -m pip install --no-index "/path/to/olyder-0.5.0b1-py3-none-any.whl"`.
+## See a real test catch a regression
+
+The cart-pricing example expects a 25% discount on a price of 100. With the
+discount calculation broken, the unit test receives 100 instead of 75 and
+Olyder exits `1`. Restore the calculation and all three unit tests pass
+against the same acceptance spec. From an Olyder checkout, run:
+
+```sh
+python examples/demo-app/replay_regression.py
+```
+
+The replay runs both cases in a temporary copy. Open `report.html` in
+`.olyder/pricing-proof/discount-regression/` and
+`.olyder/pricing-proof/discount-fixed/` to compare the verdicts and spec hashes.
+The replay works offline and makes zero model calls. For an offline smoke
+test using only the installed CLI, run `olyder demo`.
 
 ## Verify your repository
 

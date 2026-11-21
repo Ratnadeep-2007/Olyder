@@ -19,14 +19,14 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install Olyder
-        run: python -m pip install "git+https://github.com/Ratnadeep-2007/Olyder.git@e51ac79a9662ff7fae00b2265800bcb5497f3b33"
+        run: python -I -m pip --isolated install --index-url https://pypi.org/simple "olyder==0.5.0b1"
       - name: Verify acceptance criteria
         id: verify
         run: olyder verify --spec olyder.json --output "$RUNNER_TEMP/olyder-report"
       - name: Summarize verification
         if: ${{ !cancelled() && (steps.verify.outcome == 'success' || steps.verify.outcome == 'failure') }}
         run: |
-          python - <<'PY'
+          python -I - <<'PY'
           import json
           import os
           from pathlib import Path
