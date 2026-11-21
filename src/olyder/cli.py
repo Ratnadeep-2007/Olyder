@@ -23,6 +23,9 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"Olyder {__version__}")
     sub = p.add_subparsers(dest="command", required=True)
     sub.add_parser('doctor',help='Read-only setup and capability diagnostics')
+    demo = sub.add_parser("demo", help="Run a built-in offline verification example")
+    demo.add_argument("--fail", action="store_true", help="Show an intentionally failing example")
+    demo.add_argument("--output", type=Path, help="Write reports to this directory")
     bench=sub.add_parser('bench',help='Run offline paired executable fixtures; never calls paid agents')
     bench.add_argument('--output',default='.olyder/benchmark.json')
     bench.add_argument('--repetitions',type=int,default=3)
@@ -52,7 +55,8 @@ def parser() -> argparse.ArgumentParser:
     for name in ("plan", "idea", "verify", "run"):
         s = sub.add_parser(name)
         s.add_argument("--spec", default="olyder.json")
-        s.add_argument("--output", default=".olyder")
+        s.add_argument("--output", default=".olyder",
+                       help="Report directory relative to the current directory (default: .olyder)")
         if name in ("plan", "idea", "verify", "run"):
             s.add_argument("--ai", action="store_true", help="Explicit opt-in: send limited evidence to configured model endpoint")
         if name in ("idea", "verify", "run"):
@@ -102,6 +106,12 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "demo":
+            from .demo import run_demo
+            output = args.output or Path(".olyder", "demo", "fail" if args.fail else "pass")
+            result = run_demo(fail=args.fail, output=output)
+            print(_json({key: result[key] for key in ("status", "budget", "paths")}, indent=2))
+            return 0 if result["status"] == "passed" else 1
         if args.command=='prune':
             from .state import RunStore
             result=RunStore(Path(args.workspace).resolve()/'.olyder'/'runs').prune(
@@ -142,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 from .acp_bridge import serve as serve_acp
             except ImportError as exc:
-                raise ConfigError("ACP bridge requires: pip install 'olyder-agent[acp]'") from exc
+                raise ConfigError("ACP bridge requires: pip install 'olyder[acp]'") from exc
             return serve_acp(Path(args.workspace).resolve())
         if args.command == "mcp":
             from .mcp import serve
@@ -177,7 +187,13 @@ def main(argv: list[str] | None = None) -> int:
             from .plugins import load_agent_manifest
             for manifest in args.plugin:
                 load_agent_manifest(manifest,grants=set(args.grant_plugin))
-        spec = load_spec(args.spec)
+        try:
+            spec = load_spec(args.spec)
+        except FileNotFoundError as exc:
+            message = f"Specification {args.spec!r} was not found. Supply an existing file with --spec PATH."
+            if args.spec == "olyder.json":
+                message += " Run 'olyder init' to create a starter spec here."
+            raise ConfigError(message) from exc
         budget = Budget(int(spec.raw.get("limits", {}).get("max_tokens", 30000)))
         if args.command == "plan":
             if args.ai:

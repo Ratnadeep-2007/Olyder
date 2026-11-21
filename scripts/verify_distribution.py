@@ -54,6 +54,9 @@ def verify() -> None:
         assert parsed.get("Name") == name
         assert parsed.get("Version") == version
         assert parsed.get("Requires-Python") == ">=3.11"
+        assert parsed.get("License-Expression") == "Apache-2.0"
+        assert parsed.get("License-File") == "LICENSE"
+        assert f"olyder-{version}.dist-info/licenses/LICENSE" in entries
         entry_file = f"olyder-{version}.dist-info/entry_points.txt"
         assert entry_file in entries, "Missing console entry point"
         parser = configparser.ConfigParser()
@@ -72,7 +75,9 @@ def verify() -> None:
         parsed = email.message_from_bytes(meta_entry.read())
         assert parsed.get("Name") == name
         assert parsed.get("Version") == version
-    print(f"Verified distribution archives: {name} {version}, console CLI and embedded skill")
+        assert parsed.get("License-Expression") == "Apache-2.0"
+        assert parsed.get("License-File") == "LICENSE"
+    print(f"Verified distribution archives: {name} {version}, license, console CLI and embedded skill")
 
 
 if __name__ == "__main__":

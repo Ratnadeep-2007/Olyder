@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib import error, parse, request
 
 from .config import ConfigError, safe_path
-from .execution import ExecutionError, docker_argv, managed_run
+from .execution import ExecutionError, docker_argv, managed_run, workload_environment
 from .privacy import redact
 
 
@@ -60,9 +60,12 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
             return False, f"Expected exists={expected} for {check['path']}"
         if "contains" in check:
             if not p.is_file():
-                return False, "File missing or not regular file"
-            data = p.read_bytes()[:1_000_000].decode("utf-8", errors="replace")
-            return check["contains"] in data, "Text content assertion"
+                return False, f"Expected a regular file for the text assertion at {check['path']!r}"
+            with p.open("rb") as source:
+                data = source.read(1_000_000).decode("utf-8", errors="replace")
+            matched = check["contains"] in data
+            detail = "matched" if matched else "did not match"
+            return matched, f"Text assertion {detail} in {check['path']!r} (first 1000000 bytes)"
         return True, "File existence assertion"
     if kind == "command":
         if not allow_exec:
@@ -146,12 +149,14 @@ def _run(check: dict, root: Path, allow_exec: bool, allow_network: bool = False,
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
-            raise RuntimeError("Browser tests need: pip install 'olyder-agent[browser]' and playwright install chromium")
+            raise RuntimeError("Browser tests need: pip install 'olyder[browser]' and playwright install chromium")
         with sync_playwright() as pw:
             # Optional executable path permits a system Chromium install; by default
             # Playwright uses its managed browser binary.
             executable = os.getenv("OLYDER_CHROMIUM_PATH")
-            browser = pw.chromium.launch(headless=True, executable_path=executable or None)
+            browser = pw.chromium.launch(
+                headless=True, executable_path=executable or None, env=workload_environment()
+            )
             context = browser.new_context()
             trace_active = trace_dir is not None
             trace_ok = False

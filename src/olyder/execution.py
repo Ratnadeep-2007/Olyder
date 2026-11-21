@@ -17,6 +17,15 @@ from pathlib import Path
 from .control import ResourceLimit, current
 
 
+_OLYDER_CREDENTIALS = {"OLYDER_API_KEY", "OLYDER_LOCAL_API_TOKEN"}
+
+
+def workload_environment() -> dict[str, str]:
+    """Keep Olyder's credentials private while preserving the runtime environment."""
+    return {name: value for name, value in os.environ.items()
+            if name.upper() not in _OLYDER_CREDENTIALS}
+
+
 class ExecutionError(RuntimeError):
     """Command cannot be executed under the requested policy."""
 
@@ -44,6 +53,8 @@ def docker_argv(argv: list[str], root: Path, *, image: str, writable: bool,
     path = Path(root).resolve(strict=True)
     if not path.is_dir() or "," in str(path):
         raise ExecutionError("Workspace must be a directory with a Docker-compatible path")
+    if any(name.upper() in _OLYDER_CREDENTIALS for name in env_names):
+        raise ExecutionError("Olyder credentials cannot be forwarded to a workload")
     if len(env_names) > 20 or any(not name.isidentifier() or name not in os.environ for name in env_names):
         raise ExecutionError("Docker environment variables must be explicitly selected and present")
     if shutil.which("docker") is None:
@@ -80,7 +91,7 @@ def managed_run(argv: list[str], *, cwd: Path, stdout, timeout: float) -> ExitSt
     start = time.monotonic()
     try:
         process = subprocess.Popen(argv, cwd=cwd, stdout=stdout, stderr=subprocess.STDOUT,
-                                   stdin=subprocess.DEVNULL, shell=False, **kwargs)
+                                   stdin=subprocess.DEVNULL, shell=False, env=workload_environment(), **kwargs)
     except FileNotFoundError as exc:
         raise ExecutionError(f"Executable unavailable: {exc.filename}") from exc
     control = current.get()

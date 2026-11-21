@@ -23,7 +23,7 @@ or a model that independently researches the entire internet.
 4. Validate long-description metadata with `python -m twine check --strict`.
 5. Install the **built wheel** in a brand-new Python environment on
    Ubuntu, Windows, and macOS; smoke `python -m olyder --version`,
-   `doctor`, `setup opencode`, and repeat setup without overwriting files.
+   `doctor`, `setup opencode`, repeat setup, and both offline demo verdicts.
 6. Archive the reviewed distribution files as a CI artifact.
 
 These tests do not establish exhaustive application security, actual paid

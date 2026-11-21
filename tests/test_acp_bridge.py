@@ -83,12 +83,14 @@ def test_acp_prompt_emits_sdk_message_and_cancel(tmp_path):
 def test_real_acp_stdio_client_with_independent_sdk(tmp_path):
     root = _project(tmp_path)
     received = []
+    update_received = asyncio.Event()
     from acp import spawn_agent_process, text_block
     from acp.interfaces import Client
 
     class RecordingClient(Client):
         async def session_update(self, session_id, update, **kwargs):
             received.append((session_id, update))
+            update_received.set()
         async def request_permission(self, session_id, tool_call, options, **kwargs):
             return {'outcome': {'outcome': 'cancelled'}}
 
@@ -103,7 +105,9 @@ def test_real_acp_stdio_client_with_independent_sdk(tmp_path):
             turn = await conn.prompt(session_id=session.session_id,
                                      prompt=[text_block('verify')])
             assert turn.stop_reason == 'end_turn'
-            assert received and received[-1][0] == session.session_id
+            # The SDK dispatches notifications independently of the prompt response.
+            await asyncio.wait_for(update_received.wait(), timeout=3)
+            assert received[-1][0] == session.session_id
             text = received[-1][1].content.text
             assert '"blocked"' in text
     asyncio.run(asyncio.wait_for(scenario(), timeout=25))

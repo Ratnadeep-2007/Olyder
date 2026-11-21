@@ -1,7 +1,31 @@
-# Contributing
+# Contributing to Olyder
 
-This project favors reproducible evidence over model judgment. Open an issue with a minimal test fixture and expected/observed behavior. Run `python -m pytest -q` locally before submitting changes.
+## Get a local baseline
 
-Safety: never submit real API credentials, private repository data, or generated reports containing secrets. Security bugs should be reported privately to maintainers rather than accompanied by working public exploit payloads. At the first public release, configure a responsible disclosure contact in repository security settings.
+Fork and clone the project, then use a Python 3.11+ virtual environment.
 
-New scenario runners should default to non-execution, require explicit user consent for side effects, and be supported by tests on Windows and Linux.
+```sh
+python -m pip install -e ".[dev]"
+python -m pytest -q
+olyder demo
+```
+
+The demo reports are under `.olyder/demo/pass/`. For a project with an executable
+check, see [the cart-pricing example](examples/demo-app/). Browser, Docker, and
+ACP integration coverage has separate runtime prerequisites.
+
+## Propose an improvement
+
+Open an issue with the user problem, expected behavior, and a reproducible
+example. Useful places to start include adding a model-free fixture, documenting
+a verified editor setup, and improving diagnostics for a blocked check.
+For a verdict problem, include the Olyder version, operating system, Python
+version, and a small acceptance spec and report with private data removed.
+
+Keep pull requests narrow. Include a regression check for behavior changes and
+give the exact commands you ran. Keep new scenario runners opt-in for execution
+and preserve the existing acceptance matrix.
+
+Use GitHub's private reporting channel for security bugs when enabled. Keep real
+credentials, private repository data, and sensitive reports out of issues and
+pull requests.

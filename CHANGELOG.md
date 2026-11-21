@@ -4,6 +4,9 @@
 
 - Distribution renamed from unpublished `olyder-agent` to `olyder` to support
   the intended `pip install olyder` flow when published.
+- Offline pass/fail demo with real verification reports, exercised from the built wheel.
+- Protected test inputs reject new conventional acceptance files and preserve root pytest configuration.
+- Managed subprocesses and Chromium exclude Olyder's verifier and local API tokens.
 - One-command editor skill setup, including project and global native skill
   locations, conflict-safe repeated installs, and correct `description` metadata.
 - GitHub Actions builds/checks wheel and sdist and clean-installs the wheel
