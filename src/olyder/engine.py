@@ -137,8 +137,8 @@ def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, a
     from .contracts import coverage_map
     coverage = coverage_map(spec, results)
     missing_coverage = any(r["mandatory"] and not r["satisfied"] for r in coverage.values())
-    full_suite = {r["id"] for r in results} == {c["id"] for c in spec.checks}
-    if passed and (concerns or source_gaps or missing_coverage or not full_suite):
+    full_suite_selected = {r["id"] for r in results} == {c["id"] for c in spec.checks}
+    if passed and (concerns or source_gaps or missing_coverage or not full_suite_selected):
         status = "needs_review"
     else:
         status = "passed" if passed else "failed"
@@ -169,7 +169,7 @@ def verify_once(spec: Spec, *, allow_exec: bool = False, use_ai: bool = False, a
         "sources_fetched": len(sources) - len(source_gaps),
         "sources_unavailable": len(source_gaps),
     }
-    return {"goal": spec.goal, "status": status, "spec_sha256": spec.digest, "requirement_coverage": coverage, "independent_critic_status": critic_status, "selected_checks": [r["id"] for r in results], "full_suite_executed": full_suite, "checks": results, "metrics": metrics, "sources": sources, "verifier_note": notes, "ai_concerns": concerns, "budget": budget.snapshot()}
+    return {"goal": spec.goal, "status": status, "spec_sha256": spec.digest, "requirement_coverage": coverage, "independent_critic_status": critic_status, "selected_checks": [r["id"] for r in results], "full_suite_selected": full_suite_selected, "full_suite_executed": full_suite_selected and blocked_count == 0, "checks": results, "metrics": metrics, "sources": sources, "verifier_note": notes, "ai_concerns": concerns, "budget": budget.snapshot()}
 
 
 def run_loop(spec: Spec, *, allow_exec: bool, execute_builder: bool, use_ai: bool, allow_network: bool, output: Path, max_iterations: int | None = None, sandbox: str = "host", docker_image: str = "python:3.13-slim", docker_network: str = "none", agent: str | None = None, trace_dir: Path | None = None, mode: str | None = None) -> dict:

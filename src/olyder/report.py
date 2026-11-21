@@ -24,7 +24,7 @@ def save_report(report: dict, output_dir: Path) -> dict[str, str]:
     json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     metadata = {k: report[k] for k in (
         "requirement_coverage", "independent_critic_status", "selected_checks",
-        "full_suite_executed", "policy", "stop_reason", "acceptance_integrity",
+        "full_suite_selected", "full_suite_executed", "policy", "stop_reason", "acceptance_integrity",
         "run_id", "functional_verdict", "budget_verdict", "accounting",
         "wall_seconds", "environment", "verification_selection", "resource_usage", "warnings",
         "artifact_refs", "verification_target", "application_status", "repaired_check_ids", "checker_sha256"

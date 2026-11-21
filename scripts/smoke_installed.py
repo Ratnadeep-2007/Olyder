@@ -11,11 +11,12 @@ import tempfile
 import olyder
 
 
-def _run(*args: str) -> str:
+def _run(*args: str, cwd: Path | None = None, exit_code: int = 0) -> str:
     outcome = subprocess.run(
         [sys.executable, "-m", "olyder", *args],
-        capture_output=True, text=True, check=True, timeout=30,
+        cwd=cwd, capture_output=True, text=True, timeout=30,
     )
+    assert outcome.returncode == exit_code, (args, outcome.returncode, outcome.stderr)
     return outcome.stdout
 
 
@@ -37,7 +38,25 @@ def main() -> None:
             assert "description:" in path.read_text(encoding="utf-8")
         assert "Already installed" in _run("setup", "opencode", "--project", str(project))
         assert not (project / "olyder.json").exists(), "Setup must never invent a project contract"
-    print("Installed-wheel smoke passed (version, doctor, native OpenCode skill, repeat setup)")
+
+        antigravity_project = project / "Antigravity workspace"
+        antigravity_project.mkdir()
+        assert "Ready for antigravity" in _run("setup", "antigravity", cwd=antigravity_project)
+        antigravity_skill = antigravity_project / ".agents/skills/olyder/SKILL.md"
+        open_code_skill = project / ".agents/skills/olyder/SKILL.md"
+        assert antigravity_skill.read_bytes() == open_code_skill.read_bytes()
+        assert "Already installed" in _run("setup", "antigravity", cwd=antigravity_project)
+        assert not (antigravity_project / "olyder.json").exists()
+
+        for flags, status, code in [((), "passed", 0), (("--fail",), "failed", 1)]:
+            demo = json.loads(_run("demo", *flags, cwd=project, exit_code=code))
+            assert demo["status"] == status
+            assert demo["budget"]["spent"] == 0
+            assert (project / demo["paths"]["html"]).is_file()
+            report = json.loads((project / demo["paths"]["json"]).read_text(encoding="utf-8"))
+            assert report["metrics"]["execution_coverage_percent"] == 100
+        assert not (project / "olyder.json").exists()
+    print("Installed-wheel smoke passed (version, doctor, Antigravity and OpenCode skills, offline pass/fail reports)")
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ import stat
 from pathlib import Path
 
 from .config import safe_path
-from .integrity import _test_like, protected_paths
+from .integrity import _test_like, protected_paths, root_test_asset, trusted_pytest_config
 
 IGNORE = {'.git', '.olyder', '.venv', '.wheel-smoke', '__pycache__',
           '.pytest_cache', 'node_modules', '.mypy_cache', '.ruff_cache'}
@@ -142,8 +142,17 @@ class ProtectedWorkspace:
         self.baseline_dirs=directories(self.root)
         self.protected = {'tests', 'features', 'specs', spec.path.relative_to(self.root).as_posix()}
         self.protected.update(p.relative_to(self.root).as_posix() for p in protected_paths(spec))
+        # Reserve trusted pytest config even when absent so it cannot be added
+        # by the builder later. Name-only entries keep manifest schema v3.
+        pytest_config = trusted_pytest_config(spec)
+        self.pytest_protection = bool(pytest_config)
+        self.protected.update(pytest_config)
+        if self.pytest_protection:
+            self.protected.update(name for name in self.baseline if self._pytest_hook(name))
+        declared = set()
         for value in spec.raw.get('protected_paths',[]):
             captured=safe_path(self.root,value).relative_to(self.root).as_posix()
+            declared.add(captured.casefold())
             if captured not in self.baseline and captured not in self.baseline_dirs:
                 raise WorkspaceViolation('Declared verifier asset unavailable: '+value)
         for check in spec.checks:
@@ -155,13 +164,21 @@ class ProtectedWorkspace:
                     if _test_like(argument):
                         asset=_acceptance_asset(self.root,argument)
                         self.protected.add(asset.relative_to(self.root).as_posix())
+        # Keep Python package metadata available to builders for dependency discovery.
+        # The verifier always uses the trusted copy, and a changed copy blocks the run.
+        self.builder_context = set()
+        if self.pytest_protection and 'pyproject.toml' not in declared:
+            self.builder_context = {name for name in self.baseline if name.casefold() == 'pyproject.toml'}
         _mkdirs(self.trusted,self.baseline_dirs)
         _mkdirs(self.builder,[n for n in self.baseline_dirs if not self.is_protected(n)])
         _copy(self.root, self.trusted, self.baseline)
         if tree(self.trusted) != self.baseline or tree(self.root) != self.baseline:
             raise WorkspaceViolation('Source changed during snapshot capture')
         _copy(self.trusted, self.builder, [n for n in self.baseline if not self.is_protected(n) and not self.secret(n)])
+        _copy(self.trusted, self.builder, self.builder_context)
         self.manifest = {'schema_version': 3, 'root': str(self.root),
+                         'builder_context': sorted(self.builder_context),
+                         'pytest_protection': self.pytest_protection,
                          'baseline': self.baseline, 'protected': sorted(self.protected),
                          'baseline_directories':sorted(self.baseline_dirs),'baseline_modes':self.baseline_modes}
         (self.state/'manifest.json').write_text(json.dumps(self.manifest, sort_keys=True), encoding='utf-8')
@@ -180,6 +197,8 @@ class ProtectedWorkspace:
             raise WorkspaceViolation('Unsupported workspace schema')
         obj.root = Path(obj.manifest['root'])
         obj.baseline, obj.protected = obj.manifest['baseline'], set(obj.manifest['protected'])
+        obj.builder_context = set(obj.manifest.get('builder_context', []))
+        obj.pytest_protection = obj.manifest.get('pytest_protection', False)
         obj.baseline_modes=obj.manifest['baseline_modes']
         obj.baseline_dirs=set(obj.manifest.get('baseline_directories',[]))
         obj.trusted, obj.builder, obj.verify_root = (obj.state/n for n in ('trusted','builder','harness'))
@@ -190,9 +209,15 @@ class ProtectedWorkspace:
     def secret(name):
         return secret_path(name)
 
+    @staticmethod
+    def _pytest_hook(name):
+        return name.rsplit('/', 1)[-1].casefold() == 'conftest.py'
+
     def is_protected(self, name):
         normalized=name.casefold()
-        return any(normalized == p.casefold() or normalized.startswith(p.casefold()+'/') for p in self.protected)
+        return (self.pytest_protection and self._pytest_hook(name)) or any(
+            normalized == p.casefold() or normalized.startswith(p.casefold()+'/') for p in self.protected
+        )
 
     def validate(self):
         if tree(self.trusted) != self.baseline:
@@ -202,12 +227,16 @@ class ProtectedWorkspace:
         if directories(self.trusted)!=self.baseline_dirs:
             raise WorkspaceViolation('Trusted snapshot directories changed')
         proposed = tree(self.builder,include_secrets=True)
-        candidates=proposed.keys()|directories(self.builder,include_secrets=True)
-        forbidden = [n for n in candidates if self.is_protected(n) or self.secret(n) or
+        for name in self.builder_context:
+            if (proposed.get(name) != self.baseline[name]
+                    or file_modes(self.builder, [name])[name] != self.baseline_modes[name]):
+                raise WorkspaceViolation('Builder changed protected context: ' + name)
+        candidates=(proposed.keys()|directories(self.builder,include_secrets=True)) - self.builder_context
+        forbidden = [n for n in sorted(candidates) if self.is_protected(n) or self.secret(n) or root_test_asset(n) or
                      n in proposed and any(p.casefold().startswith(n.casefold()+'/') for p in self.protected)]
         if forbidden:
             raise WorkspaceViolation('Builder supplied protected or secret paths: '+', '.join(forbidden[:5]))
-        return proposed
+        return {name: digest for name, digest in proposed.items() if name not in self.builder_context}
 
     def harness(self):
         proposed = self.validate()

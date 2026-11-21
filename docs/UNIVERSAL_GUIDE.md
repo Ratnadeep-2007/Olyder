@@ -5,10 +5,11 @@ Python 3.11+; no mandatory runtime dependencies. From a clone:
 ```text
 python -m pip install -e .
 olyder doctor
+olyder demo
 olyder verify --spec examples/demo-app/olyder.json --allow-exec
 ```
 
-The demo runs actual pricing unit tests without a model. Generated example evidence is in docs/examples/universal/. Review executable checks before granting --allow-exec.
+`olyder demo` runs two file checks offline and writes reports under `.olyder/demo/pass/`. The separate cart-pricing example runs unit tests without a model and needs a reviewed execution grant. See [example evidence](examples/universal/).
 
 ## Quick global editor setup
 
@@ -29,6 +30,8 @@ location is `~/.gemini/config/skills/olyder/SKILL.md`.
 The older `olyder install-skill --target ...` command remains available,
 now with `--global` and explicit `antigravity` / `gemini` targets.
 Refresh editor skill discovery or start a new conversation after setup.
+See the [Antigravity setup and invocation guide](ANTIGRAVITY.md) and
+the [GitHub Actions verification starter](GITHUB_ACTIONS.md).
 
 ## Configuration
 
