@@ -33,6 +33,20 @@ Refresh editor skill discovery or start a new conversation after setup.
 See the [Antigravity setup and invocation guide](ANTIGRAVITY.md) and
 the [GitHub Actions verification starter](GITHUB_ACTIONS.md).
 
+## Use Olyder in Codex
+
+From the project root in the Python environment where Olyder is installed, run:
+
+```sh
+python -m olyder setup codex
+```
+
+The installer prints the path to `.agents/skills/olyder/SKILL.md`.
+Open Codex in the same project and run `/skills` to look for `olyder`.
+Restart Codex if the new skill does not appear. To select it, type
+`$olyder` in your prompt and ask Codex to verify your `olyder.json`.
+[Codex skill discovery and invocation](https://learn.chatgpt.com/docs/build-skills#how-chatgpt-and-codex-use-skills)
+
 ## Configuration
 
 `olyder init` creates a starter spec. Preserve goal/check IDs and review builder.argv before enabling mutation. Existing schema-1 specs remain readable; schema 2 adds explicit requirements:

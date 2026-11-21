@@ -8,10 +8,10 @@ Antigravity runs commands.
 From your project's root, install the workspace skill.
 
 ```sh
-olyder setup antigravity
+python -m olyder setup antigravity
 ```
 
-Use `olyder setup antigravity --global` if you want the skill across projects.
+Use `python -m olyder setup antigravity --global` if you want the skill across projects.
 The workspace installer writes `.agents/skills/olyder/SKILL.md`. The global
 installer uses `~/.gemini/config/skills/olyder/SKILL.md`. These are discovery
 locations for Antigravity's App, CLI, and IDE. The skill ID is `olyder`.
@@ -19,10 +19,12 @@ locations for Antigravity's App, CLI, and IDE. The skill ID is `olyder`.
 
 ## Run the first check
 
-1. Open the workspace in Antigravity. In the CLI, run `/skills reload` or
-   start a new session. In the IDE, look under **Customizations** in the agent
-   side panel.
-2. If you don't have an acceptance spec yet, run `olyder init` in the project
+1. Open the workspace in Antigravity. In the CLI, run `/skills` and look
+   for `olyder` under **Workspace skills**. Confirm that the path points to
+   your project's `.agents/skills/olyder/SKILL.md`. If needed, run
+   `/skills reload` or start a new session. In the IDE, look under
+   **Customizations** in the agent side panel.
+2. If you don't have an acceptance spec yet, run `python -m olyder init` in the project
    and edit the generated checks. The [README example](../README.md#verify-your-repository)
    shows a file-only check you can run immediately.
 3. Ask Antigravity to use Olyder by name. In the App or CLI, you can also
@@ -31,11 +33,10 @@ locations for Antigravity's App, CLI, and IDE. The skill ID is `olyder`.
    > Use Olyder to verify the current change against olyder.json. Show the
    > verdict and the report path. Ask before running executable checks.
 
-For a quick CLI check outside the editor, use `olyder demo` first. If the
-Antigravity session cannot find `olyder`, provide the executable's absolute
-path or start the session in the Python environment where Olyder is
-installed. Use the same execution environment for Antigravity and the CLI.
+For a quick CLI check outside the editor, use `python -m olyder demo`.
+Use the same Python environment in Antigravity. If needed, give the agent
+the absolute path to the interpreter and ask it to run `-m olyder`.
 
 Skill setup is offline. Verification uses the permissions you grant to Olyder.
-Run `olyder verify` for file checks. Review a test command before enabling
-it with `olyder verify --allow-exec`.
+Run `python -m olyder verify` for file checks. Review a test command before
+enabling it with `python -m olyder verify --allow-exec`.

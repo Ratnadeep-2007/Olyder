@@ -22,8 +22,12 @@ it with `source .venv/bin/activate` on macOS and Linux or
 
 ```sh
 python -m pip install "olyder==0.5.0b1"
-olyder --version
+python -m olyder --version
 ```
+
+Use the Python interpreter from the environment where you installed Olyder.
+The shorter `olyder` command is also available where your system allows the
+installed launcher to run.
 
 ## See a real test catch a regression
 
@@ -40,7 +44,7 @@ The replay runs both cases in a temporary copy. Open `report.html` in
 `.olyder/pricing-proof/discount-regression/` and
 `.olyder/pricing-proof/discount-fixed/` to compare the verdicts and spec hashes.
 The replay works offline and makes zero model calls. For an offline smoke
-test using only the installed CLI, run `olyder demo`.
+test using only the installed CLI, run `python -m olyder demo`.
 
 ## Verify your repository
 
@@ -57,8 +61,8 @@ with a condition your change must satisfy.
 ```
 
 ```sh
-olyder plan
-olyder verify
+python -m olyder plan
+python -m olyder verify
 ```
 
 Add a check object to the `checks` array to run your existing test suite.
@@ -68,7 +72,7 @@ This example assumes pytest is installed in the verification environment.
 {"id": "unit-tests", "type": "command", "argv": ["python", "-m", "pytest", "-q"]}
 ```
 
-Review all configured commands before running `olyder verify --allow-exec`.
+Review all configured commands before running `python -m olyder verify --allow-exec`.
 File checks need no execution grant.
 HTTP and optional Playwright browser checks require `--allow-exec`, and
 non-local URLs also require `--allow-network`. A blocked check leaves acceptance
@@ -91,7 +95,7 @@ to the directory where you launched Olyder. Use `--output` to select it explicit
 | Use case | Entry point |
 | --- | --- |
 | Add local or CI verification | `olyder verify` and a checked-in `olyder.json`. Use the [GitHub Actions starter](docs/GITHUB_ACTIONS.md) for pull requests |
-| Give an editor the Olyder skill | [`olyder setup antigravity`](docs/ANTIGRAVITY.md), `olyder setup codex`, `olyder setup opencode`, or `olyder setup claude`. Add `--global` for all projects |
+| Give an editor the Olyder skill | `python -m olyder setup` with [`antigravity`](docs/ANTIGRAVITY.md), [`codex`](docs/UNIVERSAL_GUIDE.md#use-olyder-in-codex), `opencode`, or `claude`. Add `--global` for all projects |
 | Integrate a tool or application | Python [SDK](docs/UNIVERSAL_GUIDE.md) or read-only-by-default stdio `olyder mcp` |
 | Connect a compatible ACP editor | Optional [ACP v1 bridge](docs/ACP_BRIDGE.md) via `olyder[acp]` |
 | Review evidence with another model | `olyder verify --ai` with a configured OpenAI-compatible endpoint |
