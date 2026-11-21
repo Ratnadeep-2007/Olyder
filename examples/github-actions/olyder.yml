@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install Olyder
-        run: python -m pip install "olyder==0.5.0b1"
+        run: python -m pip install "git+https://github.com/Ratnadeep-2007/Olyder.git@e51ac79a9662ff7fae00b2265800bcb5497f3b33"
       - name: Verify acceptance criteria
         id: verify
         run: olyder verify --spec olyder.json --output "$RUNNER_TEMP/olyder-report"
@@ -32,16 +32,19 @@ jobs:
           from pathlib import Path
 
           report = Path(os.environ["RUNNER_TEMP"]) / "olyder-report" / "report.json"
-          if report.is_file():
-              verdict = json.loads(report.read_text(encoding="utf-8"))
-              metrics = verdict.get("metrics", {})
-              with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
-                  print("## Olyder acceptance", file=summary)
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              print("## Olyder acceptance", file=summary)
+              if report.is_file():
+                  verdict = json.loads(report.read_text(encoding="utf-8"))
+                  metrics = verdict.get("metrics", {})
                   print(f"\n**Verdict:** {verdict['status']}", file=summary)
                   if metrics:
                       print(f"\nExecuted {metrics['executed_checks']} of {metrics['declared_checks']} checks. "
                             f"Passed: {metrics['passed_checks']}. Failed: {metrics['failed_checks']}. "
                             f"Blocked: {metrics['blocked_checks']}.", file=summary)
+              else:
+                  print("\nVerification produced no report. See the **Verify acceptance criteria** step log.",
+                        file=summary)
           PY
       - name: Upload verification report
         if: ${{ !cancelled() && (steps.verify.outcome == 'success' || steps.verify.outcome == 'failure') }}

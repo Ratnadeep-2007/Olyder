@@ -14,17 +14,17 @@ an API key, model call, or executable check.
    Its workflow summary shows the verdict and check counts. Download the
    `olyder-report` artifact for the HTML, Markdown, and JSON evidence.
 
-The workflow's pinned PyPI install requires the public `0.5.0b1` beta. Before
-publication, replace the requirement in the install step with
-`git+https://github.com/Ratnadeep-2007/Olyder.git@<full-reviewed-commit-sha>`,
-using a commit that is already available on GitHub. For a local trial, install
-the candidate wheel and run `olyder verify` against the copied spec.
+The workflow pins a public Olyder Git revision so it can run before the
+first PyPI release. It needs Git and network access for installation. After
+PyPI publication, you can pin the package with
+`python -m pip install "olyder==0.5.0b1"`. For a local trial, install the
+candidate wheel and run `olyder verify` against the copied spec.
 
 ## Make it a required check
 
 Once the first run succeeds, configure your branch rules to require the
 `acceptance` check. A failed or blocked verdict exits `1`. A spec error exits
-`2` and may produce only a diagnostic in the job log. The reporting steps run
+`2`. If there is no report, the summary directs you to the job log. The reporting steps run
 after a verification failure so you can inspect the evidence without changing
 the job's exit result. [GitHub status checks](https://docs.github.com/en/pull-requests/reference/status-checks)
 

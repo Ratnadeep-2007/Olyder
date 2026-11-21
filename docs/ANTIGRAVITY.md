@@ -25,8 +25,8 @@ locations for Antigravity's App, CLI, and IDE. The skill ID is `olyder`.
 2. If you don't have an acceptance spec yet, run `olyder init` in the project
    and edit the generated checks. The [README example](../README.md#verify-your-repository)
    shows a file-only check you can run immediately.
-3. In the App or CLI, invoke `/olyder` and give it a task. You can also ask for
-   the skill by name.
+3. Ask Antigravity to use Olyder by name. In the App or CLI, you can also
+   explicitly invoke the skill with `/olyder`.
 
    > Use Olyder to verify the current change against olyder.json. Show the
    > verdict and the report path. Ask before running executable checks.
