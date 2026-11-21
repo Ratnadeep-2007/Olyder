@@ -14,7 +14,7 @@ def run_demo(*, fail: bool, output: Path) -> dict:
     with tempfile.TemporaryDirectory(prefix="olyder-demo-") as directory:
         project = Path(directory)
         (project / "release.txt").write_text(
-            "channel=beta\n" if fail else "channel=stable\n", encoding="utf-8"
+            "channel=beta\n" if fail else "channel=stable\n", encoding="utf-8", newline="\n"
         )
         spec = project / "olyder.json"
         spec.write_text(json.dumps({
