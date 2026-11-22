@@ -9,11 +9,11 @@ report showing what passed, failed, or was blocked.
 
 ## Use a supported editor skill
 
-Install Olyder in a Python 3.11+ virtual environment. From your project
-root, run the setup command for your editor.
+Install Beta 2 in a Python 3.11+ virtual environment to follow the tested
+setup below. From your project root, run the command for your editor.
 
 ```sh
-python -m pip install --pre olyder
+python -m pip install "olyder==0.5.0b2"
 python -m olyder --version
 ```
 
@@ -58,13 +58,27 @@ Use the absolute path to your project in place of `/path/to/project`.
 python -m olyder mcp --workspace /path/to/project
 ```
 
+For clients that use an `mcpServers` JSON configuration, replace both paths
+in this example with the absolute paths on your machine.
+
+```json
+{
+  "mcpServers": {
+    "olyder": {
+      "command": "/path/to/venv/bin/python",
+      "args": ["-m", "olyder", "mcp", "--workspace", "/path/to/project"]
+    }
+  }
+}
+```
+
 The default server exposes planning and file-only verification. See the
 [integration guide](UNIVERSAL_GUIDE.md) for the server's permission model.
 
 ## Use a chat assistant to read a report
 
-Share this public guide with an assistant that can browse. If it has no
-terminal access, run Olyder yourself and share the relevant parts of
-`report.md` or `report.json`. Remove sensitive project details and test
-output before sharing. Ask the assistant to explain the verdict and cite the
-check evidence. The report covers the checks and environment that actually ran.
+Share this guide with a browsing assistant, or paste the relevant instructions
+into chat. If the assistant has no terminal access, run Olyder yourself and
+paste the relevant parts of `report.md` or `report.json`. Remove sensitive
+project details and test output before sharing. Ask the assistant to explain
+the verdict and cite the evidence for each check it discusses.
