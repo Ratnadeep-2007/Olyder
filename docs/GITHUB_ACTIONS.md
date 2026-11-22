@@ -47,7 +47,7 @@ call, or executable check.
    Its workflow summary shows the verdict and check counts. Download the
    `olyder-report` artifact for the HTML, Markdown, and JSON evidence.
 
-Both workflows install `olyder==0.5.0b1` from PyPI. For a local trial,
+Both workflows install `olyder==0.5.0b2` from PyPI. For a local trial,
 install the same version and run `olyder verify` against your spec.
 
 ## Make it a required check
