@@ -27,6 +27,7 @@ Open `.olyder/demo/pass/report.html` to see the verdict and the two checks
 behind it. The demo runs offline after installation and needs no API key.
 Use `python -m olyder demo --fail` to see a failed check in
 `.olyder/demo/fail/report.html`.
+Run `python -m olyder --version` to see which beta you installed.
 
 For a new virtual environment, run `python -m venv .venv`, then activate it
 with `source .venv/bin/activate` on macOS or Linux, or
@@ -59,8 +60,9 @@ hash, so you can see that the requirements held steady while the code changed.
 ## Verify your repository
 
 Put an `olyder.json` file at your project root. Start with one condition you
-want every change to satisfy. This one expects an installation heading in the
-project README.
+want every change to satisfy. This example checks for the exact text
+`## Install` in the project README. A file check matches text anywhere in
+the file. Use a command check if you need to validate the document's structure.
 
 ```json
 {
@@ -101,6 +103,8 @@ File checks run by default. HTTP and optional Playwright browser checks need
 
 Use `python -m olyder doctor` to check local capabilities. Add `--global` to
 an editor setup command to install the skill for all your projects.
+If your editor's terminal can't launch `olyder`, ask the agent to use
+`python -m olyder` from the environment where you installed the package.
 
 For tool integrations, see the [Python SDK and MCP guide](docs/UNIVERSAL_GUIDE.md)
 and the [optional ACP bridge](docs/ACP_BRIDGE.md). The integration guide also
