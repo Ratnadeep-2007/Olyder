@@ -1,0 +1,115 @@
+name: Olyder verification
+
+on:
+  workflow_call:
+    inputs:
+      spec-path:
+        description: Workspace-relative path to the acceptance spec
+        type: string
+        default: olyder.json
+      allow-exec:
+        description: Permit executable checks in a reviewed spec
+        type: boolean
+        default: false
+      artifact-name:
+        description: Artifact name, unique across jobs in the calling workflow
+        type: string
+        default: olyder-report
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install Olyder
+        run: python -I -m pip --isolated install --index-url https://pypi.org/simple "olyder==0.5.0b1"
+      - name: Verify acceptance criteria
+        id: verify
+        env:
+          OLYDER_SPEC_PATH: ${{ inputs.spec-path }}
+          OLYDER_ALLOW_EXEC: ${{ inputs.allow-exec }}
+        run: |
+          python -I - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as outputs:
+              print(f"commit={commit}", file=outputs)
+
+          workspace = Path(os.environ["GITHUB_WORKSPACE"]).resolve()
+          requested = Path(os.environ["OLYDER_SPEC_PATH"])
+          try:
+              spec = (workspace / requested).resolve()
+          except (OSError, ValueError, RuntimeError):
+              print("Could not resolve spec-path inside the repository.", file=sys.stderr)
+              raise SystemExit(2)
+          if requested.is_absolute() or not spec.is_relative_to(workspace):
+              print("spec-path must be relative to the repository and resolve inside it.", file=sys.stderr)
+              raise SystemExit(2)
+
+          output = Path(os.environ["RUNNER_TEMP"]) / "olyder-report"
+          command = [sys.executable, "-I", "-m", "olyder", "verify", "--spec", str(spec),
+                     "--output", str(output)]
+          if os.environ["OLYDER_ALLOW_EXEC"] == "true":
+              command.append("--allow-exec")
+          raise SystemExit(subprocess.run(command, check=False).returncode)
+          PY
+      - name: Summarize verification
+        if: ${{ !cancelled() && (steps.verify.outcome == 'success' || steps.verify.outcome == 'failure') }}
+        env:
+          OLYDER_CHECKED_COMMIT: ${{ steps.verify.outputs.commit }}
+        run: |
+          python -I - <<'PY'
+          import html
+          import json
+          import os
+          from pathlib import Path
+
+          commit = os.environ["OLYDER_CHECKED_COMMIT"]
+          report = Path(os.environ["RUNNER_TEMP"]) / "olyder-report" / "report.json"
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              print("## Olyder acceptance", file=summary)
+              if commit:
+                  print(f"\nChecked commit: `{commit}`", file=summary)
+              if not report.is_file():
+                  print("\nVerification produced no report. See **Verify acceptance criteria**.", file=summary)
+                  raise SystemExit(0)
+
+              verdict = json.loads(report.read_text(encoding="utf-8"))
+              status = html.escape(verdict["status"])
+              digest = html.escape(verdict["spec_sha256"])
+              print(f"\n**Verdict:** {status}\n\nSpec SHA-256: <code>{digest}</code>", file=summary)
+              metrics = verdict.get("metrics")
+              if metrics:
+                  print(f"\nExecuted {metrics['executed_checks']} of {metrics['declared_checks']} checks. "
+                        f"Passed: {metrics['passed_checks']}. Failed: {metrics['failed_checks']}. "
+                        f"Blocked: {metrics['blocked_checks']}.", file=summary)
+              unresolved = [check for check in verdict.get("checks", [])
+                            if check["status"] in ("fail", "blocked")]
+              if unresolved:
+                  print("\n### Checks that need attention", file=summary)
+                  for check in unresolved[:10]:
+                      identifier = html.escape(" ".join(check["id"].split())[:120])
+                      print(f"- <code>{identifier}</code>: {check['status']}", file=summary)
+              print("\nDownload the Olyder report artifact for full evidence.", file=summary)
+          PY
+      - name: Upload verification report
+        if: ${{ !cancelled() && (steps.verify.outcome == 'success' || steps.verify.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ runner.temp }}/olyder-report/report.*
+          if-no-files-found: ignore
+          retention-days: 7

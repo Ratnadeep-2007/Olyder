@@ -10,29 +10,41 @@ An optional reviewer can assess the observed evidence, and a repair loop can
 send failing checks back to a configured builder.
 
 [![CI](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml/badge.svg)](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml)
-[Quick start](#quick-start) · [Antigravity skill](docs/ANTIGRAVITY.md) · [GitHub Actions](docs/GITHUB_ACTIONS.md) · [Contribute](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[![PyPI](https://img.shields.io/pypi/v/olyder?include_prereleases)](https://pypi.org/project/olyder/)
+[Quick start](#quick-start) · [Verify your repository](#verify-your-repository) · [Antigravity skill](docs/ANTIGRAVITY.md) · [GitHub Actions](docs/GITHUB_ACTIONS.md) · [Contribute](CONTRIBUTING.md)
 
 ## Quick start
 
-The first PyPI beta, `0.5.0b1`, is a release candidate. Install from the GitHub
-source in a Python virtual environment while publication is pending. This
-installation route requires Git and network access. Create an environment with
-`python -m venv .venv` and activate it with `source .venv/bin/activate` on
-macOS/Linux or `.venv\Scripts\Activate.ps1` in PowerShell.
+Install the [PyPI beta](https://pypi.org/project/olyder/0.5.0b1/) with Python
+3.11 or newer. Create an environment with `python -m venv .venv` and activate
+it with `source .venv/bin/activate` on macOS and Linux or
+`.\.venv\Scripts\Activate.ps1` in PowerShell.
 
 ```sh
-python -m pip install "git+https://github.com/Ratnadeep-2007/Olyder.git"
-olyder demo
-olyder demo --fail
+python -m pip install "olyder==0.5.0b1"
+python -m olyder --version
 ```
 
-The demo uses two file checks in a temporary project. The first command exits
-`0` and writes a report under `.olyder/demo/pass/`. The second deliberately fails
-one assertion, exits `1`, and writes a separate report under `.olyder/demo/fail/`.
-Open `report.html` or read `report.json` to see what ran and why the verdict
-changed. Both runs work offline and use zero model tokens. If you already have
-a reviewed wheel, install it without package-index access using
-`python -m pip install --no-index "/path/to/olyder-0.5.0b1-py3-none-any.whl"`.
+Use the Python interpreter from the environment where you installed Olyder.
+The shorter `olyder` command is also available where your system allows the
+installed launcher to run.
+
+## See a real test catch a regression
+
+The cart-pricing example expects a 25% discount on a price of 100. With the
+discount calculation broken, the unit test receives 100 instead of 75 and
+Olyder exits `1`. Restore the calculation and all three unit tests pass
+against the same acceptance spec. From an Olyder checkout, run:
+
+```sh
+python examples/demo-app/replay_regression.py
+```
+
+The replay runs both cases in a temporary copy. Open `report.html` in
+`.olyder/pricing-proof/discount-regression/` and
+`.olyder/pricing-proof/discount-fixed/` to compare the verdicts and spec hashes.
+The replay works offline and makes zero model calls. For an offline smoke
+test using only the installed CLI, run `python -m olyder demo`.
 
 ## Verify your repository
 
@@ -49,8 +61,8 @@ with a condition your change must satisfy.
 ```
 
 ```sh
-olyder plan
-olyder verify
+python -m olyder plan
+python -m olyder verify
 ```
 
 Add a check object to the `checks` array to run your existing test suite.
@@ -60,7 +72,7 @@ This example assumes pytest is installed in the verification environment.
 {"id": "unit-tests", "type": "command", "argv": ["python", "-m", "pytest", "-q"]}
 ```
 
-Review all configured commands before running `olyder verify --allow-exec`.
+Review all configured commands before running `python -m olyder verify --allow-exec`.
 File checks need no execution grant.
 HTTP and optional Playwright browser checks require `--allow-exec`, and
 non-local URLs also require `--allow-network`. A blocked check leaves acceptance
@@ -83,7 +95,7 @@ to the directory where you launched Olyder. Use `--output` to select it explicit
 | Use case | Entry point |
 | --- | --- |
 | Add local or CI verification | `olyder verify` and a checked-in `olyder.json`. Use the [GitHub Actions starter](docs/GITHUB_ACTIONS.md) for pull requests |
-| Give an editor the Olyder skill | [`olyder setup antigravity`](docs/ANTIGRAVITY.md), `olyder setup codex`, `olyder setup opencode`, or `olyder setup claude`. Add `--global` for all projects |
+| Give an editor the Olyder skill | `python -m olyder setup` with [`antigravity`](docs/ANTIGRAVITY.md), [`codex`](docs/UNIVERSAL_GUIDE.md#use-olyder-in-codex), `opencode`, or `claude`. Add `--global` for all projects |
 | Integrate a tool or application | Python [SDK](docs/UNIVERSAL_GUIDE.md) or read-only-by-default stdio `olyder mcp` |
 | Connect a compatible ACP editor | Optional [ACP v1 bridge](docs/ACP_BRIDGE.md) via `olyder[acp]` |
 | Review evidence with another model | `olyder verify --ai` with a configured OpenAI-compatible endpoint |

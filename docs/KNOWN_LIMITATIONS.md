@@ -1,6 +1,7 @@
 # Current limitations and unsupported capabilities
 
-This branch is unreleased and is not a proof of production correctness.
+Olyder `0.5.0b1` is a public beta. The available verification evidence covers
+the checks and environments described below.
 
 - No live Codex/OpenCode/Claude provider-account study, invoice API reconciliation, or provider-enforced gateway cap was run. Claude is not installed locally. CLI usage can be partial; model identity used for pricing may be requested rather than independently observed. Monetary admission is USD-only and local/soft. strict means stop on unknown settlement, not a hard spending guarantee.
 - Docker is optional. Host mode requires explicit unsafe authorization for builders and is not OS isolation. Directory separation cannot protect against a hostile host process with the same rights. Local Docker Desktop's daemon was unavailable; hosted Docker tests provide separate evidence. Rootless Docker/egress proxy configurations remain unverified. Root UID/mount mappings may fail closed.
