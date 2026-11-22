@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Olyder"
-version = "0.5.0b1"
+version = "0.5.0b2"
 description = "Verification-driven execution, independent checks, and evidence for AI coding agents"
 readme = "README.md"
 requires-python = ">=3.11"

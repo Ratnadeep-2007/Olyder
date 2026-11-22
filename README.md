@@ -15,13 +15,13 @@ send failing checks back to a configured builder.
 
 ## Quick start
 
-Install the [PyPI beta](https://pypi.org/project/olyder/0.5.0b1/) with Python
+Install the [PyPI beta](https://pypi.org/project/olyder/) with Python
 3.11 or newer. Create an environment with `python -m venv .venv` and activate
 it with `source .venv/bin/activate` on macOS and Linux or
 `.\.venv\Scripts\Activate.ps1` in PowerShell.
 
 ```sh
-python -m pip install "olyder==0.5.0b1"
+python -m pip install --pre olyder
 python -m olyder --version
 ```
 
