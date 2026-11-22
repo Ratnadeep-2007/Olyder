@@ -13,6 +13,7 @@ request.
 
 [Try it](#quick-start) · [Verify your repo](#verify-your-repository) ·
 [Install the skill](#install-the-olyder-skill) · [Run it on a pull request](#run-it-on-a-pull-request)
+· [Use it with an AI assistant](docs/AI_ASSISTANTS.md)
 
 ## Quick start
 
