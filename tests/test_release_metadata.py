@@ -14,7 +14,7 @@ def test_package_metadata_matches_module_version():
     source = Path(__file__).resolve().parents[1]
     metadata = tomllib.loads((source / "pyproject.toml").read_text(encoding="utf-8"))
     assert metadata["project"]["name"] == "Olyder"
-    assert metadata["project"]["version"] == olyder.__version__ == "0.5.0b1"
+    assert metadata["project"]["version"] == olyder.__version__ == "0.5.0b2"
     assert metadata["project"]["requires-python"] == ">=3.11"
     assert "acp" in metadata["project"]["optional-dependencies"]
 
@@ -23,7 +23,7 @@ def test_cli_version_matches_package_version(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "0.5.0b1" in capsys.readouterr().out
+    assert "0.5.0b2" in capsys.readouterr().out
 
 
 def test_release_workflow_only_triggers_on_published_release():

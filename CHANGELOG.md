@@ -1,8 +1,18 @@
 # Changelog
 
-## 0.5.0b1 — first PyPI beta candidate (pending owner approval)
+## 0.5.0b2 — simpler setup and pull request checks
 
-- Package metadata uses the public name **Olyder**. Install with `pip install olyder` after publication.
+- Install from PyPI and run Olyder with `python -m olyder`. The Codex and
+  Antigravity guides show how to check that your editor found the workspace skill.
+- Replay a broken cart discount and its fix with the same tests. Olyder writes
+  a report for each result and makes zero model calls.
+- Add Olyder to a pull request with a reusable GitHub Actions workflow. The
+  run summary shows the verdict and failing checks, and the full report is
+  available to download. File checks work by default. Command checks are opt-in.
+
+## 0.5.0b1 — first PyPI beta
+
+- Published to PyPI under the name **Olyder**.
 - Offline pass/fail demo with real verification reports, exercised from the built wheel.
 - Antigravity setup guide and a GitHub Actions starter with verdict summaries
   and downloadable acceptance evidence.

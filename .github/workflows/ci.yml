@@ -85,7 +85,7 @@ jobs:
       - name: Validate distribution metadata and files
         run: python scripts/verify_distribution.py
       - name: Validate long description
-        run: python -m twine check --strict dist/olyder-0.5.0b1.tar.gz dist/olyder-0.5.0b1-py3-none-any.whl
+        run: python -m twine check --strict dist/olyder-0.5.0b2.tar.gz dist/olyder-0.5.0b2-py3-none-any.whl
       - name: Install wheel in fresh environment and smoke it
         shell: bash
         run: |
@@ -95,13 +95,13 @@ jobs:
           else
             PY=".wheel-smoke/bin/python"
           fi
-          "$PY" -m pip install --no-index --find-links dist "olyder==0.5.0b1"
+          "$PY" -m pip install --no-index --find-links dist "olyder==0.5.0b2"
           "$PY" scripts/smoke_installed.py
       - name: Upload candidate archives for human review
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: olyder-0.5.0b1-build-candidate
+          name: olyder-0.5.0b2-build-candidate
           path: dist/*
           if-no-files-found: error
           retention-days: 7

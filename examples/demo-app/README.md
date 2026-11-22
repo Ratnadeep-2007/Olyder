@@ -1,7 +1,7 @@
 # Cart-pricing regression walkthrough
 
 Install the PyPI beta in a virtual environment with
-`python -m pip install "olyder==0.5.0b1"`. From the root of the Olyder
+`python -m pip install --pre olyder`. From the root of the Olyder
 checkout, run:
 
 ```sh

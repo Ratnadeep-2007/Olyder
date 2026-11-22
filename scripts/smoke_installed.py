@@ -21,7 +21,7 @@ def _run(*args: str, cwd: Path | None = None, exit_code: int = 0) -> str:
 
 
 def main() -> None:
-    version = "0.5.0b1"
+    version = "0.5.0b2"
     assert importlib.metadata.version("olyder") == version
     assert olyder.__version__ == version
     assert version in _run("--version")

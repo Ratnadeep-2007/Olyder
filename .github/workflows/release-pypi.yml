@@ -36,11 +36,11 @@ jobs:
       - name: Verify name, version, contents, and release tag
         run: python scripts/verify_distribution.py
       - name: Validate PyPI long description
-        run: python -m twine check --strict dist/olyder-0.5.0b1.tar.gz dist/olyder-0.5.0b1-py3-none-any.whl
+        run: python -m twine check --strict dist/olyder-0.5.0b2.tar.gz dist/olyder-0.5.0b2-py3-none-any.whl
       - name: Smoke the built wheel in a clean environment
         run: |
           python -m venv .wheel-smoke
-          .wheel-smoke/bin/python -m pip install --no-index --find-links dist "olyder==0.5.0b1"
+          .wheel-smoke/bin/python -m pip install --no-index --find-links dist "olyder==0.5.0b2"
           .wheel-smoke/bin/python scripts/smoke_installed.py
       - name: Upload the exact verified distribution files
         uses: actions/upload-artifact@v4
