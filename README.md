@@ -1,22 +1,23 @@
 # Olyder
 
-**Check whether an AI-written change meets your requirements.**
+**An agent validation skill and CLI for AI-generated code.**
 
-Olyder runs the tests and file checks you choose, then shows what passed, what
-failed, and what couldn't run. Keep those checks in an `olyder.json` file so
-you can run the same requirements on your machine, from an editor, or on a
-GitHub pull request.
+Define your acceptance criteria in `olyder.json`. Olyder runs the tests and
+file checks you choose, then shows what passed, what failed, and what couldn't
+run. Use the same checks on your machine, from an editor, or on a GitHub pull
+request.
 
 [![PyPI](https://img.shields.io/pypi/v/olyder?include_prereleases)](https://pypi.org/project/olyder/)
 [![CI](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ratnadeep-2007/Olyder/actions/workflows/ci.yml)
 [![Apache 2.0 license](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
 [Try it](#quick-start) · [Verify your repo](#verify-your-repository) ·
-[Connect an editor](#use-olyder-in-your-editor-or-ci) · [Run it on a pull request](#run-it-on-a-pull-request)
+[Install the skill](#install-the-olyder-skill) · [Run it on a pull request](#run-it-on-a-pull-request)
 
 ## Quick start
 
-Activate a Python 3.11+ virtual environment and run:
+Activate a Python 3.11+ virtual environment and install the
+[Olyder beta from PyPI](https://pypi.org/project/Olyder/).
 
 ```sh
 python -m pip install --pre olyder
@@ -122,19 +123,26 @@ File checks run by default. HTTP and optional Playwright browser checks need
    the `olyder-report` artifact for the evidence. Keep the check on later PRs
    if it catches something you care about reviewing.
 
-## Use Olyder in your editor or CI
+## Install the Olyder skill
+
+After installing the CLI, run the setup command for your editor from the
+project root.
 
 | Where | How to start |
 | --- | --- |
 | **Codex** | Run `python -m olyder setup codex` from your project root. [Codex setup](docs/UNIVERSAL_GUIDE.md#use-olyder-in-codex) |
 | **Google Antigravity** | Run `python -m olyder setup antigravity` from your project root. [Antigravity setup](docs/ANTIGRAVITY.md) |
-| **GitHub Actions** | Call the reusable workflow to see the verdict on a pull request and download the full report. [GitHub Actions setup](docs/GITHUB_ACTIONS.md) |
 | **OpenCode or Claude Code** | Run `python -m olyder setup opencode` or `python -m olyder setup claude`. [Editor setup](docs/UNIVERSAL_GUIDE.md#quick-global-editor-setup) |
 
 Use `python -m olyder doctor` to check local capabilities. Add `--global` to
 an editor setup command to install the skill for all your projects.
 If your editor's terminal can't launch `olyder`, ask the agent to use
 `python -m olyder` from the environment where you installed the package.
+
+With an `olyder.json` in the project, try this prompt in your editor.
+
+> Use the Olyder skill to verify this project. Show me which checks failed
+> and where to open the report.
 
 For tool integrations, see the [Python SDK and MCP guide](docs/UNIVERSAL_GUIDE.md)
 and the [optional ACP bridge](docs/ACP_BRIDGE.md). The integration guide also
