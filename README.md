@@ -12,7 +12,7 @@ GitHub pull request.
 [![Apache 2.0 license](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
 [Try it](#quick-start) · [Verify your repo](#verify-your-repository) ·
-[Connect an editor](#use-olyder-in-your-editor-or-ci) · [Run it in GitHub Actions](docs/GITHUB_ACTIONS.md)
+[Connect an editor](#use-olyder-in-your-editor-or-ci) · [Run it on a pull request](#run-it-on-a-pull-request)
 
 ## Quick start
 
@@ -59,8 +59,9 @@ hash, so you can see that the requirements held steady while the code changed.
 
 ## Verify your repository
 
-Put an `olyder.json` file at your project root. Start with one condition you
-want every change to satisfy. This example checks for the exact text
+Put an `olyder.json` file at your project root and run the commands from that
+directory. Start with one condition that matters for the change you're making.
+This example checks for the exact text
 `## Install` in the project README. A file check matches text anywhere in
 the file. Use a command check if you need to validate the document's structure.
 
@@ -78,19 +79,48 @@ python -m olyder plan
 python -m olyder verify
 ```
 
-Open `.olyder/report.html` for the result, or use `report.md` and `report.json`
-from the same directory in review tools. To use your existing test suite,
-add a command check to the `checks` array. This example needs pytest installed
-in the verification environment.
+### Read the result
+
+Open `.olyder/report.html` and look under **Acceptance tests**. If
+`install-docs` failed, the **Evidence** column tells you what Olyder checked.
+Add the missing text to the project README and run verification again.
+To keep both reports, give each run a separate output directory, such as
+`python -m olyder verify --output .olyder/after-fix`.
+
+![Olyder's HTML report marks install-docs as failed and says the text did not match in README.md](docs/images/readme-check-report.png)
+
+The report directory also contains `report.md` for reviews and `report.json`
+for tools.
+
+### Use a test you already run
+
+Add a command check to the `checks` array when the requirement is about
+behavior, such as a discount calculation or a generated document containing
+an expected field. Use the command you already run in the project. The
+Python interpreter in this example needs pytest and your test dependencies.
 
 ```json
 {"id": "unit-tests", "type": "command", "argv": ["python", "-m", "pytest", "-q"]}
 ```
 
+If Windows picks a different Python, replace the first `argv` item with the
+full path to the interpreter that has pytest installed. Use forward slashes
+in the JSON path, for example `C:/work/project/.venv/Scripts/python.exe`.
+
 Review configured commands before running `python -m olyder verify --allow-exec`.
 File checks run by default. HTTP and optional Playwright browser checks need
 `--allow-exec`, and non-local URLs need `--allow-network` as well. See the
 [scenario examples](docs/EXAMPLES.md) for browser and staging checks.
+
+## Run it on a pull request
+
+1. Add the `olyder.json` that you ran locally to your branch.
+2. Add the workflow from the [GitHub Actions guide](docs/GITHUB_ACTIONS.md).
+   Start with a file check. For a test suite that needs dependencies, run
+   Olyder in the same CI job that installs them.
+3. Open a pull request. Look for the verdict in the job summary and download
+   the `olyder-report` artifact for the evidence. Keep the check on later PRs
+   if it catches something you care about reviewing.
 
 ## Use Olyder in your editor or CI
 
