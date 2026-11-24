@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "goal": "Verify Olyder's local access, execution, credential, and reporting controls against synthetic fixtures",
+  "requirements": [
+    {
+      "id": "local-access",
+      "text": "The read API uses a loopback listener and denies requests with an invalid token",
+      "acceptance_check_ids": ["local-access-tests"]
+    },
+    {
+      "id": "execution-permissions",
+      "text": "Default MCP verification keeps command checks blocked and executable plugin manifests must meet the declared contract",
+      "acceptance_check_ids": ["permission-tests"]
+    },
+    {
+      "id": "credential-isolation",
+      "text": "Managed workloads omit Olyder's credentials, and detached snapshots exclude known credential files",
+      "acceptance_check_ids": ["credential-tests"]
+    },
+    {
+      "id": "report-privacy",
+      "text": "Verification reports redact common credential fields and escape untrusted content",
+      "acceptance_check_ids": ["report-tests"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "local-access-tests",
+      "type": "command",
+      "argv": [
+        "python", "-m", "pytest", "-q",
+        "tests/test_integrations.py::test_read_api_rejects_unknown_token",
+        "tests/test_integrations.py::test_loopback_api_startup_does_not_resolve_dns"
+      ],
+      "contains": "2 passed",
+      "timeout": 30
+    },
+    {
+      "id": "permission-tests",
+      "type": "command",
+      "argv": [
+        "python", "-m", "pytest", "-q",
+        "tests/test_core.py::test_mcp_does_not_execute_shell",
+        "tests/test_integrations.py::test_malformed_plugin_contract_is_rejected"
+      ],
+      "contains": "4 passed",
+      "timeout": 30
+    },
+    {
+      "id": "credential-tests",
+      "type": "command",
+      "argv": [
+        "python", "-m", "pytest", "-q",
+        "tests/test_execution_credentials.py",
+        "tests/test_universal_security.py::test_known_credentials_never_snapshotted"
+      ],
+      "contains": "4 passed",
+      "timeout": 30
+    },
+    {
+      "id": "report-tests",
+      "type": "command",
+      "argv": [
+        "python", "-m", "pytest", "-q",
+        "tests/test_report_privacy.py",
+        "tests/test_universal_security.py::test_reports_do_not_render_untrusted_markdown_images"
+      ],
+      "contains": "4 passed",
+      "timeout": 30
+    }
+  ],
+  "limits": {"max_seconds": 180}
+}
