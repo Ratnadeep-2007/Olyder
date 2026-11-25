@@ -18,10 +18,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python: ['3.11', '3.13']
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -29,6 +32,41 @@ jobs:
         run: python -m pip install -e . pytest
       - name: Run tests
         run: python -m pytest -q
+      - name: Verify security controls with Olyder
+        id: security_controls
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
+        run: python -m olyder verify --spec olyder.security.json --allow-exec --output "$RUNNER_TEMP/olyder-security"
+      - name: Summarize security verification
+        if: ${{ !cancelled() && (steps.security_controls.outcome == 'success' || steps.security_controls.outcome == 'failure') }}
+        run: |
+          python - <<'PY'
+          import html
+          import json
+          import os
+          from pathlib import Path
+
+          report_path = Path(os.environ["RUNNER_TEMP"]) / "olyder-security" / "report.json"
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              print("## Olyder security verification\n", file=summary)
+              if report_path.is_file():
+                  report = json.loads(report_path.read_text(encoding="utf-8"))
+                  verdict = html.escape(report["status"])
+                  print(f"Verdict <code>{verdict}</code>\n", file=summary)
+                  for check in report["checks"]:
+                      name = html.escape(" ".join(check["id"].split())[:120])
+                      status = html.escape(check["status"])
+                      print(f"- <code>{name}</code> (<code>{status}</code>)", file=summary)
+              else:
+                  print("See the verification step log for the error.", file=summary)
+          PY
+      - name: Upload security verification report
+        if: ${{ !cancelled() && (steps.security_controls.outcome == 'success' || steps.security_controls.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: olyder-security-report
+          path: ${{ runner.temp }}/olyder-security/report.*
+          if-no-files-found: ignore
+          retention-days: 7
       - name: CLI help
         run: olyder --help
   docker-isolation:

@@ -22,4 +22,7 @@ No comprehensive DNS-rebinding/SSRF defense, container-escape assurance, malicio
 
 ## Evidence
 
+The [security acceptance spec](SECURITY_CHECKS.md) runs selected local
+control tests and reports which requirements passed or remain unresolved.
+
 Original 99-scenario matrix remains unchanged. New fixtures cover detached oracle visibility/tampering, case variants, missing scripts, directory replacement, FIFO rejection, reserve concurrency/idempotence, unknown billing, cancellation, revision conflicts, resume restrictions, explicit plugins, real local HTTP authentication and full-suite regression sentinels. The hosted Docker job also executes the protected SDK with a real Python builder/container. Evidence is in docs/validation; distinguish hosted jobs from skipped local integration tests.
