@@ -96,3 +96,32 @@ def test_missing_opencode_counts_are_unknown():
     usage=get_agent('opencode').parse(io.StringIO('{"type":"step_finish","part":{"reason":"stop","tokens":{}}}'))
     assert not usage['usage_complete']
     assert usage['observed_tokens'] is None
+
+
+@pytest.mark.parametrize('incomplete_step', [
+    None,
+    {'reason': 'stop'},
+    {'reason': 'stop', 'tokens': None},
+    {'reason': 'stop', 'tokens': {'input': 5}},
+])
+def test_opencode_partial_usage_cannot_be_priced(incomplete_step):
+    complete_step = {'reason': 'stop', 'tokens': {'input': 10, 'output': 2}}
+    events = [{'type': 'step_finish', 'part': part}
+              for part in (complete_step, incomplete_step)]
+    usage = get_agent('opencode').parse(io.StringIO('\n'.join(map(json.dumps, events))))
+    assert usage['observed_tokens'] == 12
+    assert usage['usage_events'] == 1
+    assert not usage['usage_complete']
+    assert PricingSnapshot('opencode', 'fixture', '2026-11-27', '2', '4', '1').estimate(usage) is None
+
+
+def test_opencode_missing_intermediate_usage_cannot_be_priced():
+    events = [
+        {'type': 'step_finish', 'part': {'reason': 'tool-calls'}},
+        {'type': 'step_finish', 'part': {
+            'reason': 'stop', 'tokens': {'input': 10, 'output': 2}}},
+    ]
+    usage = get_agent('opencode').parse(io.StringIO('\n'.join(map(json.dumps, events))))
+    assert usage['status'] == 'completed'
+    assert usage['observed_tokens'] == 12
+    assert not usage['usage_complete']

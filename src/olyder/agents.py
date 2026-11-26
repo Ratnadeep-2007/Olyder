@@ -72,6 +72,7 @@ class AgentUsage:
             elif kind == "step_finish":
                 part = event.get("part")
                 if not isinstance(part, dict):
+                    self.malformed_events += 1
                     return
                 identifier = part.get("id")
                 if identifier is not None and not isinstance(identifier,str):
@@ -84,23 +85,25 @@ class AgentUsage:
                 if part.get("reason") == "stop":
                     self.completed = True
                 counts = part.get("tokens")
-                if isinstance(counts, dict):
-                    if any(type(counts.get(k)) is not int or counts[k]<0 for k in ('input','output')):
-                        self.malformed_events += 1
-                        return
-                    cache = counts.get("cache") or {}
-                    if not isinstance(cache, dict):
-                        cache = {}
-                    inp, out = _count(counts.get("input")), _count(counts.get("output"))
-                    cached = _count(cache.get("read"))
-                    reasoning = _count(counts.get("reasoning"))
-                    written = _count(cache.get("write"))
-                    self.input_tokens += inp + written
-                    self.output_tokens += out
-                    self.cached_tokens += cached
-                    self.reasoning_tokens += reasoning
-                    self.observed_total += _count(counts.get("total")) or inp + out + cached + reasoning + written
-                    self.usage_events += 1
+                if not isinstance(counts, dict):
+                    self.malformed_events += 1
+                    return
+                if any(type(counts.get(k)) is not int or counts[k] < 0 for k in ("input", "output")):
+                    self.malformed_events += 1
+                    return
+                cache = counts.get("cache") or {}
+                if not isinstance(cache, dict):
+                    cache = {}
+                inp, out = counts["input"], counts["output"]
+                cached = _count(cache.get("read"))
+                reasoning = _count(counts.get("reasoning"))
+                written = _count(cache.get("write"))
+                self.input_tokens += inp + written
+                self.output_tokens += out
+                self.cached_tokens += cached
+                self.reasoning_tokens += reasoning
+                self.observed_total += _count(counts.get("total")) or inp + out + cached + reasoning + written
+                self.usage_events += 1
 
     def snapshot(self) -> dict:
         return {"provider": self.provider, "input_tokens": self.input_tokens,

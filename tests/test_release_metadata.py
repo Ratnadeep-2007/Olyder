@@ -26,6 +26,21 @@ def test_cli_version_matches_package_version(capsys):
     assert "0.5.0b2" in capsys.readouterr().out
 
 
+def test_mcp_server_version_matches_package_version(tmp_path):
+    from olyder.mcp import process
+
+    response = process({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {"protocolVersion": "2025-03-26", "capabilities": {}},
+    }, tmp_path)
+    assert response["result"]["protocolVersion"] == "2025-03-26"
+    assert response["result"]["serverInfo"] == {
+        "name": "olyder", "version": olyder.__version__,
+    }
+
+
 def test_release_workflow_only_triggers_on_published_release():
     workflow = (Path(__file__).resolve().parents[1] / ".github" /
                 "workflows" / "release-pypi.yml").read_text(encoding="utf-8")

@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from . import __version__
 from .config import load_spec
 from .engine import plan, verify_once
 from .privacy import redact, redact_values
@@ -39,7 +40,11 @@ def process(msg: dict, workspace: Path, *, run_permissions=None, sandbox='host',
     base = {"jsonrpc": "2.0", "id": req_id}
     try:
         if method == "initialize":
-            value = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "olyder", "version": "0.4.0"}}
+            value = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "olyder", "version": __version__},
+            }
         elif method == "ping":
             value = {}
         elif method == "tools/list":
