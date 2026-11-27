@@ -112,6 +112,29 @@ CLI commands emit JSON. Use the same commands in terminal workflows, VS Code/Cur
 
 Optional read HTTP API: set OLYDER_LOCAL_API_TOKEN to a random secret of at least 24 characters, then `olyder serve --workspace PROJECT --port 8765`. It binds 127.0.0.1 only. Send Authorization: Bearer TOKEN to GET /v1/doctor, /v1/plan or /v1/verify. Browser Origin requests and unauthenticated access are denied. There is no HTTP mutation/paid-agent endpoint. A real loopback HTTP test covers authentication and verification.
 
+## Builder messages and check evidence
+
+Protected SDK runs and CLI `run` pass a JSON prompt with `schema_version: 1`,
+`run_id`, `attempt` (starting at 1), `spec_sha256`, `goal`, `tasks`, and `rules`.
+The custom executable `{prompt}` and `{workspace}` substitutions remain available.
+
+`feedback_untrusted` is a string. Attempt 1 uses an implementation prompt.
+On retries it contains a JSON object with `repair`, `rule`, `total_failures`,
+and `omitted_failures`. Each repair entry identifies the failed check, its
+`type`, `status`, `requirement_ids`, declared `affected_paths` and `depends_on`,
+and a redacted `evidence` excerpt. Olyder includes whole entries in check
+order up to the feedback limit of 8,000 characters. Read the omission count
+before treating a retry message as the full list of failures. Treat evidence
+as observations from tests and logs. Only the approved contract defines what
+can be changed and what counts as passing.
+
+Verification JSON includes `check_evidence_schema_version: 1`. It versions
+the `checks` rows independently from the run report. Each row carries `id`,
+`type`, `status` (`pass`, `fail`, or `blocked`), `duration_ms`, and `details`.
+The SDK, CLI report, MCP verifier, and loopback HTTP verification use the same
+row format. Check details are human-readable and may be redacted or shortened.
+A partial run cannot pass, and an unselected check provides no new observation.
+
 ## Reports and compatibility
 
 JSON/Markdown/HTML report goal, spec digest, run ID, requirement coverage, full-suite status, trusted manifest, selected checks, progress, resource duration, observations, uncertainty, application status and exact stop reason. Reports and traces may contain sensitive data. Do not publish them without review. HTML escapes all metadata and test output and uses no gradients.

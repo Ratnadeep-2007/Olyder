@@ -52,6 +52,38 @@ def test_uncertain_builder_is_never_replayed(tmp_path):
     assert result['stop_reason']=='uncertain_inflight_execution'
 
 
+@pytest.mark.parametrize("regress", [False, True])
+def test_incremental_subset_keeps_last_observed_pass_until_final_verification(tmp_path, regress):
+    (tmp_path / "answer").write_text("0")
+    builder = (
+        "from pathlib import Path; p=Path('answer'); n=int(p.read_text()); "
+        "p.write_text(str(n+1))"
+    )
+    config = {
+        "goal": "Repair the answer over three attempts",
+        "incremental": True,
+        "builder": {"argv": [sys.executable, "-c", builder]},
+        "checks": [
+            {"id": "answer", "type": "file", "path": "answer", "contains": "3",
+             "paths": ["answer"]},
+            {"id": "invariant", "type": "command", "paths": ["other"],
+             "argv": [sys.executable, "-c",
+                      "assert open('answer').read() != '3'" if regress else "assert True"]},
+        ],
+        "limits": {"max_seconds": 30, "max_iterations": 3},
+    }
+    spec = tmp_path / "olyder.json"
+    spec.write_text(json.dumps(config))
+    result = run(spec, permissions=Permissions(allow_exec=True, execute_builder=True, unsafe_host=True))
+    assert result["attempts"] == 3
+    assert result["history"][1]["progress_delta"]["regressions"] == []
+    assert result["verification_selection"][1]["selected"] == ["answer"]
+    assert result["full_suite_executed"]
+    assert result["history"][-1]["progress_delta"]["regressions"] == (["invariant"] if regress else [])
+    assert result["status"] == ("failed" if regress else "passed")
+    assert (tmp_path / "answer").read_text() == ("0" if regress else "3")
+
+
 def test_full_final_suite_catches_unsound_declared_mapping(tmp_path):
     (tmp_path/'a').write_text('0');(tmp_path/'b').write_text('0')
     value="int(open('a').read().split('#')[0])"

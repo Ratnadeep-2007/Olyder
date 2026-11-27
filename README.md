@@ -96,6 +96,7 @@ to the directory where you launched Olyder. Use `--output` to select it explicit
 | --- | --- |
 | Add local or CI verification | `olyder verify` and a checked-in `olyder.json`. Use the [GitHub Actions starter](docs/GITHUB_ACTIONS.md) for pull requests |
 | Give an editor the Olyder skill | `python -m olyder setup` with [`antigravity`](docs/ANTIGRAVITY.md), [`codex`](docs/UNIVERSAL_GUIDE.md#use-olyder-in-codex), `opencode`, or `claude`. Add `--global` for all projects |
+| Coordinate an existing coding agent | Use a [detached task](docs/COORDINATION.md) to submit, verify, and approve a specific revision |
 | Integrate a tool or application | Python [SDK](docs/UNIVERSAL_GUIDE.md) or read-only-by-default stdio `olyder mcp` |
 | Connect a compatible ACP editor | Optional [ACP v1 bridge](docs/ACP_BRIDGE.md) via `olyder[acp]` |
 | Review evidence with another model | `olyder verify --ai` with a configured OpenAI-compatible endpoint |

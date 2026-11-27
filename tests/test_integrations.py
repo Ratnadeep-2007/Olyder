@@ -24,6 +24,34 @@ def test_incompatible_plugin_rejected(tmp_path,version,kind):
         load_agent_manifest(path,grants={'bad'})
 
 
+def test_registered_verifier_uses_shared_dispatch_and_execution_grant(tmp_path, monkeypatch):
+    from olyder.config import ConfigError, load_spec
+    from olyder import plugins
+    from olyder.sdk import Permissions
+
+    monkeypatch.setattr(plugins, "_verifiers", {})
+    path = tmp_path / "olyder.json"
+    path.write_text(json.dumps({"goal": "Record a custom assertion", "checks": [
+        {"id": "local", "type": "plugin:fixture"},
+    ]}))
+    with pytest.raises(ConfigError):
+        load_spec(path)
+
+    calls = []
+
+    def verify(check, _root, permissions):
+        calls.append((check["id"], permissions))
+        return True, "Fixture satisfied"
+
+    plugins.register_verifier("fixture", verify, trusted=True)
+    assert run(path)["checks"][0]["status"] == "blocked"
+    assert calls == []
+    result = run(path, permissions=Permissions(allow_exec=True))
+    assert result["status"] == "passed"
+    assert result["checks"][0]["details"] == "Fixture satisfied"
+    assert calls == [("local", {"allow_exec": True, "allow_network": False})]
+
+
 def test_cli_doctor(capsys):
     assert main(['doctor'])==0
     result=json.loads(capsys.readouterr().out)
@@ -38,6 +66,39 @@ def test_cli_status_cancel_report(tmp_path,capsys):
     for command in ('status','cancel','report'):
         assert main([command,result['run_id'],'--workspace',str(tmp_path)])==0
         assert json.loads(capsys.readouterr().out)
+
+
+def test_check_evidence_schema_and_verdict_agree_across_entry_points(tmp_path, capsys):
+    from olyder.api import dispatch
+    from olyder.mcp import process
+
+    (tmp_path / "present.txt").write_text("ok")
+    spec = tmp_path / "olyder.json"
+    spec.write_text(json.dumps({"goal": "Observe pass, fail, and blocked", "checks": [
+        {"id": "present", "type": "file", "path": "present.txt"},
+        {"id": "absent", "type": "file", "path": "absent.txt"},
+        {"id": "command", "type": "command", "argv": [sys.executable, "-c", "pass"]},
+    ]}))
+    sdk = run(spec)
+    output = tmp_path / "cli-report"
+    assert main(["verify", "--spec", str(spec), "--output", str(output)]) == 1
+    capsys.readouterr()
+    cli = json.loads((output / "report.json").read_text(encoding="utf-8"))
+    rpc = process({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                   "params": {"name": "olyder_verify"}}, tmp_path)
+    mcp = json.loads(rpc["result"]["content"][0]["text"])
+    status, http = dispatch("/v1/verify", "fixture-auth", "fixture-auth", tmp_path)
+    assert status == 200
+    for report in (sdk, cli, mcp, http):
+        assert report["check_evidence_schema_version"] == 1
+        assert report["status"] == "blocked"
+        assert report["spec_sha256"] == sdk["spec_sha256"]
+        assert report["requirement_coverage"] == sdk["requirement_coverage"]
+        assert [(check["id"], check["status"]) for check in report["checks"]] == [
+            ("present", "pass"), ("absent", "fail"), ("command", "blocked"),
+        ]
+        assert all(set(check) == {"id", "status", "type", "duration_ms", "details"}
+                   for check in report["checks"])
 
 
 def test_read_api_rejects_unknown_token(tmp_path):

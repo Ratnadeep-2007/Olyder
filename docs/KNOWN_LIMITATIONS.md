@@ -1,6 +1,6 @@
 # Current limitations and unsupported capabilities
 
-Olyder `0.5.0b1` is a public beta. The available verification evidence covers
+Olyder `0.5.0b2` is a public beta. The available verification evidence covers
 the checks and environments described below.
 
 - No live Codex/OpenCode/Claude provider-account study, invoice API reconciliation, or provider-enforced gateway cap was run. Claude is not installed locally. CLI usage can be partial; model identity used for pricing may be requested rather than independently observed. Monetary admission is USD-only and local/soft. strict means stop on unknown settlement, not a hard spending guarantee.
