@@ -17,7 +17,7 @@ from pathlib import Path
 from .control import ResourceLimit, current
 
 
-_OLYDER_CREDENTIALS = {"OLYDER_API_KEY", "OLYDER_LOCAL_API_TOKEN"}
+_OLYDER_CREDENTIALS = {"OLYDER_API_KEY", "OLYDER_LOCAL_API_TOKEN", "OLYDER_TASK_CONTROLLER_KEY"}
 
 
 def workload_environment() -> dict[str, str]:

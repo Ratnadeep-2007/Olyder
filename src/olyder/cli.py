@@ -100,12 +100,72 @@ def parser() -> argparse.ArgumentParser:
     mcp.add_argument('--unsafe-host',action='store_true')
     mcp.add_argument('--sandbox',choices=['host','docker'],default='host')
     mcp.add_argument('--docker-image',default='python:3.13-slim')
+    task = sub.add_parser("task", help="Coordinate a detached task with an existing coding agent")
+    operations = task.add_subparsers(dest="task_operation", required=True)
+    opened = operations.add_parser("open", help="Freeze acceptance inputs and assign a proposal")
+    opened.add_argument("--spec", default="olyder.json")
+    opened.add_argument("--agent-id", required=True)
+    opened.add_argument("--sandbox", choices=["host", "docker"], default="host")
+    opened.add_argument("--docker-image", default="python:3.13-slim")
+    for name, help_text in (
+        ("status", "Read task state and the current proposal revision"),
+        ("submit", "Record a proposal revision for verification"),
+        ("verify", "Verify the submitted revision as the controller"),
+        ("complete", "Approve the verified revision as the controller"),
+        ("gate", "Check a current approval without changing task state"),
+    ):
+        operation = operations.add_parser(name, help=help_text)
+        operation.add_argument("run_id")
+        operation.add_argument("--workspace", default=".")
+        if name in ("submit", "complete", "gate"):
+            operation.add_argument("--revision", required=True)
+        if name == "submit":
+            operation.add_argument("--agent-id", required=True)
+        if name == "verify":
+            operation.add_argument("--allow-exec", action="store_true")
+            operation.add_argument("--allow-network", action="store_true")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "task":
+            import os
+
+            from . import coordination
+            from .sdk import Permissions
+
+            operation = args.task_operation
+            key = os.getenv("OLYDER_TASK_CONTROLLER_KEY")
+            if operation == "open":
+                result = coordination.open_task(
+                    args.spec, agent_id=args.agent_id, controller_key=key,
+                    backend=args.sandbox, docker_image=args.docker_image,
+                )
+            elif operation == "status":
+                result = coordination.task_status(args.workspace, args.run_id)
+            elif operation == "submit":
+                result = coordination.submit_task(args.workspace, args.run_id, args.revision,
+                                                  agent_id=args.agent_id)
+            elif operation == "verify":
+                result = coordination.verify_task(
+                    args.workspace, args.run_id, controller_key=key,
+                    permissions=Permissions(allow_exec=args.allow_exec, allow_network=args.allow_network),
+                )
+            elif operation == "gate":
+                try:
+                    approval = coordination.task_gate(args.workspace, args.run_id, args.revision)
+                except (OSError, RuntimeError, ValueError) as exc:
+                    print(_json({"gate": "closed", "reason": str(exc)}, indent=2))
+                    return 1
+                print(_json({"gate": "open", "approval": approval}, indent=2))
+                return 0
+            else:
+                result = coordination.complete_task(args.workspace, args.run_id, args.revision,
+                                                    controller_key=key)
+            print(_json(result, indent=2))
+            return 1 if operation == "verify" and result["phase"] != "verified" else 0
         if args.command == "demo":
             from .demo import run_demo
             output = args.output or Path(".olyder", "demo", "fail" if args.fail else "pass")

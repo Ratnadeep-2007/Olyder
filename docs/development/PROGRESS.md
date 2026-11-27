@@ -195,18 +195,81 @@ establish format and protocol, with no guarantee about specific vendor behavior.
 [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/json-schema-validation)
 [ACP prompt turn](https://agentclientprotocol.com/protocol/v1/prompt-turn)
 
+## Iterations 6 and 7 — External tasks and revision-bound approval
+
+**Baseline.** The implementation branch was at `0a9202b`, three commits ahead of
+the fetched GitHub main. The original checkout held uncommitted edits and was
+left in place. A clean Linux baseline passed 395 tests, including Chromium.
+Three live Docker checks were skipped.
+
+**Audit and decision.** The CLI and SDK already manage subprocess builders and
+store lifecycle checkpoints in `RunStore`. The engine owns deterministic
+verdicts, `contracts.py` maps evidence to requirements, and `report.py` writes
+the artifacts. `workspace.py` captures the trusted inputs, while the execution
+and backend modules own containment and grants. The agent adapters and telemetry
+parsers address subprocesses. MCP and ACP provide read-oriented agent entry
+points. None of those paths had a task that an existing agent could submit and
+repair across sessions. The packaged and repository skills now describe that
+handoff.
+
+Antigravity compared a local gate with a queue and confirmed the repository root.
+Reusing the same state store and protected verifier was feasible without a
+migration. A generic queue and provider-specific messaging adapter are deferred
+until an integration needs delivery and reconnect behavior. A spec hash alone
+does not identify the implementation, so the gate also binds the captured files,
+modes, directory paths, policy and report digest.
+
+**Primary research checked 2026-11-27.** Herdr documents agent discovery, prompt,
+waiting, and transcript reads. Local Herdr 0.9.5 exposed those commands. Waits
+observe agent lifecycle and can settle without proving a particular turn's
+outcome. CodeRabbit documents status checks and configurable merge enforcement.
+Its review status has skipped and rate-limited cases. The design inference is
+to keep transport state separate from deterministic acceptance and let the
+calling orchestrator enforce the final result.
+[Herdr automation](https://herdr.dev/tui/docs/agent-automation/)
+[CodeRabbit status check](https://docs.coderabbit.ai/pr-reviews/status-check)
+
+**Acceptance and results.** A submission supplies only the assigned identifier
+and observed revision. Missing execution permission blocks command checks.
+Failed tests produce structured repair evidence. A controller approval is a
+separate transition and can only authorize the fully verified revision. Stale
+revisions, changed reports, unapproved submissions and cancelled tasks close the
+gate. The public CLI covers open, status, submit, verify, completion and gate.
+The local command suite tests credential filtering and concurrent verification
+and cancellation.
+
+The final Linux suite passed 399 tests, including live Chromium, with three
+Docker checks skipped. Antigravity found no actionable issues in its defensive
+review. A fresh externally managed agent repaired a synthetic cart from a real
+`repair.requested` message. The controller reverified the new revision, recorded
+approval on attempt two, and opened the keyless gate for that revision only.
+Both attempts used the same locked spec and the verifier made zero model calls.
+Those local reports are under `.olyder/coordination-live/.olyder/`.
+[Coordination guide](../COORDINATION.md)
+
+**Limits.** The first external task flow is local and pull-based. The agent ID
+routes work and the controller key authorizes verification and approval within
+protected local state. Isolate the controller and run store from agents that
+should not have access to them. The gate does not apply the proposal, control
+agent lifecycles, or set repository merge policy. Multi-agent registration,
+capability-based routing, persistent delivery and native Herdr, MCP, and ACP
+task transports remain open.
+
 ## Continuation checkpoint
 
-1. Validate the managed OpenCode and Codex repair adapters using an approved live
+1. Add an opt-in orchestration adapter for discovered external agents and
+   capability-based routing. Test disconnect and reconnect without treating
+   transport state as acceptance. Keep the task gate as the authority.
+2. Validate the managed OpenCode and Codex repair adapters using an approved live
    provider or a local model and a disposable project. OpenCode's configured
    free pane still showed a quota block. This session did not exercise a
    model-backed vendor CLI through Olyder's managed backend.
-2. Implement a small read-only repository context inventory. Capture languages,
+3. Implement a small read-only repository context inventory. Capture languages,
    build and test declarations and changed files before adding indexing or
    inferred test selection. The Git docs checked 2026-11-27 describe stable
    machine-oriented status output and standard ignore rules.
    [Git status](https://git-scm.com/docs/git-status) · [Git ls-files](https://git-scm.com/docs/git-ls-files)
-3. Compare official Semgrep, OSV-Scanner and Gitleaks contracts, then pick one
+4. Compare official Semgrep, OSV-Scanner and Gitleaks contracts, then pick one
    scanner with reproducible local fixtures. Protect severity and suppression
    policy. Validate blocked and malformed-output cases before exposing verdicts.
-4. Recheck against PR #14 after owner review and merge.
+5. Recheck against PR #14 after owner review and merge.

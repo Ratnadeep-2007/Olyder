@@ -31,7 +31,7 @@ from .quota import Budget, QuotaExceeded
 from .report import save_report
 from .research import collect
 from .state import RunStore
-from .workspace import ProtectedWorkspace, WorkspaceViolation, file_modes, tree
+from .workspace import ProtectedWorkspace, WorkspaceViolation, directories, file_modes, tree
 
 
 MAX_REPAIR_FEEDBACK_CHARS = 8000
@@ -55,7 +55,7 @@ def _digest(path):
 
 def _checker_digest():
     digest=hashlib.sha256()
-    for name in ('sdk.py','checks.py','contracts.py','engine.py','workspace.py','execution.py'):
+    for name in ('sdk.py','checks.py','contracts.py','engine.py','workspace.py','execution.py','coordination.py','policy.py'):
         digest.update(name.encode());digest.update(Path(__file__).with_name(name).read_bytes())
     return digest.hexdigest()
 
@@ -452,6 +452,38 @@ def money_zero(value):
     return money(value)==0
 
 
+def _verify_saved_proposal(saved, contract_spec, permissions, control, *,
+                           isolation, image, expected_input=None):
+    """Run the shared verifier against a frozen oracle and a detached proposal."""
+    root = saved.harness()
+    spec = Spec(contract_spec.path, root, contract_spec.raw, contract_spec.digest)
+    for check in spec.checks:
+        if check["type"] == "command" and any(Path(arg).is_absolute() for arg in check["argv"][1:]):
+            raise WorkspaceViolation("Protected checks require relative asset arguments")
+    input_before = tree(root)
+    modes_before = file_modes(root, input_before)
+    dirs_before = directories(root)
+    if expected_input is not None and (input_before, modes_before, dirs_before) != expected_input:
+        raise WorkspaceViolation("Harness does not match submitted revision")
+    control.check_backend = get_backend("docker", image=image) if isolation == "docker" else get_backend("host")
+    with activate(control):
+        control.check()
+        preparation = getattr(control.check_backend, "prepare_detached", None)
+        if preparation:
+            preparation(root, writable=False)
+        item = verify_once(spec, allow_exec=permissions.allow_exec,
+                           allow_network=permissions.allow_network, sandbox=isolation,
+                           docker_image=image, deadline=control.deadline)
+        control.check()
+    saved.validate()
+    input_after = tree(root)
+    if any(input_after.get(name) != digest for name, digest in input_before.items()):
+        raise WorkspaceViolation("Verifier modified captured inputs")
+    if file_modes(root, input_before) != modes_before or not dirs_before <= directories(root):
+        raise WorkspaceViolation("Verifier modified captured input metadata")
+    return item
+
+
 def resume(run_id, workspace='.', *, permissions=None, output=None, recover=False):
     """Reverify a durable proposal; never replay a builder or a paid model call.
 
@@ -482,37 +514,17 @@ def resume(run_id, workspace='.', *, permissions=None, output=None, recover=Fals
             raise WorkspaceViolation('Saved proposal belongs to another workspace')
         if 'proposal_digest' not in state or tree(saved.builder)!=state['proposal_digest']:
             raise WorkspaceViolation('Saved proposal changed')
-        root=saved.harness()
-        spec=load_spec(contract)
-        spec=Spec(contract,root,spec.raw,spec.digest)
-        permissions=permissions or Permissions()
-        isolation=state.get('execution_backend','host')
-        if isolation not in ('host','docker'):
-            raise WorkspaceViolation('Custom backend recovery requires explicit integration')
-        # Saved paid requests are never resumed or re-settled.
-        state=store.update(run_id,state['revision'],{'phase':'resume_started','cancel_requested':False})
-        input_before=tree(root)
-        modes_before=file_modes(root,input_before)
-        before={n:h for n,h in input_before.items() if saved.is_protected(n)}
-        control=RunControl(resumed_started+spec.raw.get('limits',{}).get('max_seconds',600),
-                           cancelled=lambda:store.read(run_id).get('cancel_requested',False))
-        control.check_backend=get_backend('docker',image=state.get('docker_image','python:3.13-slim')) if isolation=='docker' else get_backend('host')
-        with activate(control):
-            control.check()
-            preparation=getattr(control.check_backend,'prepare_detached',None)
-            if preparation:
-                preparation(root,writable=False)
-            item=verify_once(spec,allow_exec=permissions.allow_exec,allow_network=permissions.allow_network,
-                             sandbox=isolation,docker_image=state.get('docker_image','python:3.13-slim'),deadline=control.deadline)
-            control.check()
-        saved.validate()
-        input_after=tree(root)
-        if before!={n:h for n,h in input_after.items() if saved.is_protected(n)}:
-            raise WorkspaceViolation('Verifier changed protected inputs during resume')
-        if any(input_after.get(n)!=h for n,h in input_before.items()):
-            raise WorkspaceViolation('Verifier modified proposal inputs during resume')
-        if file_modes(root,input_before)!=modes_before:
-            raise WorkspaceViolation('Verifier modified proposal input permissions during resume')
+        spec = load_spec(contract)
+        permissions = permissions or Permissions()
+        isolation = state.get("execution_backend", "host")
+        if isolation not in ("host", "docker"):
+            raise WorkspaceViolation("Custom backend recovery requires explicit integration")
+        # Take the state checkpoint before assembling the mutable harness.
+        state = store.update(run_id, state["revision"], {"phase": "resume_started", "cancel_requested": False})
+        control = RunControl(resumed_started + spec.raw.get("limits", {}).get("max_seconds", 600),
+                             cancelled=lambda: store.read(run_id).get("cancel_requested", False))
+        item = _verify_saved_proposal(saved, spec, permissions, control, isolation=isolation,
+                                      image=state.get("docker_image", "python:3.13-slim"))
         item.update(run_id=run_id,resumed_verification_only=True,replayed_builder=False,
                     verification_target='checkpointed_proposal',application_status='not_attempted',
                     accounting=state.get('accounting'),stop_reason='resume_verification')
