@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
-from . import __version__
+from . import __version__, communication
 from .config import load_spec
 from .control import Cancelled, ResourceLimit, RunControl
 from .engine import plan
@@ -93,7 +93,7 @@ def _view(state, saved, revision):
     return {
         "schema_version": 1, "run_id": state["run_id"], "task_id": state["run_id"],
         "phase": "cancelled" if state.get("cancel_requested") else state["phase"].removeprefix("task_"),
-        "agent_id": state["agent_id"], "spec_sha256": state["spec_sha256"],
+        "agent_id": state["agent_id"], "agent_session": state.get("agent_session"), "spec_sha256": state["spec_sha256"],
         "proposal": str(saved.builder), "proposal_revision": revision,
         "submitted_revision": state.get("submitted_revision"),
         "verified_revision": state.get("verified_revision"),
@@ -104,21 +104,32 @@ def _view(state, saved, revision):
     }
 
 
-def open_task(spec_path, *, agent_id, controller_key, backend="host", docker_image="python:3.13-slim"):
+def open_task(spec_path, *, agent_id=None, required_capabilities=(), controller_key,
+              backend="host", docker_image="python:3.13-slim"):
     """The controller freezes the oracle before handing an isolated proposal to an agent."""
-    if not isinstance(agent_id, str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}", agent_id):
-        raise TaskError("Invalid agent identifier")
+    spec = load_spec(spec_path)
+    if agent_id is None:
+        selected = communication.route(spec.root, required_capabilities)
+        agent_id = selected["agent_id"]
+    else:
+        if not isinstance(agent_id, str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}", agent_id):
+            raise TaskError("Invalid agent identifier")
+        if required_capabilities:
+            raise TaskError("Choose an explicit agent or capability routing")
+        selected = communication.agent(spec.root, agent_id)
+        if selected is not None and not selected["available"]:
+            raise TaskError("Selected agent is disconnected")
     if backend not in ("host", "docker"):
         raise TaskError("External tasks require the host or Docker backend")
     key_digest = _key_digest(controller_key)
-    spec = load_spec(spec_path)
     limit = spec.raw.get("limits", {}).get("max_iterations", 3)
     if not 1 <= limit <= 20:
         raise TaskError("External task max_iterations must be between 1 and 20")
     store = RunStore(spec.root / ".olyder" / "runs")
     state = store.create({
         "kind": "external_task", "phase": "task_opening",
-        "agent_id": agent_id, "controller_key_digest": key_digest,
+        "agent_id": agent_id, "agent_session": selected["session"] if selected else None,
+        "controller_key_digest": key_digest,
         "spec_path": str(spec.path), "spec_sha256": spec.digest,
         "checker_sha256": _checker_digest(), "execution_backend": backend, "docker_image": docker_image,
         "attempt": 0, "max_attempts": limit, "task_plan": plan(spec),
@@ -130,23 +141,35 @@ def open_task(spec_path, *, agent_id, controller_key, backend="host", docker_ima
     if _digest(contract) != spec.digest:
         raise TaskError("Contract changed during task opening")
     revision = _revision(_verification_input(saved))
+    assignment = {**_event(state, "task.assigned"), "proposal": str(saved.builder),
+                  "proposal_revision": revision, "goal": spec.goal}
     state = store.update(state["run_id"], state["revision"], {
         "phase": "task_assigned",
         "manifest_sha256": saved.evidence()["manifest_sha256"],
-    })
+    }, notification=communication.notification(state, assignment))
     return _view(state, saved, revision)
 
 
-def task_status(workspace, run_id):
+def _check_agent(root, state, agent_id, session):
+    if agent_id != state["agent_id"] or session != state.get("agent_session"):
+        raise TaskError("Task is assigned to another agent session")
+    if session is not None:
+        communication.bound_agent(root, agent_id, session)
+
+
+def task_status(workspace, run_id, *, agent_binding=None):
     root, store, state = _task(workspace, run_id)
+    if agent_binding is not None:
+        _check_agent(root, state, *agent_binding)
     _spec, saved = _load_inputs(root, store, state)
     return _view(state, saved, _revision(_verification_input(saved)))
 
 
-def submit_task(workspace, run_id, proposal_revision, *, agent_id):
+def submit_task(workspace, run_id, proposal_revision, *, agent_id, agent_session=None):
     """Record a submission. The sender cannot submit a verdict or permissions."""
     root, store, state = _task(workspace, run_id)
-    if agent_id != state["agent_id"] or state.get("cancel_requested"):
+    _check_agent(root, state, agent_id, agent_session)
+    if state.get("cancel_requested"):
         raise TaskError("Task is unavailable to the submitting agent")
     phase = state["phase"].removeprefix("task_")
     if phase not in _SUBMITTABLE and phase != "submitted":
@@ -191,7 +214,7 @@ def _event(state, name):
             "run_id": state["run_id"], "task_id": state["run_id"], "timestamp": time.time(),
             "sender": "olyder", "correlation_id": (state.get("submission") or {}).get("message_id"),
             "attempt": state["attempt"], "spec_sha256": state["spec_sha256"],
-            "proposal_revision": state["submitted_revision"]}
+            "proposal_revision": state.get("submitted_revision")}
 
 
 def verify_task(workspace, run_id, *, controller_key, permissions=None):
@@ -241,14 +264,14 @@ def verify_task(workspace, run_id, *, controller_key, permissions=None):
         result.update(status="cancelled", stop_reason="user_cancelled")
     elif latest["revision"] != state["revision"]:
         raise TaskError("Task changed during verification")
+    verification = {**_event(state, "verification.completed" if phase == "verified"
+                             else "verification.blocked" if phase == "blocked"
+                             else "verification.finished"), "status": result["status"]}
+    repair = _repair(state, result) if phase == "repair_required" else None
     state = store.update(run_id, latest["revision"], {
-        "phase": f"task_{phase}", "result": result,
-        "verification": {**_event(state, "verification.completed" if phase == "verified"
-                                 else "verification.blocked" if phase == "blocked"
-                                 else "verification.finished"), "status": result["status"]},
-        "verified_revision": revision if phase == "verified" else None,
-        "repair": _repair(state, result) if phase == "repair_required" else None,
-    })
+        "phase": f"task_{phase}", "result": result, "verification": verification,
+        "verified_revision": revision if phase == "verified" else None, "repair": repair,
+    }, notification=communication.notification(state, repair or verification))
     return _view(state, saved, revision)
 
 
@@ -286,7 +309,7 @@ def complete_task(workspace, run_id, proposal_revision, *, controller_key):
     }
     state = store.update(run_id, state["revision"], {
         "phase": "task_completed", "completion": completion,
-    })
+    }, notification=communication.notification(state, completion))
     return _view(state, saved, proposal_revision)
 
 

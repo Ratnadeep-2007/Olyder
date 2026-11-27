@@ -95,16 +95,47 @@ def parser() -> argparse.ArgumentParser:
     acp.add_argument("--workspace", default=".")
     mcp = sub.add_parser("mcp", help="Run read-only-by-default MCP JSON-RPC server over stdio")
     mcp.add_argument("--workspace", default=".")
+    mcp.add_argument("--task-agent")
+    mcp.add_argument("--task-session")
+    mcp.add_argument("--task-auto-verify", action="store_true",
+                     help="Allow a bound session to trigger reviewed verification")
     mcp.add_argument('--allow-exec',action='store_true')
     mcp.add_argument('--execute-builder',action='store_true',help='Expose olyder_run only with explicit server-side execution grant')
     mcp.add_argument('--unsafe-host',action='store_true')
     mcp.add_argument('--sandbox',choices=['host','docker'],default='host')
     mcp.add_argument('--docker-image',default='python:3.13-slim')
+    agents = sub.add_parser("agent", help="Manage workspace agent sessions and task delivery")
+    agent_ops = agents.add_subparsers(dest="agent_operation", required=True)
+    for name in ("list", "register", "role", "disconnect", "route", "inbox", "ack",
+                 "discover-herdr", "enroll-herdr", "push-herdr"):
+        operation = agent_ops.add_parser(name)
+        operation.add_argument("--workspace", default=".")
+        if name not in ("list", "route", "discover-herdr"):
+            operation.add_argument("agent_id")
+        if name in ("register", "inbox", "ack"):
+            operation.add_argument("--session", required=True)
+        if name in ("register", "role", "enroll-herdr", "route"):
+            operation.add_argument("--role", default="builder")
+        if name in ("register", "enroll-herdr", "route"):
+            operation.add_argument("--capability", action="append", default=[])
+        if name == "register":
+            operation.add_argument("--provider", default="external")
+        if name == "ack":
+            operation.add_argument("message_id")
+        if name in ("discover-herdr", "enroll-herdr"):
+            operation.add_argument("--herdr-workspace", required=True)
+        if name == "enroll-herdr":
+            operation.add_argument("--pane", required=True)
+        if name.endswith("-herdr"):
+            operation.add_argument("--herdr-bin", default="herdr")
     task = sub.add_parser("task", help="Coordinate a detached task with an existing coding agent")
     operations = task.add_subparsers(dest="task_operation", required=True)
     opened = operations.add_parser("open", help="Freeze acceptance inputs and assign a proposal")
     opened.add_argument("--spec", default="olyder.json")
-    opened.add_argument("--agent-id", required=True)
+    assignment = opened.add_mutually_exclusive_group(required=True)
+    assignment.add_argument("--agent-id")
+    assignment.add_argument("--route", action="store_true", help="Assign an available registered builder")
+    opened.add_argument("--capability", action="append", default=[])
     opened.add_argument("--sandbox", choices=["host", "docker"], default="host")
     opened.add_argument("--docker-image", default="python:3.13-slim")
     for name, help_text in (
@@ -121,15 +152,53 @@ def parser() -> argparse.ArgumentParser:
             operation.add_argument("--revision", required=True)
         if name == "submit":
             operation.add_argument("--agent-id", required=True)
+            operation.add_argument("--session")
         if name == "verify":
             operation.add_argument("--allow-exec", action="store_true")
             operation.add_argument("--allow-network", action="store_true")
+    for command in (opened, operations.choices["verify"], operations.choices["complete"]):
+        command.add_argument("--notify-herdr", action="store_true", help="Push a pending message through Herdr")
+        command.add_argument("--herdr-bin", default="herdr")
     return p
+
+
+def _agent_operation(args):
+    from . import communication as comm
+    from .herdr_transport import HerdrTransport
+
+    workspace, operation = args.workspace, args.agent_operation
+    if operation == "list":
+        return comm.list_agents(workspace)
+    if operation == "route":
+        return comm.route(workspace, args.capability, role=args.role)
+    if operation == "register":
+        return comm.register(workspace, args.agent_id, args.session, role=args.role,
+                             capabilities=args.capability, provider=args.provider)
+    if operation == "role":
+        return comm.change_role(workspace, args.agent_id, args.role)
+    if operation == "disconnect":
+        return comm.disconnect(workspace, args.agent_id)
+    if operation == "inbox":
+        return {"messages": comm.inbox(workspace, args.agent_id, args.session)}
+    if operation == "ack":
+        return comm.acknowledge(workspace, args.agent_id, args.session, args.message_id)
+
+    transport = HerdrTransport(args.herdr_bin)
+    if operation == "discover-herdr":
+        return transport.discover(args.herdr_workspace)
+    if operation == "enroll-herdr":
+        return transport.enroll(workspace, args.agent_id, workspace_id=args.herdr_workspace,
+                                pane=args.pane, role=args.role, capabilities=args.capability)
+    return transport.push(workspace, args.agent_id)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "agent":
+            result = _agent_operation(args)
+            print(_json(result, indent=2))
+            return 1 if isinstance(result, dict) and result.get("status") == "uncertain" else 0
         if args.command == "task":
             import os
 
@@ -140,14 +209,14 @@ def main(argv: list[str] | None = None) -> int:
             key = os.getenv("OLYDER_TASK_CONTROLLER_KEY")
             if operation == "open":
                 result = coordination.open_task(
-                    args.spec, agent_id=args.agent_id, controller_key=key,
+                    args.spec, agent_id=args.agent_id, controller_key=key, required_capabilities=args.capability,
                     backend=args.sandbox, docker_image=args.docker_image,
                 )
             elif operation == "status":
                 result = coordination.task_status(args.workspace, args.run_id)
             elif operation == "submit":
                 result = coordination.submit_task(args.workspace, args.run_id, args.revision,
-                                                  agent_id=args.agent_id)
+                                                  agent_id=args.agent_id, agent_session=args.session)
             elif operation == "verify":
                 result = coordination.verify_task(
                     args.workspace, args.run_id, controller_key=key,
@@ -164,6 +233,15 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 result = coordination.complete_task(args.workspace, args.run_id, args.revision,
                                                     controller_key=key)
+            if getattr(args, "notify_herdr", False):
+                from .communication import CommunicationError
+                from .herdr_transport import HerdrTransport
+
+                workspace = Path(args.spec).resolve().parent if operation == "open" else args.workspace
+                try:
+                    result["delivery"] = HerdrTransport(args.herdr_bin).push(workspace, result["agent_id"])
+                except (CommunicationError, OSError) as exc:
+                    result["delivery"] = {"status": "deferred", "reason": str(exc)}
             print(_json(result, indent=2))
             return 1 if operation == "verify" and result["phase"] != "verified" else 0
         if args.command == "demo":
@@ -215,13 +293,30 @@ def main(argv: list[str] | None = None) -> int:
                 raise ConfigError("ACP bridge requires: pip install 'olyder[acp]'") from exc
             return serve_acp(Path(args.workspace).resolve())
         if args.command == "mcp":
+            import os
+
+            from .communication import bound_agent
             from .mcp import serve
             from .sdk import Permissions
             if args.execute_builder and (not args.allow_exec or args.sandbox=='host' and not args.unsafe_host):
                 raise ConfigError('MCP builder grant needs --allow-exec and --sandbox docker or --unsafe-host')
-            return serve(Path(args.workspace).resolve(),run_permissions=Permissions(
-                allow_exec=args.allow_exec,execute_builder=args.execute_builder,unsafe_host=args.unsafe_host),
-                sandbox=args.sandbox,docker_image=args.docker_image)
+            workspace = Path(args.workspace).resolve()
+            if bool(args.task_agent) != bool(args.task_session):
+                raise ConfigError("Task MCP requires both --task-agent and --task-session")
+            if args.task_agent and args.execute_builder:
+                raise ConfigError("A bound task server cannot grant managed builder execution")
+            binding = (args.task_agent, args.task_session) if args.task_agent else None
+            if binding:
+                bound_agent(workspace, *binding)
+            key = None
+            if args.task_auto_verify:
+                key = os.getenv("OLYDER_TASK_CONTROLLER_KEY")
+                if binding is None or key is None or not 32 <= len(key) <= 256:
+                    raise ConfigError("Automatic verification needs a bound session and a controller key")
+            return serve(workspace, run_permissions=Permissions(
+                allow_exec=args.allow_exec, execute_builder=args.execute_builder, unsafe_host=args.unsafe_host),
+                sandbox=args.sandbox, docker_image=args.docker_image, task_agent=binding,
+                task_controller_key=key, task_permissions=Permissions(allow_exec=args.allow_exec))
         if args.command in ("install-skill", "setup"):
             from .skill_install import install_skill
             target = args.editor if args.command == "setup" else args.target

@@ -255,11 +255,70 @@ agent lifecycles, or set repository merge policy. Multi-agent registration,
 capability-based routing, persistent delivery and native Herdr, MCP, and ACP
 task transports remain open.
 
+## Iterations 8–10 — Agent registry, durable delivery, and transports
+
+**Baseline.** The branch `feat/agent-communication` starts at the external task
+PR head `3fc002b`. The baseline passed 399 Linux tests with live Chromium.
+Three local Docker checks were skipped.
+
+**Design.** Keep the agent records and task delivery rows in RunStore's SQLite
+database. Event insertion shares the task transition transaction. This avoids
+a second queue and the gap between committing a verdict and publishing it.
+Persisted message IDs make acknowledgement idempotent. A session replacement
+does not inherit the old session's tasks or messages. Role and declared
+capabilities affect new routing, while approval remains a controller operation.
+
+**Transports.** The opt-in bound MCP server exposes inbox, acknowledgement,
+task status, and submission. Its controller can grant automatic verification
+of submitted revisions. Repeating a handled revision returns the same attempt.
+The Herdr adapter discovers native sessions through the documented CLI,
+checks the enrolled pane before sending, and pushes an inbox pointer.
+Timeouts remain uncertain and are not automatically retried. An agent can
+always pull an unacknowledged message through its bound session.
+
+**Research checked 2026-11-27.** Antigravity independently compared an outbox
+with a separate queue and native Herdr push with scoped MCP pull. SQLite
+documents transaction behavior. MCP documents tool schemas and tool result
+errors. Herdr distinguishes a pane from a native agent session. A Herdr wait
+can settle without identifying a specific turn, and a timeout can follow
+delivery. The outbox, scoped binding, and pointer design are Olyder decisions
+based on these boundaries. Local Herdr 0.9.5 supported the tested commands.
+[SQLite transactions](https://sqlite.org/lang_transaction.html)
+[MCP tools, 2025-03-26](https://modelcontextprotocol.io/specification/2025-03-26/server/tools)
+[Herdr automation](https://herdr.dev/tui/docs/agent-automation/)
+
+**Validation.** The Linux suite passed 405 tests, including live Chromium,
+with three Docker smoke tests skipped. Tests cover atomic outbox rollback, role and availability
+routing, session replacement, acknowledgement and reconnect, MCP authority
+boundaries, and uncertain Herdr delivery without retry. Antigravity found no
+actionable issues in its implementation review.
+
+**Live handoff.** The adapter discovered four Herdr panes in `w1`. A real
+stdio MCP client submitted a synthetic cart proposal, received a failure, and
+reconnected with the same pending repair ID and attempt number. Herdr notified
+Antigravity, which pulled and acknowledged the record, repaired the proposal,
+and submitted the new revision. A fresh MCP process verified attempt two.
+The controller then approved the exact revision. Replaying the submission
+left the attempt count at two and the verifier used zero model calls.
+Local evidence is under `.olyder/agent-communication-live/.olyder/`.
+
+**Local measurements.** On WSL Linux with Python 3.14.4, 20 paired runs used
+a two-file synthetic repository and one file check. Median open → submit →
+verify was 461.99 ms for unregistered tasks and 459.64 ms for registered tasks.
+A separate run measured about 200 ms for both paths, so the absolute time
+varied across runs. Median inbox read plus two acknowledgements in the final
+run was 1.85 ms. All 40 expected messages were acknowledged. Process peak RSS
+was 28,852 KiB and median
+registered run database size was 36,864 bytes. These are fixture observations
+with zero model calls. They do not measure hosted provider or Herdr wait time.
+[Coordination guide](../COORDINATION.md)
+
 ## Continuation checkpoint
 
-1. Add an opt-in orchestration adapter for discovered external agents and
-   capability-based routing. Test disconnect and reconnect without treating
-   transport state as acceptance. Keep the task gate as the authority.
+1. Extend the transport layer with operator-approved reassignment of an existing
+   task to a replacement session and higher-volume inbox delivery controls.
+   Keep the task gate as the authority. Review agent session scopes before
+   introducing any background dispatch service.
 2. Validate the managed OpenCode and Codex repair adapters using an approved live
    provider or a local model and a disposable project. OpenCode's configured
    free pane still showed a quota block. This session did not exercise a
