@@ -25,6 +25,12 @@ class RunStore:
         try:
             with self.connect() as c:
                 c.execute('CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, revision INTEGER, data TEXT)')
+                c.execute('CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, data TEXT NOT NULL)')
+                c.execute("""CREATE TABLE IF NOT EXISTS agent_messages (
+                    id TEXT PRIMARY KEY, run_id TEXT NOT NULL, agent_id TEXT NOT NULL,
+                    session TEXT NOT NULL, status TEXT NOT NULL, data TEXT NOT NULL)""")
+                c.execute("""CREATE INDEX IF NOT EXISTS agent_message_recipient
+                    ON agent_messages(agent_id, session, status)""")
         except sqlite3.Error as exc:
             raise StateError('Corrupt or inaccessible run database') from exc
 
@@ -76,7 +82,7 @@ class RunStore:
         except (sqlite3.Error,ValueError,TypeError) as exc:
             raise StateError('Corrupt run checkpoint') from exc
 
-    def update(self, identifier, revision, changes):
+    def update(self, identifier, revision, changes, *, notification=None):
         data=self.read(identifier)
         data.update(changes)
         data['revision']=revision+1
@@ -88,6 +94,12 @@ class RunStore:
                              (revision+1,encoded,identifier,revision))
             if cursor.rowcount != 1:
                 raise StateError('Concurrent or stale checkpoint writer')
+            if notification is not None:
+                message_id, agent_id, session, payload = notification
+                c.execute(
+                    "INSERT INTO agent_messages VALUES (?, ?, ?, ?, 'pending', ?)",
+                    (message_id, identifier, agent_id, session, payload),
+                )
         return data
 
     def cancel(self, identifier):
@@ -137,7 +149,7 @@ class RunStore:
         selected=[]
         for identifier in ids:
             state=self.read(identifier)
-            if state.get('phase')!='completed' or state.get('created_at',time.time())>cutoff:
+            if state.get('phase') not in ('completed', 'task_completed', 'task_cancelled') or state.get('created_at',time.time())>cutoff:
                 continue
             accounting=state.get('accounting',{})
             if accounting.get('pending_requests'):
@@ -151,5 +163,6 @@ class RunStore:
                 if path.exists():
                     shutil.rmtree(path)
                 with self.connect() as c:
+                    c.execute('DELETE FROM agent_messages WHERE run_id=?',(identifier,))
                     c.execute('DELETE FROM runs WHERE id=?',(identifier,))
         return {'run_ids':selected,'deleted':apply,'older_than_days':older_than_days}
