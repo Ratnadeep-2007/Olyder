@@ -178,7 +178,11 @@ including live Chromium. Three Docker checks were skipped with the daemon unavai
 The original development contract passed its 69 verification and 70 agent
 tests under the same hash with zero model calls. Antigravity reported no actionable
 findings in its second review. No dependencies were added and no performance gains
-were measured. [Builder and evidence contract](../UNIVERSAL_GUIDE.md#builder-messages-and-check-evidence)
+were measured. A fresh tester also launched the MCP stdio server and CLI against
+the same disposable fixture with execution disabled. Both reported a passing
+file check, a blocked command check, and evidence schema v1. The command
+marker was absent from the fixture and the CLI's detached workspace.
+[Builder and evidence contract](../UNIVERSAL_GUIDE.md#builder-messages-and-check-evidence)
 
 **Research for iterations 4 and 5.** Sources checked 2026-11-27.
 RFC 8259 permits bounds and requires conforming output. Inline messages can drop
