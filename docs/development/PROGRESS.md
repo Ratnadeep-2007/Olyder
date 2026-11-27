@@ -13,7 +13,7 @@ before changing their guarantees.
 
 | Area | State and evidence | Gaps and follow-up |
 | --- | --- | --- |
-| A. Core | VERIFIED for CLI/SDK deterministic verdicts, mandatory coverage, blocked checks, and beta version consistency. See `tests/test_sdk.py`, `test_v05_verdict.py`, and `test_release_metadata.py`. IMPLEMENTED for versioned specs and plugin contracts in `config.py`, `contracts.py`, and `interfaces.py`. | PARTIAL for unified execution and capability diagnostics. The legacy engine has a weaker trust boundary. Built-in check dispatch and validation span `config.py` and `checks.py`. A unified registry and standardized findings contract are MISSING. |
+| A. Core | VERIFIED for CLI/SDK deterministic verdicts, mandatory coverage, blocked checks, and beta version consistency. See `tests/test_sdk.py`, `test_v05_verdict.py`, and `test_release_metadata.py`. IMPLEMENTED for versioned specs and plugin contracts in `config.py`, `contracts.py`, and `interfaces.py`. | PARTIAL for unified execution and capability diagnostics. The legacy engine has a weaker trust boundary. Built-in and registered plugin types share dispatch. Check evidence v1 covers the existing result rows. A scanner findings contract is MISSING. |
 | B. Repository context | PARTIAL. `impact.py` selects checks from explicit path mappings and falls back to the full suite. `workspace.py` applies bounded snapshots and sensitive-file exclusions. | MISSING for automatic language/framework/package-manager/lockfile/test discovery, Git diff and changed-symbol analysis, import graph, related source and test selection, AGENTS.md context indexing, automatic requirement mapping, and an invalidatable incremental index. Start with Git and local parsers. Defer Tree-sitter until a language-specific need is demonstrated. |
 | C. Before development | VERIFIED for deterministic planning, spec validation, hashed requirements and protected acceptance inputs. IMPLEMENTED for optional AI planning, manual requirements and user-reviewed executable checks. | PARTIAL for semantic ambiguity, edge-case, security and missing-test suggestions. Contract revision history is MISSING. |
 | D. Agents | IMPLEMENTED for CLI, skills, SDK, MCP, structured verification outputs, report retrieval, Codex/OpenCode/Claude and custom adapters, capabilities, timers, cancellation, recovery and usage observation. VERIFIED with synthetic adapters and installed OpenCode help. | BLOCKED for a live OpenCode run by its quota. Claude and Codex live managed runs and Antigravity desktop are unverified here. A managed Antigravity adapter is DEFERRED pending a documented integration and test. |
@@ -121,14 +121,88 @@ Sources checked 2026-11-27.
   Both OpenCode panes displayed DeepSeek V4.1 Flash Free and hit their daily limit.
   No OpenCode research reply or live model-backed compatibility evidence was available.
 
+## Ordered roadmap
+
+| Priority | Implementation | Current state |
+| --- | --- | --- |
+| P0 | Reliable, structured builder–verifier communication | VERIFIED for the versioned retry message, executable handoff, and incremental repair scenarios. |
+| P0 | Unified check registry and evidence schema | VERIFIED for built-in and registered-plugin dispatch and evidence v1 across the four tested entry points. Scanner-specific fields remain future work. |
+| P0 | Real agent repair-loop validation | VERIFIED with an externally managed coding agent on the cart fixture. PARTIAL for vendor CLI supervision. |
+| P1 | Repository context engine | PARTIAL. Start with a read-only Git and file inventory. Keep existing explicit impact mappings conservative. |
+| P1 | Semgrep, OSV-Scanner and Gitleaks | MISSING. Compare tool contracts and choose one adapter before adding others. |
+| P1 | Automatic acceptance-contract generation | PARTIAL. Deterministic planning exists. Generated checks need user review before execution or use as an oracle. |
+| P2 | Contextual AI reviewer | PARTIAL. The current optional critic reviews declared requirements and observations. |
+| P2 | Advanced review categories and optimization | DEFERRED until performance baselines and integration demand justify them. |
+
+## Iteration 4 — Builder handoff and incremental repair
+
+**Decision.** Keep the existing JSON string field and version the outer message. A
+native nested feedback object would simplify new clients but break consumers of
+the string field. A sidecar adds mount, cleanup, and change-tracking work.
+Antigravity independently preferred the inline envelope over a sidecar. Its
+nested-object proposal was deferred for compatibility with current executables.
+
+**Acceptance.** Oversized feedback remains valid JSON with accurate omission
+counts and bounded excerpts. Each included check maps to its requirements.
+Literal prompt data survives argv interpolation. Old executable templates still
+receive their workspace path. A claimed pass from a builder does not affect the
+verdict. Intermediate check selection must not be mistaken for a regression.
+The full final suite still detects a regression and prevents application.
+
+**Evidence.** The previous code stopped during the subprocess retry when the
+builder tried to parse truncated feedback. It also stopped a three-attempt
+incremental fixture after two attempts because an omitted passing check was
+counted as a regression. Regression tests cover both issues and the literal
+workspace placeholder. A fresh coding agent received actual structured Olyder
+findings for a synthetic cart and edited only the implementation. An independent
+reverification changed both checks from fail to pass under SHA-256
+`2cb4af0f22e21eb021cb7cbf4747b589f65a2ec8de5852c5a1ef134f26231370`.
+The verifier used zero model calls. Local reports are under
+`.olyder/live-repair-p0/.olyder/`. Antigravity found no actionable issues in its
+first implementation review.
+
+## Iteration 5 — Check dispatch and evidence
+
+**Acceptance.** Spec loading and execution resolve built-in and registered
+plugin types through the same dispatch. Existing checks and execution grants
+preserve behavior. A trusted plugin is callable only with the existing grant.
+CLI JSON, SDK, MCP, and local HTTP must report the same pass, fail, and blocked
+check rows and coverage under the same contract. Timing and entry-point metadata
+can differ.
+
+**Change.** Separate built-in handlers share one dispatch resolver with spec
+loading. Existing per-type validators remain in configuration. Add the evidence
+version alongside existing check rows and verify the contract with a
+cross-entry-point test. The Linux Python 3.14.4 regression suite passed 395 tests,
+including live Chromium. Three Docker checks were skipped with the daemon unavailable.
+The original development contract passed its 69 verification and 70 agent
+tests under the same hash with zero model calls. Antigravity reported no actionable
+findings in its second review. No dependencies were added and no performance gains
+were measured. [Builder and evidence contract](../UNIVERSAL_GUIDE.md#builder-messages-and-check-evidence)
+
+**Research for iterations 4 and 5.** Sources checked 2026-11-27.
+RFC 8259 permits bounds and requires conforming output. Inline messages can drop
+whole entries before serialization. JSON Schema distinguishes bounded string
+fields from structured objects. ACP defines a separate session protocol with
+streamed updates. It does not define Olyder's portable feedback or evidence
+fields. The reliability conclusions are based on local tests. The sources
+establish format and protocol, with no guarantee about specific vendor behavior.
+[RFC 8259, December 2017](https://www.rfc-editor.org/rfc/rfc8259)
+[JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12/json-schema-validation)
+[ACP prompt turn](https://agentclientprotocol.com/protocol/v1/prompt-turn)
+
 ## Continuation checkpoint
 
-1. Verify the OpenCode executable in a disposable project with Git and without Git.
-   When quota is available and the provider is authorized, retain the minimum
-   redacted event metadata for a complete turn, a tool-using turn, and a provider failure.
-   Inspect observed finish reasons and usage before changing protocol assumptions.
-2. Validate every verification entry point against a single spec containing passed,
-   failed and blocked checks. Reuse that result to design a versioned finding schema.
-3. After owner review of PR #14, test the development spec against the merged branch.
-   Before adding a scanner integration, choose one tool and validate missing-tool,
-   invalid-output and permission-gated cases using reviewed local fixtures.
+1. Validate the managed OpenCode and Codex repair adapters using an approved live
+   provider or a local model and a disposable project. OpenCode's configured
+   free pane still showed a quota block. This session did not exercise a
+   model-backed vendor CLI through Olyder's managed backend.
+2. Implement a small read-only repository context inventory. Capture languages,
+   build and test declarations and changed files before adding indexing or
+   inferred test selection. The Git docs checked 2026-11-27 describe stable
+   machine-oriented status output and standard ignore rules.
+   [Git status](https://git-scm.com/docs/git-status) · [Git ls-files](https://git-scm.com/docs/git-ls-files)
+3. Compare official Semgrep, OSV-Scanner and Gitleaks contracts, then pick one
+   scanner with reproducible local fixtures. Protect severity and suppression
+   policy. Validate blocked and malformed-output cases before exposing verdicts.
+4. Recheck against PR #14 after owner review and merge.

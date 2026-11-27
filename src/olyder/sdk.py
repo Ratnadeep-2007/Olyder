@@ -18,6 +18,7 @@ from pathlib import Path
 from .accounting import RuntimeAccounting
 from .adapters import ExecutableAgent, bind_model, get_agent
 from .backends import get_backend
+from .checks import CHECK_EVIDENCE_SCHEMA_VERSION
 from .config import Spec, load_spec
 from .control import Cancelled, ResourceLimit, RunControl, activate, current
 from .engine import _independent_review, plan, verify_once
@@ -25,12 +26,15 @@ from .execution import ExecutionError, managed_run
 from .impact import select_checks
 from .models import ModelError
 from .policy import RunPolicy, progress
-from .privacy import redact
+from .privacy import redact, redact_values
 from .quota import Budget, QuotaExceeded
 from .report import save_report
 from .research import collect
 from .state import RunStore
 from .workspace import ProtectedWorkspace, WorkspaceViolation, file_modes, tree
+
+
+MAX_REPAIR_FEEDBACK_CHARS = 8000
 
 
 @dataclass(frozen=True)
@@ -56,8 +60,48 @@ def _checker_digest():
     return digest.hexdigest()
 
 
+def _repair_feedback(spec: Spec, verification: dict) -> str:
+    """Keep the legacy JSON string parseable by omitting whole records."""
+    failures = [check for check in verification["checks"] if check["status"] == "fail"]
+    declared_checks = {check["id"]: check for check in spec.checks}
+    requirement_ids: dict[str, list[str]] = {}
+    for identifier, requirement in verification["requirement_coverage"].items():
+        for check_id in requirement["check_ids"]:
+            requirement_ids.setdefault(check_id, []).append(identifier)
+
+    payload = {
+        "repair": [],
+        "rule": "Do not weaken requirements or tests",
+        "total_failures": len(failures),
+        "omitted_failures": len(failures),
+    }
+    encoded = json.dumps(payload)
+    for result in failures:
+        check_id = result["id"]
+        declared = declared_checks[check_id]
+        payload["repair"].append(redact_values({
+            "check_id": check_id,
+            "status": result["status"],
+            "type": result["type"],
+            "evidence": result["details"][:1200],
+            "affected_paths": declared.get("paths", []),
+            "depends_on": declared.get("depends_on", []),
+            "requirement_ids": requirement_ids.get(check_id, []),
+        }))
+        payload["omitted_failures"] -= 1
+        candidate = json.dumps(payload)
+        if len(candidate) > MAX_REPAIR_FEEDBACK_CHARS:
+            break
+        encoded = candidate
+    return encoded
+
+
 def _execute(adapter, backend, workspace, prompt, timeout):
-    command = [p.replace('{workspace}', str(workspace)) for p in adapter.command(prompt)]
+    # Expand argv template placeholders outside the serialized prompt only.
+    command = [
+        prompt.join(part.replace("{workspace}", str(workspace)) for part in arg.split(prompt))
+        for arg in adapter.command(prompt)
+    ]
     if getattr(adapter.capabilities(),'requires_git',False) and not (workspace/'.git').exists():
         with tempfile.TemporaryFile(mode='w+t') as out:
             outcome = managed_run(['git','init','--quiet'], cwd=workspace, stdout=out, timeout=min(5,timeout))
@@ -146,6 +190,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                        sink=emit, model_provider=model_provider)
     result={'schema_version':2,'goal':spec.goal,'spec_sha256':spec.digest,'run_id':run_id,'status':'blocked',
             'checker_sha256':state['checker_sha256'],
+            'check_evidence_schema_version': CHECK_EVIDENCE_SCHEMA_VERSION,
             'checks':[],'history':[],'stop_reason':'initialization_failed',
             'sources':[],'independent_critic_status':'not_requested', 'budget':{}}
     workspace=None
@@ -192,7 +237,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
             adapter=get_agent(name) if name else ExecutableAgent('generic',builder.get('argv') or ['false'])
             adapter=bind_model(adapter,builder.get('model'))
             feedback='Implement the original goal. Do not create or modify acceptance assets.'
-            previous=[]; stagnant=0; previous_tree={}; selections=[]; test_ms=0; executed_count=0
+            previous={}; stagnant=0; previous_tree={}; selections=[]; test_ms=0; executed_count=0
             token_budget=Budget(limits.get('max_tokens',30000))
             for number in range(1,iterations+1):
                 control.check()
@@ -203,9 +248,16 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                 if permissions.execute_builder and not reserve_only:
                     ticket=account.admit('builder')
                     checkpoint('builder_started',attempt=number)
-                    prompt=json.dumps({'goal':spec.goal,'tasks':plan(spec)['tasks'],
-                        'feedback_untrusted':redact(feedback)[:8000],
-                        'rules':'Implementation files only. Verifier assets are detached.'},ensure_ascii=False)
+                    prompt = json.dumps({
+                        "schema_version": 1,
+                        "run_id": run_id,
+                        "attempt": number,
+                        "spec_sha256": spec.digest,
+                        "goal": spec.goal,
+                        "tasks": plan(spec)["tasks"],
+                        "feedback_untrusted": feedback,
+                        "rules": "Implementation files only. Verifier assets are detached.",
+                    }, ensure_ascii=False)
                     usage=None
                     try:
                         usage,builder_stop=_execute(adapter,execution,workspace.builder,prompt,
@@ -241,7 +293,7 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                     selected=None; selection_reason='full_suite_default'
                     if spec.raw.get('incremental') is True and number>1 and not request_critic:
                         selected,selection_reason=select_checks(spec.checks,changed,
-                            {c['id'] for c in previous if c['status']!='pass'})
+                            {c['id'] for c in previous.values() if c['status']!='pass'})
                     selections.append({'attempt':number,'selected':sorted(selected) if selected is not None else [c['id'] for c in spec.checks],
                                        'reason':selection_reason,'changed_files':sorted(changed)})
                     item=verify_once(verification_spec,allow_exec=permissions.allow_exec,
@@ -295,7 +347,9 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                     raise WorkspaceViolation('Verifier modified implementation inputs; proposal was not verified unchanged')
                 if file_modes(root,input_before)!=modes_before:
                     raise WorkspaceViolation('Verifier modified input file permissions')
-                delta=progress(previous,item['checks'])
+                # An omitted check keeps its last observation until it runs again.
+                observed_before = [previous[c["id"]] for c in item["checks"] if c["id"] in previous]
+                delta = progress(observed_before, item["checks"])
                 delta.update(changed_files=sorted(changed),failure_signature=hashlib.sha256(
                     json.dumps([(c['id'],c['status'],redact(c['details'])) for c in item['checks'] if c['status']!='pass'],sort_keys=True).encode()).hexdigest())
                 history=result['history']+[{'number':number,'status':item['status'],
@@ -324,16 +378,9 @@ def run(spec_path='olyder.json', *, permissions=None, backend='host', agent=None
                 stagnant=0 if delta['improved'] else stagnant+1
                 if stagnant>policy.no_progress_limit:
                     result['stop_reason']='no_progress';break
-                previous=item['checks']
+                previous.update((check['id'], check) for check in item['checks'])
                 previous_tree=proposed_tree
-                failed=[{'check_id':c['id'],'status':c['status'],'evidence':c['details'][:1200]}
-                    for c in item['checks'] if c['status']!='pass']
-                by_check={c['id']:c for c in spec.checks}
-                for failure in failed:
-                    declared=by_check[failure['check_id']]
-                    failure.update(affected_paths=declared.get('paths',[]),
-                                   depends_on=declared.get('depends_on',[]))
-                feedback=json.dumps({'repair':failed,'rule':'Do not weaken requirements or tests'})
+                feedback = _repair_feedback(spec, item)
             else:
                 result['stop_reason']='iteration_limit'
     except QuotaExceeded as exc:

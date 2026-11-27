@@ -1,5 +1,6 @@
-﻿import json
+import json
 import sys
+import textwrap
 
 import pytest
 
@@ -27,6 +28,61 @@ def test_end_to_end_detached_verification_and_apply(tmp_path):
     assert result['accounting']['observations'][0]['observed_tokens'] is None
     assert result['budget_verdict'] == 'unknown'
     assert any(e['type']=='process_started' for e in events)
+
+
+def test_builder_repairs_using_bounded_structured_feedback(tmp_path):
+    builder = textwrap.dedent("""
+        import json
+        import sys
+        from pathlib import Path
+
+        prompt = json.loads(sys.argv[1])
+        assert Path(sys.argv[2]) == Path.cwd()
+        if prompt["feedback_untrusted"].startswith("Implement"):
+            print("All tests passed")  # The verifier must still find the defect.
+        else:
+            repair = json.loads(prompt["feedback_untrusted"])
+            assert prompt["schema_version"] == 1
+            assert prompt["attempt"] == 2
+            assert len(prompt["run_id"]) == 32
+            assert len(prompt["spec_sha256"]) == 64
+            assert len(prompt["feedback_untrusted"]) <= 8000
+            assert repair["omitted_failures"] > 0
+            assert repair["total_failures"] == len(repair["repair"]) + repair["omitted_failures"] == 10
+            first = repair["repair"][0]
+            assert first["check_id"] == "oracle-0"
+            assert first["status"] == "fail"
+            assert first["type"] == "command"
+            assert first["requirement_ids"] == ["correct-answer"]
+            assert first["affected_paths"] == ["answer.py"]
+            assert "expected 42, got 0" in first["evidence"]
+            assert ("{work" + "space}") in first["evidence"]
+            assert "fixture-private" not in first["evidence"]
+            Path("answer.py").write_text("answer = 42")
+    """)
+    checks = [
+        {
+            "id": f"oracle-{i}", "type": "command", "paths": ["answer.py"],
+            "argv": [sys.executable, "-c",
+                     "from answer import answer; "
+                     "print('expected 42, got', answer, '{workspace}', 'token=fixture-private', 'x' * 1500); "
+                     "assert answer == 42"],
+        }
+        for i in range(10)
+    ]
+    spec = project(
+        tmp_path,
+        builder={"argv": [sys.executable, "-c", builder, "{prompt}", "{workspace}"]},
+        schema_version=2,
+        requirements=[{"id": "correct-answer", "text": "Answer must equal 42",
+                       "acceptance_check_ids": [check["id"] for check in checks]}],
+        checks=checks,
+    )
+    result = run(spec, permissions=Permissions(allow_exec=True, execute_builder=True, unsafe_host=True))
+    assert result["status"] == "passed"
+    assert [attempt["status"] for attempt in result["history"]] == ["failed", "passed"]
+    assert result["repaired_check_ids"] == [check["id"] for check in checks]
+    assert (tmp_path / "answer.py").read_text() == "answer = 42"
 
 
 def test_builder_tamper_does_not_manufacture_success(tmp_path):

@@ -39,6 +39,10 @@ def register_verifier(name, verifier, *, trusted=False, api_version=1):
     _verifiers[name]=verifier
 
 
+def is_registered_verifier(name: str) -> bool:
+    return name in _verifiers
+
+
 def verify_plugin(check,root,permissions):
     name=check['type'].removeprefix('plugin:')
     if name not in _verifiers:
