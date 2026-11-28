@@ -31,6 +31,18 @@ jobs:
         run: python -m pytest -q
       - name: CLI help
         run: olyder --help
+      - name: Offline paired agent evaluation
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
+        run: python -m olyder.evals offline .olyder/ci-agent-evaluation
+      - name: Upload evaluation evidence
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: olyder-offline-agent-evaluation
+          path: |
+            .olyder/ci-agent-evaluation/plan.json
+            .olyder/ci-agent-evaluation/records/
+            .olyder/ci-agent-evaluation/report.json
   docker-isolation:
     runs-on: ubuntu-latest
     steps:

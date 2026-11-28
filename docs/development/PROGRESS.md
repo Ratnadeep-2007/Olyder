@@ -313,6 +313,34 @@ registered run database size was 36,864 bytes. These are fixture observations
 with zero model calls. They do not measure hosted provider or Herdr wait time.
 [Coordination guide](../COORDINATION.md)
 
+## Iteration 11 — Paired agent evaluation
+
+On 2026-11-28, the evaluation branch started at `2fd3a7b`, the head used by
+PR #16. OpenCode researched primary benchmark sources and Antigravity reviewed
+the design and implementation. Keeping development and scoring separate avoids
+exposing the held-out oracle during development. The new runner uses normal
+public tests in A and the existing protected Olyder task verifier and gate
+in B. Unlike the older benchmark, it compares workflows with and without
+Olyder and preserves a separate scoring phase. A third arm remains optional.
+[Harbor task environments](https://github.com/harbor-framework/harbor/blob/main/docs-mintlify/tasks/environment.mdx)
+
+The initial checkout pilot established equal starting bytes and detected
+a public-example-only solution. It then expanded to checkout, authorization,
+attendance, inventory and refactoring. Thirty scripted runs covered three
+pairs per task. Both arms solved 10/15, passed 33/48 held-out assertions and
+had five false completion signals. Separate private scoring used 15 cases
+written by an independent reviewer after submission. Both arms passed 31/45
+assertions on that oracle. The private oracle is kept outside the repository.
+Candidate exceptions count as failed checks, distinct from runner errors.
+
+The scripted run used zero model calls. Median public-check time delta was
+231.88 ms on this WSL fixture run, and Linux runner peak RSS was 29,008 KiB.
+These observations describe the harness and Olyder bookkeeping on these small
+tasks. A live study still requires budget authorization for the chosen
+provider and an available isolated runner. The local Docker daemon was
+unavailable, so no live trials were run.
+[Evaluation guide](../../evaluations/README.md)
+
 ## Continuation checkpoint
 
 1. Extend the transport layer with operator-approved reassignment of an existing
