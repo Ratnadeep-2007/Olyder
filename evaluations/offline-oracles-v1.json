@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "checkout": [
+      {
+        "id": "mixed-quantity",
+        "category": "functional",
+        "input": {
+          "items": [
+            {
+              "qty": 2,
+              "unit_cents": 199
+            },
+            {
+              "qty": 1,
+              "unit_cents": 301
+            }
+          ],
+          "discount": 15
+        },
+        "expected": 595
+      },
+      {
+        "id": "empty-cart",
+        "category": "regression",
+        "input": {
+          "items": [],
+          "discount": 20
+        },
+        "expected": 0
+      },
+      {
+        "id": "no-discount",
+        "category": "functional",
+        "input": {
+          "items": [
+            {
+              "qty": 3,
+              "unit_cents": 50
+            }
+          ],
+          "discount": 0
+        },
+        "expected": 150
+      }
+    ],
+    "auth-rbac": [
+      {
+        "id": "different-tenant",
+        "input": {
+          "actor_tenant": "north",
+          "record_tenant": "south",
+          "action": "read",
+          "role": "admin",
+          "owned": false
+        },
+        "expected": false,
+        "category": "access_control"
+      },
+      {
+        "id": "viewer-update",
+        "input": {
+          "actor_tenant": "north",
+          "record_tenant": "north",
+          "action": "update",
+          "role": "viewer",
+          "owned": true
+        },
+        "expected": false,
+        "category": "access_control"
+      },
+      {
+        "id": "owner-update",
+        "input": {
+          "actor_tenant": "north",
+          "record_tenant": "north",
+          "action": "update",
+          "role": "owner",
+          "owned": true
+        },
+        "expected": true,
+        "category": "functional"
+      },
+      {
+        "id": "unknown-role",
+        "input": {
+          "actor_tenant": "north",
+          "record_tenant": "north",
+          "action": "read",
+          "role": "guest",
+          "owned": false
+        },
+        "expected": false,
+        "category": "access_control"
+      }
+    ],
+    "attendance": [
+      {
+        "id": "threshold",
+        "input": {
+          "dates": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "records": [
+            {
+              "date": "a",
+              "status": "present"
+            },
+            {
+              "date": "b",
+              "status": "excused"
+            },
+            {
+              "date": "c",
+              "status": "present"
+            }
+          ]
+        },
+        "expected": {
+          "credited": 3,
+          "enrolled": 4,
+          "eligible": true
+        },
+        "category": "functional"
+      },
+      {
+        "id": "duplicate-and-outside",
+        "input": {
+          "dates": [
+            "x",
+            "y",
+            "z"
+          ],
+          "records": [
+            {
+              "date": "x",
+              "status": "present"
+            },
+            {
+              "date": "x",
+              "status": "present"
+            },
+            {
+              "date": "other",
+              "status": "present"
+            }
+          ]
+        },
+        "expected": {
+          "credited": 1,
+          "enrolled": 3,
+          "eligible": false
+        },
+        "category": "functional"
+      },
+      {
+        "id": "empty",
+        "input": {
+          "dates": [],
+          "records": []
+        },
+        "expected": {
+          "credited": 0,
+          "enrolled": 0,
+          "eligible": false
+        },
+        "category": "regression"
+      }
+    ],
+    "inventory-api": [
+      {
+        "id": "deduct",
+        "input": {
+          "stock": {
+            "a": 9,
+            "b": 2
+          },
+          "sku": "a",
+          "delta": -4
+        },
+        "expected": {
+          "status": 200,
+          "stock": {
+            "a": 5,
+            "b": 2
+          }
+        },
+        "category": "functional",
+        "preserve_input": true
+      },
+      {
+        "id": "insufficient",
+        "input": {
+          "stock": {
+            "a": 1,
+            "b": 6
+          },
+          "sku": "a",
+          "delta": -2
+        },
+        "expected": {
+          "status": 409,
+          "stock": {
+            "a": 1,
+            "b": 6
+          }
+        },
+        "category": "regression",
+        "preserve_input": true
+      },
+      {
+        "id": "unknown",
+        "input": {
+          "stock": {
+            "a": 1
+          },
+          "sku": "b",
+          "delta": 5
+        },
+        "expected": {
+          "status": 404,
+          "stock": {
+            "a": 1
+          }
+        },
+        "category": "functional",
+        "preserve_input": true
+      }
+    ],
+    "refactor": [
+      {
+        "id": "existing-order",
+        "input": [
+          "bob",
+          "Ada",
+          "bob",
+          "Bea"
+        ],
+        "expected": [
+          "Ada",
+          "Bea",
+          "bob"
+        ],
+        "category": "regression"
+      },
+      {
+        "id": "empty",
+        "input": [],
+        "expected": [],
+        "category": "regression"
+      },
+      {
+        "id": "case-preserved",
+        "input": [
+          " A",
+          "a ",
+          " a"
+        ],
+        "expected": [
+          "A",
+          "a"
+        ],
+        "category": "functional"
+      }
+    ]
+  }
+}

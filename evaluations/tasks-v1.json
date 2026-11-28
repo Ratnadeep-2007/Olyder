@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "tasks": [
+    {
+      "id": "checkout",
+      "prompt": "Implement solve(cart). Return the total in integer cents after summing qty times unit_cents and subtracting a percentage discount rounded down to cents. Empty carts total zero.",
+      "starter": "def solve(cart):\n    return 0\n",
+      "repair": "def solve(cart):\n    subtotal = sum(item['qty'] * item['unit_cents'] for item in cart['items'])\n    return subtotal - subtotal * cart['discount'] // 100\n",
+      "public": [
+        {
+          "id": "example",
+          "input": {
+            "items": [
+              {
+                "qty": 1,
+                "unit_cents": 100
+              }
+            ],
+            "discount": 25
+          },
+          "expected": 75
+        }
+      ]
+    },
+    {
+      "id": "auth-rbac",
+      "prompt": "Implement solve(request) to return a boolean. Deny a different tenant. In the same tenant, admins may read or update, owners may read or update their own record, viewers may only read, and reject unknown actions or roles.",
+      "starter": "def solve(request):\n    return False\n",
+      "repair": "def solve(request):\n    if request['actor_tenant'] != request['record_tenant'] or request['action'] not in {'read', 'update'}:\n        return False\n    role = request['role']\n    return role == 'admin' or role == 'viewer' and request['action'] == 'read' or role == 'owner' and request['owned']\n",
+      "public": [
+        {
+          "id": "admin-read",
+          "input": {
+            "actor_tenant": "north",
+            "record_tenant": "north",
+            "action": "read",
+            "role": "admin",
+            "owned": false
+          },
+          "expected": true,
+          "category": "functional"
+        }
+      ]
+    },
+    {
+      "id": "attendance",
+      "prompt": "Given enrollment dates and attendance records, implement solve(sheet). Count unique enrolled dates marked present or excused. Ignore records outside enrollment. Return a dictionary with credited days, total enrolled days and eligible, true when at least 75 percent are credited. Empty enrollment is ineligible.",
+      "starter": "def solve(sheet):\n    return {'credited': 0, 'enrolled': len(sheet['dates']), 'eligible': False}\n",
+      "repair": "def solve(sheet):\n    dates = set(sheet['dates'])\n    credited = {record['date'] for record in sheet['records'] if record['date'] in dates and record['status'] in {'present', 'excused'}}\n    return {'credited': len(credited), 'enrolled': len(dates), 'eligible': bool(dates) and 4 * len(credited) >= 3 * len(dates)}\n",
+      "public": [
+        {
+          "id": "basic",
+          "input": {
+            "dates": [
+              "mon",
+              "tue"
+            ],
+            "records": [
+              {
+                "date": "mon",
+                "status": "present"
+              },
+              {
+                "date": "tue",
+                "status": "present"
+              }
+            ]
+          },
+          "expected": {
+            "credited": 2,
+            "enrolled": 2,
+            "eligible": true
+          },
+          "category": "functional"
+        }
+      ]
+    },
+    {
+      "id": "inventory-api",
+      "prompt": "Implement solve(request) for an inventory change API. Apply the integer delta to the given SKU only if it exists and the new quantity is nonnegative. Return {status, stock} with 200 on success, 404 for missing SKU and 409 for insufficient stock. Inputs and other SKU quantities remain intact.",
+      "starter": "def solve(request):\n    return {'status': 409, 'stock': request['stock']}\n",
+      "repair": "def solve(request):\n    stock = dict(request['stock'])\n    sku = request['sku']\n    if sku not in stock:\n        return {'status': 404, 'stock': stock}\n    updated = stock[sku] + request['delta']\n    if updated < 0:\n        return {'status': 409, 'stock': stock}\n    stock[sku] = updated\n    return {'status': 200, 'stock': stock}\n",
+      "public": [
+        {
+          "id": "restock",
+          "input": {
+            "stock": {
+              "pen": 2
+            },
+            "sku": "pen",
+            "delta": 3
+          },
+          "expected": {
+            "status": 200,
+            "stock": {
+              "pen": 5
+            }
+          },
+          "category": "functional"
+        }
+      ]
+    },
+    {
+      "id": "refactor",
+      "prompt": "Refactor solve(names) to normalize leading and trailing whitespace while preserving existing behavior. Return a sorted list of unique nonblank names. Preserve case and the existing sort order.",
+      "starter": "def solve(names):\n    values = []\n    for name in names:\n        if name and name not in values:\n            values.append(name)\n    values.sort()\n    return values\n",
+      "repair": "def solve(names):\n    return sorted({name.strip() for name in names if name.strip()})\n",
+      "public": [
+        {
+          "id": "trim",
+          "input": [
+            " Ada ",
+            "Ada",
+            "  "
+          ],
+          "expected": [
+            "Ada"
+          ],
+          "category": "functional"
+        }
+      ]
+    }
+  ]
+}
